@@ -8,7 +8,7 @@ GuessNova is designed around keyboard-first terminal interaction and text-first 
 - The Textual TUI starts on Play, focuses the numeric guess field on mount, and retains the predictable input → submit → hint gameplay sequence.
 - Workspace panes are reachable through `Ctrl+1` through `Ctrl+6`: Play, Profiles, History, Leaderboard, Settings, and Recovery.
 - Each workspace shortcut moves focus to a useful first control in the selected pane.
-- Plain `Q` and `R` are non-priority application bindings so letters remain typable in profile/search/path inputs. `Ctrl+Q` and `Ctrl+R` remain global quit/reset alternatives.
+- Plain `Q` and `R` belong only to the focused numeric Play input, preserving the original quit/reset flow without stealing normal letters from profile/search/player/path fields. `Ctrl+Q` and `Ctrl+R` remain global quit/reset alternatives.
 - The TUI returns focus to the guess field after guesses, hints, and explicit round reset.
 - Outcomes, hints, warnings, profile actions, filtering status, and recovery status use descriptive text rather than color alone.
 - `--plain` disables Rich CLI color for simpler screen-reader/capture output.
@@ -51,6 +51,8 @@ Ctrl+R  New round
 Ctrl+Q  Quit
 ```
 
+The focused numeric Play field additionally supports plain `R` for a new round and plain `Q` to quit. Those single-letter bindings are widget-local, so ordinary Textual text inputs remain normal text editors.
+
 The tab bar and ordinary Tab/Shift+Tab focus navigation remain available in addition to these shortcuts.
 
 ## Automated accessibility-adjacent coverage
@@ -61,10 +63,11 @@ Textual pilot tests verify:
 - legacy gameplay tab order;
 - Enter submission;
 - range-hint behavior;
-- reset behavior;
+- Play-local `R` reset;
+- Play-local `Q` quit;
 - result persistence;
 - Ctrl+number pane navigation;
-- ordinary `q`/`r` typing in text fields;
+- ordinary `q`/`r` typing in workspace text fields;
 - profile create/rename/delete/restore;
 - exact-name deletion confirmation;
 - history filtering and invalid-date handling;
@@ -93,7 +96,7 @@ CLI tests exercise plain/compact-compatible commands and parser behavior. These 
 - Add/update localization keys for new presentation text in every shipped locale.
 - Keep destructive local-data actions confirmed and recoverable where practical.
 - Keep Recovery inspection separate from repair unless a future design preserves explicit confirmation and backup-before-write guarantees.
-- Ensure global shortcuts do not steal normal character input from text-editing controls.
+- Scope single-letter shortcuts to controls where those letters are commands; use Ctrl/global alternatives so text-editing controls keep normal character input.
 
 ## Manual release evidence
 
@@ -101,8 +104,9 @@ Before every release candidate, copy and complete [`accessibility_evidence_templ
 
 - keyboard-only CLI flows;
 - plain/compact output;
-- TUI Play focus, submission, hint, reset, and quit behavior;
+- TUI Play focus, submission, hint, plain/global reset, and plain/global quit behavior;
 - keyboard traversal and shortcut access for all six workspace panes;
+- ordinary `q`/`r` character entry in workspace text fields;
 - profile lifecycle confirmation/recovery;
 - history and leaderboard filtering;
 - Settings switches/selects and focus visibility;
