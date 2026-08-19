@@ -27,6 +27,7 @@ python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
 python -m guessnova.doctor_cli --help
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
 `make check` runs the same core quality sequence plus entry-point verification on systems with Make available.
@@ -35,11 +36,18 @@ python -m guessnova.doctor_cli --help
 
 - Keep game/domain logic independent of Rich/Textual presentation, diagnostics, backup wrappers, command dispatch, and filesystem I/O.
 - Keep `entrypoint.py` limited to routing; do not duplicate gameplay or Doctor business logic there.
+- Keep reusable Textual workspace data/configuration behavior in `tui_workspace.py` when it does not require widget/focus knowledge.
+- Keep `tui.py` focused on composition, focus, event handling, and presentation orchestration over existing application/local-adapter APIs.
 - Add or update focused tests for behavior changes and regression fixes.
 - Preserve deterministic behavior for seeded and daily challenges.
 - Use temporary storage and deterministic targets/seeds/clocks in tests; never touch a contributor's real GuessNova state.
 - Preserve keyboard-only operation and avoid color-only meaning.
 - Keep destructive local-data operations confirmed and recoverable where practical.
+- TUI profile deletion must retain exact-name confirmation and recoverable trash semantics unless an intentional safer design replaces it.
+- Changing active TUI profile ownership must not allow a partially played round to be persisted under a different profile.
+- TUI global bindings must not steal normal character input from profile/search/path fields; retain globally reliable Ctrl alternatives when single-letter shortcuts exist.
+- Keep TUI Recovery read-only unless a separately reviewed design proves explicit confirmation and pre-repair backup guarantees.
+- Keep one mounted TUI linguistically consistent; do not partially relabel only some widgets after a locale change.
 - Keep state, replay, backup, and Doctor-report compatibility explicit. Do not invent a schema migration unless a concrete state-format boundary exists.
 - When introducing a real schema migration, commit representative fixtures for the previous supported schema and test forward migration/future-schema rejection.
 - Keep backup-wrapper versioning independent from state-schema versioning and Doctor-report versioning.
@@ -107,13 +115,31 @@ Review:
 - safe refusal paths;
 - support-output privacy.
 
-## Textual changes
+## Textual workspace changes
 
-For TUI behavior, prefer dependency-injected `Storage(tmp_path)` and deterministic `GuessGame(...)` instances with Textual's `run_test()` pilot. Cover focus order, keyboard bindings, submission, and persistence when those areas change.
+Use `Storage(tmp_path)` and deterministic/injected `GuessGame(...)` instances with Textual's `run_test()` pilot. Reusable non-widget behavior belongs in helper tests when practical.
+
+When changing a pane, review relevant items:
+
+- initial and post-action focus;
+- Ctrl+number pane shortcuts;
+- Tab/Shift+Tab navigation;
+- normal text entry for `q`/`r` characters;
+- completed-round exactly-once persistence;
+- active-profile round isolation;
+- recoverable deletion confirmation;
+- history/leaderboard filter correctness;
+- settings persistence and immediate-vs-next-launch behavior;
+- high-contrast focus visibility;
+- English/Hindi catalog completeness;
+- read-only Recovery guarantees;
+- temporary/private test state only.
+
+Keep the focused pilot suites separated by concern rather than growing one giant scenario.
 
 ## Accessibility changes
 
-Keep `docs/accessibility.md` current. Release-candidate changes affecting interaction, layout, contrast, localization, or destructive actions should also update the manual evidence checklist when needed. Automated pilot tests supplement rather than replace manual terminal review.
+Keep `docs/accessibility.md` current. Release-candidate changes affecting interaction, layout, contrast, localization, destructive actions, workspace focus, or Recovery behavior should also update the manual evidence checklist when needed. Automated pilot tests supplement rather than replace manual terminal review.
 
 ## Pull requests
 
