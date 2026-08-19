@@ -60,6 +60,21 @@ def test_doctor_repair_requires_confirmation_and_can_repair(
     assert len(list(backups.glob("*.guessnova.json"))) == 1
 
 
+def test_doctor_json_repair_requires_yes_without_prompt(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    monkeypatch.setenv("GUESSNOVA_HOME", str(tmp_path))
+
+    def fail_if_prompted(_prompt: str) -> str:
+        raise AssertionError("JSON mode must not prompt")
+
+    monkeypatch.setattr("guessnova.doctor_cli.console.input", fail_if_prompted)
+    assert main(["--json", "--repair"]) == 2
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["healthy"] is False
+    assert "requires --yes" in payload["error"]
+
+
 def test_doctor_json_repair_emits_single_json_document(
     tmp_path: Path, monkeypatch, capsys
 ) -> None:
