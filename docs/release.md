@@ -13,6 +13,7 @@
    pytest --cov=guessnova --cov-report=term-missing
    python -m compileall -q src tests scripts
    python scripts/verify_release_metadata.py
+   python scripts/check_docs_links.py
    python scripts/smoke_test.py
    python -m guessnova --help
    python -m guessnova doctor --help
@@ -25,41 +26,50 @@
    ```
 
 4. Review CI, Security checks, and CodeQL results for the **exact release commit**. Do not treat queued, pending, cancelled-superseded, or older-head results as a pass for the selected release head.
-5. Require the CI platform-package matrix to complete on Ubuntu, Windows, and macOS. Each platform must build, validate, install the wheel, start `python -m guessnova --help`, import both the stable Textual workspace and the shipped challenge-enabled app from the installed wheel, run `guessnova doctor --help`, run `guessnova-doctor --help`, verify Doctor version output, and pass the smoke test.
-6. Verify CLI help, seeded play, daily play, explicit hints, reverse mode, settings, advanced history filters/grouping, profile create/use/rename/delete/restore, backup export/import, and Doctor state/backup routes.
-7. Verify the six-pane Textual workspace launches with Play active and the guess input focused.
-8. Verify Textual pane shortcuts `Ctrl+1` through `Ctrl+6`, global `Ctrl+R`/`Ctrl+Q`, and normal character input in workspace/challenge text fields.
-9. Verify v1.5 Challenge Setup supports Classic, Timed, Streak, and Daily and uses the shared difficulty registry. Confirm Reverse is absent from the ordinary numeric setup.
-10. Verify non-Daily challenge seed input accepts an optional whole number; verify Daily disables seed and enables its `YYYY-MM-DD` date field.
-11. Verify blank Daily date resolves to an explicit local current date after successful start.
-12. Verify invalid seed or Daily date reports text feedback, focuses the relevant input, and leaves the active game/target/attempt count/result-save state intact.
-13. Verify successful challenge start clears old round UI state, updates range/attempts, shows target-free challenge identity, and returns focus to Guess.
-14. Verify seeded Classic/Timed/Streak configured reset reproduces the same deterministic challenge and Daily configured reset reproduces the same resolved-date challenge.
-15. Verify Textual Profiles create/use/rename/delete/restore flows, exact-name delete confirmation, achievement summary, and unfinished-round reset when active-profile ownership changes.
-16. Verify Textual History result/mode/difficulty/search/date filters, invalid-date behavior, and newest-first bounded display.
-17. Verify Textual Leaderboard mode/difficulty/player filters while preserving ranked ordering.
-18. Verify Textual Settings persistence for theme/locale/reduced motion/high contrast/sound/smart hints, immediate high-contrast/smart-hint behavior, and next-launch locale semantics.
-19. Verify Textual Recovery diagnostics and backup verification remain read-only and do not expose a repair/import action.
-20. Verify schema migration from both committed schema-1 fixtures and confirm resulting normalized state is schema 2. Confirm future schema rejection remains intact and no schema-3 fixture/version has been invented without a real boundary.
-21. Verify a backup-v2 round trip, legacy wrapper-v1 import, deliberately modified backup failing SHA-256 integrity, and backup preflight rejecting a checksum-valid but structurally unimportable payload.
-22. Verify bounded state/backup behavior: oversized state is rejected before decode/normal persistence, oversized backup is rejected before JSON processing, and `MAX_EXPORT_BYTES > MAX_STATE_BYTES` remains true.
-23. Verify `guessnova doctor --json`, `guessnova-doctor --json`, explicit `--data-dir`, Doctor report version `1`, stable exit semantics, and a repair flow against isolated schema-1 state. Confirm the repair backup contains the original schema-1 payload and repaired state is schema 2.
-24. Confirm JSON repair requires `--yes`, so no interactive prompt can contaminate machine-readable stdout.
-25. Complete a copy of `docs/accessibility_evidence_template.md` against the exact release candidate, including v1.5 Challenge Setup and every Textual pane. Do not infer manual accessibility results from automated tests.
-26. Verify both shipped locales (`en`, `hi`) and confirm no visible catalog key or broken placeholder reaches the user. Relaunch the TUI after changing locale to verify full-language presentation, including Challenge Setup.
-27. Verify `docs/completion_audit.md` contains no unchecked release-blocking implementation item; evidence items must match the actual candidate status.
-28. Synchronize version metadata, `CHANGELOG.md`, `ROADMAP.md`, and `what_changed.md`.
-29. Create semantic tag `v1.5.0` only after required automated checks and manual gates pass.
-30. The release workflow independently verifies that the tag version equals `project.version`, then reruns lint, format, strict mypy, tests, compile, release metadata, smoke, dependency audit, and the cross-platform package matrix before it can publish artifacts.
-31. After verification succeeds, the workflow builds source/wheel distributions, validates them with Twine, and attaches them to generated GitHub release notes.
-32. Verify the published wheel exposes `guessnova`, `guessnova-tui`, and `guessnova-doctor`; confirm `guessnova doctor --help` works and both stable/shipped Textual imports resolve from the installed wheel; confirm no local state, caches, credentials, repair backups, or secrets are included.
-33. If screenshots/demo media are published, capture them from this exact signed-off tag/commit and record provenance according to `docs/media/README.md`. Never use mock or reconstructed release media.
+5. Confirm the exact release checkout passes `scripts/check_docs_links.py`. The checker validates repository-local Markdown/image/reference/HTML targets without fetching external URLs, and rejects missing or repository-escaping local paths.
+6. Require the CI platform-package matrix to complete on Ubuntu, Windows, and macOS. Each platform must build, validate, install the wheel, start `python -m guessnova --help`, import both the stable Textual workspace and the shipped challenge-enabled app from the installed wheel, run `guessnova doctor --help`, run `guessnova-doctor --help`, verify Doctor version output, and pass the smoke test.
+7. Verify CLI help, seeded play, daily play, explicit hints, reverse mode, settings, advanced history filters/grouping, profile create/use/rename/delete/restore, backup export/import, and Doctor state/backup routes.
+8. Verify the six-pane Textual workspace launches with Play active and the guess input focused.
+9. Verify Textual pane shortcuts `Ctrl+1` through `Ctrl+6`, global `Ctrl+R`/`Ctrl+Q`, and normal character input in workspace/challenge text fields.
+10. Verify v1.5 Challenge Setup supports Classic, Timed, Streak, and Daily and uses the shared difficulty registry. Confirm Reverse is absent from the ordinary numeric setup.
+11. Verify non-Daily challenge seed input accepts an optional whole number; verify Daily disables seed and enables its `YYYY-MM-DD` date field.
+12. Verify blank Daily date resolves to an explicit local current date after successful start.
+13. Verify invalid seed or Daily date reports text feedback, focuses the relevant input, and leaves the active game/target/attempt count/result-save state intact.
+14. Verify successful challenge start clears old round UI state, updates range/attempts, shows target-free challenge identity, and returns focus to Guess.
+15. Verify seeded Classic/Timed/Streak configured reset reproduces the same deterministic challenge and Daily configured reset reproduces the same resolved-date challenge.
+16. Verify Textual Profiles create/use/rename/delete/restore flows, exact-name delete confirmation, achievement summary, and unfinished-round reset when active-profile ownership changes.
+17. Verify Textual History result/mode/difficulty/search/date filters, invalid-date behavior, and newest-first bounded display.
+18. Verify Textual Leaderboard mode/difficulty/player filters while preserving ranked ordering.
+19. Verify Textual Settings persistence for theme/locale/reduced motion/high contrast/sound/smart hints, immediate high-contrast/smart-hint behavior, and next-launch locale semantics.
+20. Verify Textual Recovery diagnostics and backup verification remain read-only and do not expose a repair/import action.
+21. Verify schema migration from both committed schema-1 fixtures and confirm resulting normalized state is schema 2. Confirm future schema rejection remains intact and no schema-3 fixture/version has been invented without a real boundary.
+22. Verify a backup-v2 round trip, legacy wrapper-v1 import, deliberately modified backup failing SHA-256 integrity, and backup preflight rejecting a checksum-valid but structurally unimportable payload.
+23. Verify bounded state/backup behavior: oversized state is rejected before decode/normal persistence, oversized backup is rejected before JSON processing, and `MAX_EXPORT_BYTES > MAX_STATE_BYTES` remains true.
+24. Verify `guessnova doctor --json`, `guessnova-doctor --json`, explicit `--data-dir`, Doctor report version `1`, stable exit semantics, and a repair flow against isolated schema-1 state. Confirm the repair backup contains the original schema-1 payload and repaired state is schema 2.
+25. Confirm JSON repair requires `--yes`, so no interactive prompt can contaminate machine-readable stdout.
+26. Complete a copy of `docs/accessibility_evidence_template.md` against the exact release candidate, including v1.5 Challenge Setup and every Textual pane. Do not infer manual accessibility results from automated tests.
+27. Verify both shipped locales (`en`, `hi`) and confirm no visible catalog key or broken placeholder reaches the user. Relaunch the TUI after changing locale to verify full-language presentation, including Challenge Setup.
+28. Verify `docs/completion_audit.md` contains no unchecked release-blocking implementation item; evidence items must match the actual candidate status.
+29. Synchronize version metadata, `CHANGELOG.md`, `ROADMAP.md`, and `what_changed.md`.
+30. Create semantic tag `v1.5.0` only after required automated checks and manual gates pass.
+31. The release workflow independently verifies that the tag version equals `project.version`, then reruns lint, format, strict mypy, tests, compile, release metadata, documentation-link verification, smoke, dependency audit, and the cross-platform package matrix before it can publish artifacts.
+32. After verification succeeds, the workflow builds source/wheel distributions, validates them with Twine, and attaches them to generated GitHub release notes.
+33. Verify the published wheel exposes `guessnova`, `guessnova-tui`, and `guessnova-doctor`; confirm `guessnova doctor --help` works and both stable/shipped Textual imports resolve from the installed wheel; confirm no local state, caches, credentials, repair backups, or secrets are included.
+34. If screenshots/demo media are published, capture them from this exact signed-off tag/commit and record provenance according to `docs/media/README.md`. Never use mock or reconstructed release media.
 
 ## Version/tag invariant
 
 A release tag must be `v` followed by the exact `project.version` in `pyproject.toml`. For project version `1.5.0`, the release tag must be `v1.5.0`. A mismatch intentionally fails the release workflow before artifacts are published.
 
 Package, runtime, citation, and changelog release metadata are checked by `scripts/verify_release_metadata.py`.
+
+## Documentation integrity gate
+
+`scripts/check_docs_links.py` is part of both normal CI and tagged-release verification. It is deliberately offline and dependency-free so release correctness does not depend on third-party site availability or rate limits.
+
+The release gate validates repository-local navigation targets in Markdown, including inline links/images, reference definitions, and embedded HTML `href`/`src` attributes. Fenced and inline code examples are ignored. External URLs and fragment-only anchors are not fetched; this gate verifies local target existence and repository containment rather than internet reachability or generated heading-slug semantics.
+
+A failing local documentation target is a release blocker until the documentation or checker regression is corrected on the exact release head.
 
 ## Compatibility domains
 
