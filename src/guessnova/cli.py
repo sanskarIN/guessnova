@@ -80,27 +80,47 @@ def play(args: argparse.Namespace) -> int:
     if args.compact:
         console.print(heading)
     else:
-        console.print(Panel.fit(f"[bold]GuessNova[/bold]\n{args.mode.title()} · {args.difficulty.title()} · {diff.minimum}–{diff.maximum}"))
+        console.print(
+            Panel.fit(
+                f"[bold]GuessNova[/bold]\n{args.mode.title()} · {args.difficulty.title()} · "
+                f"{diff.minimum}–{diff.maximum}\nType 'hint' for a narrowed range clue."
+            )
+        )
     while not game.is_finished:
         try:
             raw = console.input(f"Guess [{game.attempts_left} left] › ").strip()
-            if raw.lower() in {"q", "quit", "exit"}:
+            command = raw.lower()
+            if command in {"q", "quit", "exit"}:
                 console.print("Challenge abandoned.")
                 return 1
+            if command in {"h", "hint"}:
+                try:
+                    console.print(
+                        f"[dim]{game.request_hint(penalize=args.hint_penalty)}[/dim]"
+                    )
+                except RuntimeError as exc:
+                    console.print(f"[yellow]{exc}[/yellow]")
+                continue
             feedback = game.guess(int(raw))
         except ValueError:
-            console.print("[yellow]Enter a whole number, or q to quit.[/yellow]")
+            console.print("[yellow]Enter a whole number, 'hint', or q to quit.[/yellow]")
             continue
         _render_feedback(game, feedback.outcome, feedback.hint if show_hints else None)
 
     summary = game.summary()
-    console.print(f"Target: [bold]{summary.target}[/bold] · Attempts: {summary.attempts} · {summary.elapsed_seconds:.1f}s")
+    console.print(
+        f"Target: [bold]{summary.target}[/bold] · Attempts: {summary.attempts} · "
+        f"{summary.elapsed_seconds:.1f}s · Hints: {summary.hints_used}"
+    )
     if args.no_save:
         return 0 if summary.won else 2
     profile, unlocked = GameService(storage).record(summary, args.profile)
     console.print(f"XP: {profile.stats.xp} · Win rate: {profile.stats.win_rate:.0%}")
     for achievement in sorted(unlocked):
-        console.print(f"[bold yellow]Achievement unlocked:[/bold yellow] {ACHIEVEMENT_LABELS.get(achievement, achievement)}")
+        console.print(
+            f"[bold yellow]Achievement unlocked:[/bold yellow] "
+            f"{ACHIEVEMENT_LABELS.get(achievement, achievement)}"
+        )
     console.print(f"Replay: {encode_replay(summary)}")
     return 0 if summary.won else 2
 
@@ -135,7 +155,9 @@ def stats(args: argparse.Namespace) -> int:
         ("History entries", str(len(profile.history))),
     ]
     if args.compact:
-        console.print(f"{profile.name}: " + " · ".join(f"{label}={value}" for label, value in values))
+        console.print(
+            f"{profile.name}: " + " · ".join(f"{label}={value}" for label, value in values)
+        )
         return 0
     table = Table(title=f"{profile.name} · Statistics")
     table.add_column("Metric")
@@ -298,16 +320,33 @@ def replay_cmd(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="guessnova", description="A modern number guessing game")
     parser.add_argument("--plain", action="store_true", help="disable terminal color for simpler output")
-    parser.add_argument("--compact", action="store_true", help="prefer concise text instead of rich tables/panels")
+    parser.add_argument(
+        "--compact", action="store_true", help="prefer concise text instead of rich tables/panels"
+    )
     sub = parser.add_subparsers(dest="command")
 
     play_parser = sub.add_parser("play", help="play a challenge")
     play_parser.add_argument("--difficulty", choices=sorted(DIFFICULTIES), default="normal")
-    play_parser.add_argument("--mode", choices=[m.value for m in GameMode if m != GameMode.REVERSE], default="classic")
+    play_parser.add_argument(
+        "--mode",
+        choices=[m.value for m in GameMode if m != GameMode.REVERSE],
+        default="classic",
+    )
     play_parser.add_argument("--seed", type=int)
     play_parser.add_argument("--day", help="ISO date for reproducible daily challenge")
     play_parser.add_argument("--profile")
-    play_parser.add_argument("--hints", action=argparse.BooleanOptionalAction, default=None, help="override saved smart-hint preference")
+    play_parser.add_argument(
+        "--hints",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="override saved automatic smart-hint preference",
+    )
+    play_parser.add_argument(
+        "--hint-penalty",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="charge or waive XP penalty for explicit range hints",
+    )
     play_parser.add_argument("--no-save", action="store_true")
     play_parser.set_defaults(func=play)
 
@@ -320,13 +359,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     history_parser = sub.add_parser("history", help="show local session history")
     history_parser.add_argument("--profile")
-    history_parser.add_argument("--mode", choices=[m.value for m in GameMode if m != GameMode.REVERSE])
+    history_parser.add_argument(
+        "--mode", choices=[m.value for m in GameMode if m != GameMode.REVERSE]
+    )
     history_parser.add_argument("--difficulty", choices=sorted(DIFFICULTIES))
     history_parser.add_argument("--limit", type=int, default=20)
     history_parser.set_defaults(func=history_cmd)
 
     leaderboard_parser = sub.add_parser("leaderboard", help="show local best results")
-    leaderboard_parser.add_argument("--mode", choices=[m.value for m in GameMode if m != GameMode.REVERSE])
+    leaderboard_parser.add_argument(
+        "--mode", choices=[m.value for m in GameMode if m != GameMode.REVERSE]
+    )
     leaderboard_parser.add_argument("--difficulty", choices=sorted(DIFFICULTIES))
     leaderboard_parser.add_argument("--limit", type=int, default=10)
     leaderboard_parser.set_defaults(func=leaderboard_cmd)
@@ -334,13 +377,21 @@ def build_parser() -> argparse.ArgumentParser:
     settings_parser = sub.add_parser("settings", help="show or update local profile settings")
     settings_parser.add_argument("--profile")
     settings_parser.add_argument("--theme", choices=sorted(THEMES))
-    settings_parser.add_argument("--reduced-motion", action=argparse.BooleanOptionalAction, default=None)
-    settings_parser.add_argument("--high-contrast", action=argparse.BooleanOptionalAction, default=None)
+    settings_parser.add_argument(
+        "--reduced-motion", action=argparse.BooleanOptionalAction, default=None
+    )
+    settings_parser.add_argument(
+        "--high-contrast", action=argparse.BooleanOptionalAction, default=None
+    )
     settings_parser.add_argument("--sound", action=argparse.BooleanOptionalAction, default=None)
-    settings_parser.add_argument("--smart-hints", action=argparse.BooleanOptionalAction, default=None)
+    settings_parser.add_argument(
+        "--smart-hints", action=argparse.BooleanOptionalAction, default=None
+    )
     settings_parser.set_defaults(func=settings_cmd)
 
-    about_parser = sub.add_parser("about", help="show project, license, support, and funding details")
+    about_parser = sub.add_parser(
+        "about", help="show project, license, support, and funding details"
+    )
     about_parser.set_defaults(func=about_cmd)
 
     export_parser = sub.add_parser("export", help="export local data")
