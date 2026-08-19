@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use GuessNova in a project or study, please cite this repository."
+title: "GuessNova"
+type: software
+authors:
+  - family-names: "Sanskar"
+repository-code: "https://github.com/sanskarIN/guessnova"
+license: MIT
+version: 1.0.0
+date-released: 2026-08-19
