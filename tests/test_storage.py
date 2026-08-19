@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from guessnova.profile import Profile
-from guessnova.storage import Storage
+from guessnova.storage import Storage, normalize_state
 
 
 def test_storage_save_and_load_profile(tmp_path: Path) -> None:
@@ -25,12 +27,43 @@ def test_storage_migrates_v0(tmp_path: Path) -> None:
 
 def test_storage_rejects_future_version(tmp_path: Path) -> None:
     (tmp_path / "state.json").write_text('{"schema_version":999}', encoding="utf-8")
-    try:
+    with pytest.raises(ValueError, match="newer"):
         Storage(tmp_path).load_raw()
-    except ValueError as exc:
-        assert "newer" in str(exc)
-    else:
-        raise AssertionError("expected ValueError")
+
+
+def test_storage_rejects_invalid_json(tmp_path: Path) -> None:
+    (tmp_path / "state.json").write_text("{broken", encoding="utf-8")
+    with pytest.raises(ValueError, match="invalid JSON"):
+        Storage(tmp_path).load_raw()
+
+
+def test_storage_rejects_invalid_profiles_container() -> None:
+    with pytest.raises(ValueError, match="profiles"):
+        normalize_state({"schema_version": 1, "profiles": []})
+
+
+def test_storage_normalizes_untrusted_profile_and_leaderboard_data() -> None:
+    normalized = normalize_state(
+        {
+            "schema_version": 1,
+            "active_profile": 123,
+            "profiles": {
+                "Tester": {
+                    "name": "Tester",
+                    "stats": {"games_played": "2", "games_won": 9},
+                },
+                4: "ignored",
+            },
+            "leaderboard": ["bad"],
+            "unexpected": "dropped",
+        }
+    )
+    assert normalized["active_profile"] == "Player"
+    assert "unexpected" not in normalized
+    assert normalized["leaderboard"] == []
+    profiles = normalized["profiles"]
+    assert isinstance(profiles, dict)
+    assert profiles["Tester"]["stats"]["games_won"] == 2  # type: ignore[index]
 
 
 def test_storage_leaderboard_round_trip(tmp_path: Path) -> None:
