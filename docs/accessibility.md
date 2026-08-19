@@ -1,27 +1,42 @@
 # Accessibility
 
-GuessNova is designed around keyboard-first terminal interaction.
+GuessNova is designed around keyboard-first terminal interaction and text-first meaning.
 
 ## Current practices
 
 - No mouse is required for CLI gameplay; Textual provides keyboard focus/navigation.
-- Outcomes and hints use descriptive text rather than color alone.
+- Outcomes, hints, warnings, and errors use descriptive text rather than color alone.
+- `--plain` disables terminal color for simpler screen-reader/capture output.
+- `--compact` replaces rich panels/tables with concise text where supported.
+- Saved themes use semantic color roles; `settings --high-contrast` applies the dedicated high-contrast palette to the Rich CLI.
+- `settings --reduced-motion` persists the user's reduced-motion preference for presentation features; GuessNova adds no fake-delay animation to core gameplay.
 - Invalid guesses explain the problem instead of silently failing.
 - Timed gameplay is opt-in; classic/daily/reverse play does not require timed input.
-- Profile settings include reduced-motion and high-contrast preferences for continued UI development.
-- Important information remains textual so it can be read from terminal buffers and logs without interpreting icons.
+- Automatic smart hints can be disabled per profile or overridden per round.
+- Explicit `hint` requests do not consume an attempt and clearly state any configured XP penalty.
+- Important information remains textual so it can be read from terminal buffers without interpreting icons.
+
+Examples:
+
+```bash
+guessnova --plain --compact stats
+guessnova settings --high-contrast --reduced-motion
+guessnova settings --no-smart-hints
+```
 
 ## Contributor checklist
 
 - Preserve logical input/focus order.
 - Keep all actions keyboard accessible.
 - Do not encode success/warning/error using color only.
+- Add new colors through semantic theme roles rather than hard-coded state colors.
 - Keep labels and prompts concise and explicit.
 - Test narrow terminals and enlarged font settings.
 - Avoid unnecessary animation/fake delays; respect reduced-motion settings when animation exists.
 - Maintain usable contrast for custom themes.
 - Avoid forcing timed interaction outside timed mode.
+- Keep a plain/compact path available when adding Rich presentation features.
 
 ## Manual review
 
-Before a release, manually verify CLI and TUI flows using keyboard only, high-contrast settings, a narrow terminal, and increased font scaling. Automated tests supplement but do not replace this review.
+Before a release, manually verify CLI and TUI flows using keyboard only, `--plain`, `--compact`, high-contrast settings, a narrow terminal, and increased terminal font scaling. Automated tests supplement but do not replace this review.

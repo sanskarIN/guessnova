@@ -64,6 +64,8 @@ class GameSummary:
     elapsed_seconds: float
     guesses: tuple[int, ...] = ()
     seed: int | None = None
+    hints_used: int = 0
+    hint_penalty: int = 0
 
 
 @dataclass(slots=True)
