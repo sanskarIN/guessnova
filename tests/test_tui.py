@@ -78,6 +78,19 @@ def test_tui_reset_clears_round_and_refocuses_input(tmp_path: Path) -> None:
     asyncio.run(scenario())
 
 
+def test_tui_quit_shortcut_remains_available_from_guess_input(tmp_path: Path) -> None:
+    async def scenario() -> None:
+        app = GuessNovaApp(storage=Storage(tmp_path), game=GuessGame(target=42))
+        async with app.run_test() as pilot:
+            assert app.focused is not None
+            assert app.focused.id == "guess"
+            await pilot.press("q")
+            await pilot.pause()
+            assert app.is_running is False
+
+    asyncio.run(scenario())
+
+
 def test_tui_loads_saved_smart_hint_preference(tmp_path: Path) -> None:
     storage = Storage(tmp_path)
     profile = Profile("Tester")
