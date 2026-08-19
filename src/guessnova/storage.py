@@ -1,4 +1,4 @@
-"""Atomic, local-only persistence with a small schema migration layer."""
+"""Atomic, local-only persistence with validation and schema migration."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from .constants import APP_NAME, SCHEMA_VERSION
+from .constants import APP_NAME, DEFAULT_PROFILE, SCHEMA_VERSION
 from .leaderboard import LeaderboardEntry, deserialize, serialize
 from .profile import Profile
 
@@ -20,19 +20,55 @@ def default_data_dir() -> Path:
         root = Path(os.getenv("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
         return root / APP_NAME
     xdg = os.getenv("XDG_DATA_HOME")
-    return Path(xdg).expanduser() / "guessnova" if xdg else Path.home() / ".local" / "share" / "guessnova"
+    return (
+        Path(xdg).expanduser() / "guessnova"
+        if xdg
+        else Path.home() / ".local" / "share" / "guessnova"
+    )
 
 
 def _migrate(payload: dict[str, object]) -> dict[str, object]:
-    version = int(payload.get("schema_version", 0))
+    try:
+        version = int(payload.get("schema_version", 0))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("state schema_version must be an integer") from exc
+    if version < 0:
+        raise ValueError("state schema_version cannot be negative")
     if version == 0:
         payload.setdefault("profiles", {})
-        payload.setdefault("active_profile", "Player")
+        payload.setdefault("active_profile", DEFAULT_PROFILE)
         payload["schema_version"] = 1
         version = 1
     if version > SCHEMA_VERSION:
         raise ValueError("save data was created by a newer GuessNova version")
     return payload
+
+
+def normalize_state(payload: dict[str, object]) -> dict[str, object]:
+    """Validate and normalize untrusted/local state into the supported schema."""
+    migrated = _migrate(dict(payload))
+    raw_profiles = migrated.get("profiles", {})
+    if not isinstance(raw_profiles, dict):
+        raise ValueError("state profiles must be an object")
+
+    profiles: dict[str, object] = {}
+    for key, raw_profile in raw_profiles.items():
+        if not isinstance(key, str) or not isinstance(raw_profile, dict):
+            continue
+        profile_data = dict(raw_profile)
+        profile_data.setdefault("name", key)
+        profile = Profile.from_dict(profile_data)
+        profiles[profile.name] = profile.to_dict()
+
+    raw_active = migrated.get("active_profile", DEFAULT_PROFILE)
+    active = Profile(raw_active if isinstance(raw_active, str) else DEFAULT_PROFILE).name
+    leaderboard = serialize(deserialize(migrated.get("leaderboard", [])))
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "active_profile": active,
+        "profiles": profiles,
+        "leaderboard": leaderboard,
+    }
 
 
 class Storage:
@@ -42,27 +78,42 @@ class Storage:
 
     def load_raw(self) -> dict[str, object]:
         if not self.path.exists():
-            return {"schema_version": SCHEMA_VERSION, "active_profile": "Player", "profiles": {}}
-        payload = json.loads(self.path.read_text(encoding="utf-8"))
+            return normalize_state(
+                {
+                    "schema_version": SCHEMA_VERSION,
+                    "active_profile": DEFAULT_PROFILE,
+                    "profiles": {},
+                }
+            )
+        try:
+            payload = json.loads(self.path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValueError("state file contains invalid JSON") from exc
         if not isinstance(payload, dict):
             raise ValueError("state file root must be an object")
-        return _migrate(payload)
+        return normalize_state(payload)
 
     def save_raw(self, payload: dict[str, object]) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        payload = dict(payload)
-        payload["schema_version"] = SCHEMA_VERSION
-        with NamedTemporaryFile("w", encoding="utf-8", dir=self.data_dir, delete=False) as temp:
-            json.dump(payload, temp, indent=2, sort_keys=True)
-            temp.write("\n")
-            temp.flush()
-            os.fsync(temp.fileno())
-            temp_path = Path(temp.name)
-        temp_path.replace(self.path)
+        normalized = normalize_state(payload)
+        temp_path: Path | None = None
+        try:
+            with NamedTemporaryFile(
+                "w", encoding="utf-8", dir=self.data_dir, delete=False
+            ) as temp:
+                json.dump(normalized, temp, indent=2, sort_keys=True)
+                temp.write("\n")
+                temp.flush()
+                os.fsync(temp.fileno())
+                temp_path = Path(temp.name)
+            temp_path.replace(self.path)
+        finally:
+            if temp_path is not None and temp_path.exists():
+                temp_path.unlink(missing_ok=True)
 
     def load_profile(self, name: str | None = None) -> Profile:
         payload = self.load_raw()
-        profile_name = name or str(payload.get("active_profile", "Player"))
+        profile_name = name or str(payload.get("active_profile", DEFAULT_PROFILE))
         profiles = payload.get("profiles", {})
         if not isinstance(profiles, dict):
             profiles = {}
