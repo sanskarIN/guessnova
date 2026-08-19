@@ -4,6 +4,7 @@ from pathlib import Path
 from textual.widgets import Input
 
 from guessnova.engine import GuessGame
+from guessnova.profile import Profile
 from guessnova.storage import Storage
 from guessnova.tui import GuessNovaApp
 
@@ -73,5 +74,28 @@ def test_tui_reset_clears_round_and_refocuses_input(tmp_path: Path) -> None:
             assert app.game.is_finished is False
             assert app.focused is not None
             assert app.focused.id == "guess"
+
+    asyncio.run(scenario())
+
+
+def test_tui_loads_saved_smart_hint_preference(tmp_path: Path) -> None:
+    storage = Storage(tmp_path)
+    profile = Profile("Tester")
+    profile.settings.show_smart_hints = False
+    storage.save_profile(profile)
+    app = GuessNovaApp(profile_name="Tester", storage=storage, game=GuessGame(target=42))
+    assert app.show_smart_hints is False
+
+
+def test_tui_reset_preserves_deterministic_seed(tmp_path: Path) -> None:
+    async def scenario() -> None:
+        game = GuessGame(seed=20260819)
+        target = game.target_value
+        app = GuessNovaApp(storage=Storage(tmp_path), game=game)
+        async with app.run_test() as pilot:
+            await pilot.press("r")
+            await pilot.pause()
+            assert app.game.seed == 20260819
+            assert app.game.target_value == target
 
     asyncio.run(scenario())
