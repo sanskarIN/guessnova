@@ -16,7 +16,9 @@ from .storage import Storage
 console = Console()
 
 
-def _as_dict(report: DiagnosticReport) -> dict[str, object]:
+def _as_dict(
+    report: DiagnosticReport, *, repair_backup: Path | None = None
+) -> dict[str, object]:
     return {
         "healthy": report.healthy,
         "state_exists": report.state_exists,
@@ -30,11 +32,19 @@ def _as_dict(report: DiagnosticReport) -> dict[str, object]:
         "deleted_profile_count": report.deleted_profile_count,
         "normalization_changed": report.normalization_changed,
         "issues": list(report.issues),
+        "repair_backup": str(repair_backup) if repair_backup is not None else None,
     }
 
 
-def _render(report: DiagnosticReport, *, as_json: bool, compact: bool) -> None:
-    payload = _as_dict(report)
+def _render(
+    report: DiagnosticReport,
+    *,
+    as_json: bool,
+    compact: bool,
+    repair_backup: Path | None = None,
+    repair_requested: bool = False,
+) -> None:
+    payload = _as_dict(report, repair_backup=repair_backup)
     if as_json:
         console.print_json(json.dumps(payload, ensure_ascii=False, sort_keys=True))
         return
@@ -46,7 +56,7 @@ def _render(report: DiagnosticReport, *, as_json: bool, compact: bool) -> None:
     table.add_column("Check")
     table.add_column("Value")
     for key, value in payload.items():
-        if key == "issues":
+        if key in {"issues", "repair_backup"}:
             continue
         table.add_row(key.replace("_", " ").title(), str(value))
     console.print(table)
@@ -54,6 +64,10 @@ def _render(report: DiagnosticReport, *, as_json: bool, compact: bool) -> None:
         console.print("Issues:")
         for issue in report.issues:
             console.print(f"- {issue}")
+    if repair_backup is not None:
+        console.print(f"Pre-repair backup: {repair_backup}")
+    elif repair_requested:
+        console.print("No repair was needed.")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -86,25 +100,43 @@ def main(argv: list[str] | None = None) -> int:
     storage = Storage()
     try:
         report = diagnose(storage)
+        backup: Path | None = None
         if args.repair:
             if not args.yes:
                 response = console.input(
                     "Type REPAIR to create a backup and normalize local state: "
                 ).strip()
                 if response != "REPAIR":
-                    console.print("Repair cancelled.")
-                    _render(report, as_json=args.json, compact=args.compact)
+                    if not args.json:
+                        console.print("Repair cancelled.")
+                    _render(
+                        report,
+                        as_json=args.json,
+                        compact=args.compact,
+                        repair_requested=True,
+                    )
                     return 1
             backup = repair(storage, backup_dir=args.backup_dir)
-            if backup is None:
-                console.print("No repair was needed.")
-            else:
-                console.print(f"Pre-repair backup: {backup}")
             report = diagnose(storage)
-        _render(report, as_json=args.json, compact=args.compact)
+        _render(
+            report,
+            as_json=args.json,
+            compact=args.compact,
+            repair_backup=backup,
+            repair_requested=args.repair,
+        )
         return 0 if report.healthy else 2
     except (OSError, ValueError) as exc:
-        console.print(f"Error: {exc}")
+        if args.json:
+            console.print_json(
+                json.dumps(
+                    {"healthy": False, "error": str(exc)},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            )
+        else:
+            console.print(f"Error: {exc}")
         return 2
 
 
