@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from guessnova import __version__
 from guessnova.constants import SCHEMA_VERSION
 from guessnova.doctor_protocol import DOCTOR_REPORT_VERSION
 from guessnova.entrypoint import main
@@ -45,6 +46,13 @@ def test_primary_entrypoint_routes_backup_verification(tmp_path: Path, capsys) -
     assert payload["report_version"] == DOCTOR_REPORT_VERSION
     assert payload["kind"] == "backup"
     assert payload["valid"] is True
+
+
+def test_primary_entrypoint_routes_doctor_version(capsys) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        main(["doctor", "--version"])
+    assert exc_info.value.code == 0
+    assert f"GuessNova Doctor {__version__}" in capsys.readouterr().out
 
 
 def test_primary_help_mentions_recovery_command(capsys) -> None:
