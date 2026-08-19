@@ -21,7 +21,10 @@ class GuessNovaApp(App[None]):
     Input { margin-top: 1; }
     Button { width: 100%; margin-top: 1; }
     """
-    BINDINGS = [("q", "quit", "Quit"), ("r", "reset", "New Game")]
+    BINDINGS = [
+        ("q", "quit", text("tui.binding.quit")),
+        ("r", "reset", text("tui.binding.new_game")),
+    ]
 
     def __init__(self) -> None:
         super().__init__()
@@ -34,7 +37,7 @@ class GuessNovaApp(App[None]):
             yield Label(self._range_text(), id="range")
             yield Input(placeholder=text("tui.input_placeholder"), type="integer", id="guess")
             yield Button(text("tui.submit"), id="submit", variant="primary")
-            yield Button("Range Hint", id="hint")
+            yield Button(text("tui.hint"), id="hint")
             yield Static("", id="feedback")
         yield Footer()
 
