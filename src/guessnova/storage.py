@@ -93,6 +93,8 @@ def normalize_state(payload: dict[str, object]) -> dict[str, object]:
 
     raw_active = migrated.get("active_profile", DEFAULT_PROFILE)
     active = Profile(raw_active if isinstance(raw_active, str) else DEFAULT_PROFILE).name
+    if profiles and active not in profiles:
+        active = sorted(profiles)[0]
     leaderboard = serialize(deserialize(migrated.get("leaderboard", [])))
     deleted_profiles = _normalize_deleted_profiles(migrated.get("deleted_profiles", {}))
     return {
