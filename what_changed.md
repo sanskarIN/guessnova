@@ -1,162 +1,216 @@
-# GuessNova — Work Continuity, v1.0 Baseline, and v1.1 Release Audit
+# GuessNova — Complete Work Continuity and v1.1 Merged Checkpoint
 
 ## Current milestone
 
-GuessNova `v1.0.0` is already merged into `main` and remains the stable baseline. The next complete implementation pass is now on:
+**GuessNova `v1.1.0` implementation is merged into `main`.**
+
+The v1.1 implementation was developed on:
 
 - Branch: `release/v1.1.0-ux-accessibility-20260819`
 - Pull request: `#7` — `feat: ship GuessNova 1.1 UX accessibility and portability`
 - Base commit: `c20b1dc9737ea215f8b4d5262c36eeea90907c68`
-- Code/metadata head before this handoff update: `1c8ea3c81cb63694d5feb02e9b9a9fd93dd50865`
+- Final PR head: `f74c76bc7a010a29b14c592ab9a4ca83f1c1496c`
+- Merge commit: `b303b764c83dbbca5183ee5b974bd280e7fca0cd`
+- Merge method: normal merge, not squash
+- PR commits preserved: **56 granular commits**
 - Package/runtime/citation version: `1.1.0`
 - Requested Git commit email observed in repository commit metadata: `sanskarin@outlook.in`
 
-The v1.1 PR is intentionally kept as a normal multi-commit branch so the granular history is preserved. It must not be squash-merged if the goal remains to retain the maximum meaningful commit history.
+The normal merge was intentional so the feature/fix/test/docs/build/CI history remains reviewable instead of being collapsed into a single squash commit.
 
 The prior v1.0 release-audit PR was `#6`, merged with:
 
 - `3cc6fec1945c97605506de7d004d7ef4436f48f3` — `feat: complete GuessNova v1.0 release audit`
 
-The follow-up v1.0 continuity commit on `main` was:
+The v1.0 follow-up checkpoint on `main` was:
 
 - `c20b1dc9737ea215f8b4d5262c36eeea90907c68` — `docs: record final merged v1 release audit and verification state`
 
+This file is the current continuation source of truth after the v1.1 merge.
+
 ---
 
-# 1. Product state carried forward from v1.0
+# 1. Current product scope
 
-The following v1.0 functionality is retained and must not be removed by v1.1 work.
+## 1.1 Core game modes
 
-## 1.1 Gameplay
+GuessNova retains the complete v1 gameplay foundation:
 
 - Classic number guessing.
 - Timed mode with difficulty-specific time budgets.
 - Streak-tagged mode.
 - Reverse mode using bounded binary search.
 - Deterministic daily challenge mode.
-- Easy, Normal, Hard, and Expert difficulty presets.
-- Difficulty-specific ranges and attempt budgets.
-- Out-of-range guesses do not consume an attempt.
-- Deterministic `--seed` support.
-- Deterministic `GUESSNOVA_SEED` environment-variable support.
-- Automatic smart temperature/direction/parity feedback.
-- Explicit narrowed-range hints requested with `hint` or `h`.
-- Explicit hint requests do not consume attempts.
-- Optional explicit-hint XP penalty.
-- Optional `--no-hint-penalty` override.
-- Reproducible game summaries.
-- Replay codes with integrity protection and strict validation.
-- Backward-compatible version-1 replay decoding for older payloads without later optional hint metadata.
+- Easy difficulty.
+- Normal difficulty.
+- Hard difficulty.
+- Expert difficulty.
+- Difficulty-specific ranges.
+- Difficulty-specific attempt budgets.
+- Difficulty-specific timed limits.
+- Out-of-range validation without consuming an attempt.
+- Deterministic `--seed` runs.
+- Deterministic `GUESSNOVA_SEED` environment-variable runs.
 
-## 1.2 Progression and local state
+## 1.2 Hints
 
-- Local profiles.
-- Games played and games won.
-- Win rate.
-- Average guesses.
-- Current streak and best streak.
-- XP.
-- Achievements.
-- Local leaderboard.
-- Bounded per-profile session history.
-- Human-readable JSON export/import.
-- Atomic local state writes.
-- State normalization.
-- Future-schema rejection.
-- `GUESSNOVA_HOME` override.
-- No mandatory account.
-- No runtime telemetry, analytics, ads, or required network connection.
+GuessNova includes two hint systems:
 
-## 1.3 Interfaces
+- automatic smart temperature/direction/parity feedback after valid wrong guesses;
+- explicit narrowed-range hints requested with `hint` or `h`.
 
-- Rich CLI through `guessnova`.
-- Textual TUI through `guessnova-tui`.
-- Module entry point through `python -m guessnova`.
-- CLI commands for play, reverse, stats, history, leaderboard, settings, about, export, import, and replay inspection.
-- `--plain` no-color output.
-- `--compact` concise terminal rendering.
-- Semantic terminal themes.
-- High-contrast preference.
-- Reduced-motion preference.
-- Smart-hint preference.
-- First-run onboarding.
-- English message catalog and persisted locale architecture.
+Explicit range-hint behavior:
 
-## 1.4 Security/reliability baseline
+- does not consume a guessing attempt;
+- increments a hint counter;
+- optionally accumulates an XP penalty;
+- supports `--hint-penalty`;
+- supports `--no-hint-penalty`;
+- remains deterministic relative to the hidden target/difficulty.
 
-- Strict replay-code envelope and field validation.
-- Maximum replay-code length.
-- Constant-time checksum comparison.
-- Difficulty/mode/attempt/guess/seed/timing/hint metadata validation.
-- Maximum import/export sizes.
-- Atomic backup writes.
-- Defensive imported-state normalization.
-- Bounded history.
-- Clean CLI error boundary for expected `ValueError`/`OSError` failures.
-- Rich-markup escaping for displayed exception text.
-- CI, Ruff, strict mypy, pytest/coverage, compile, smoke, CodeQL, dependency audit, secret-material checks, Dependabot, and quality-gated tagged release automation.
+Profile smart-hint preference is used by both the Rich CLI and the Textual TUI after the v1.1 TUI fix.
+
+## 1.3 Game summaries and replay codes
+
+Completed game summaries contain:
+
+- mode;
+- difficulty;
+- target;
+- won/lost state;
+- attempts;
+- elapsed seconds;
+- guess sequence;
+- optional seed;
+- explicit hint count;
+- accumulated hint penalty.
+
+Replay codes include:
+
+- version marker;
+- compact JSON summary;
+- SHA-256-derived integrity digest;
+- URL-safe Base64 envelope.
+
+Replay decoding validates:
+
+- maximum encoded size;
+- Base64/envelope structure;
+- digest length;
+- constant-time digest comparison;
+- UTF-8/JSON validity;
+- root object type;
+- supported replay version;
+- required fields;
+- field allowlist;
+- known mode;
+- known difficulty;
+- target within difficulty range;
+- bounded attempt count;
+- guess count matching attempts;
+- guess values inside the difficulty range;
+- winning replay ending on the target;
+- losing replay not containing the target;
+- finite/non-negative elapsed time;
+- signed 64-bit portable seed bounds;
+- bounded non-negative hint metadata.
+
+Existing version-1 replay codes that predate optional hint metadata continue to load with zero-value defaults.
 
 ---
 
-# 2. v1.1 implementation completed on the release branch
+# 2. Player profiles, progression, and local data
 
-## 2.1 Reusable advanced history queries
+## 2.1 Player progression
 
-`src/guessnova/history.py` now contains reusable query helpers rather than leaving history filtering inside presentation code.
+Profiles retain:
 
-Added:
+- games played;
+- games won;
+- win rate;
+- average guesses;
+- current streak;
+- best streak;
+- XP;
+- achievements;
+- settings;
+- bounded session history.
 
-- `HistoryResult = Literal["win", "loss"]`.
-- `HistoryGroup = Literal["day", "mode", "difficulty", "result"]`.
-- ISO timestamp-to-date parsing helper.
-- `filter_history(...)` supporting:
-  - mode filter;
-  - difficulty filter;
-  - win/loss filter;
-  - free-text search;
-  - `since` date;
-  - `until` date.
-- Free-text matching covers timestamp, mode, difficulty, result, attempt count, and seed.
-- Unparseable dates are excluded when a date-bound filter is requested.
-- `group_history(...)` supporting grouping by day, mode, difficulty, or result.
-- Group insertion order follows first-seen result order.
-- Unsupported group values fail explicitly.
+## 2.2 Local leaderboard
 
-Existing bounded history serialization/deserialization remains in place.
+Winning results can become local leaderboard rows containing:
 
-## 2.2 Richer history CLI
+- player name;
+- mode;
+- difficulty;
+- attempt count;
+- elapsed seconds;
+- creation timestamp.
 
-`guessnova history` now supports:
+Rows are normalized before use and sorted through the leaderboard scoring rules.
 
-```text
---mode
---difficulty
---result win|loss
---search TEXT
---since YYYY-MM-DD
---until YYYY-MM-DD
---group-by day|mode|difficulty|result
---limit POSITIVE_INTEGER
-```
+## 2.3 Session history
 
-Examples documented in README:
+History remains bounded to the most recent 200 records per profile.
+
+Each valid history record can contain:
+
+- mode;
+- difficulty;
+- result;
+- attempt count;
+- elapsed seconds;
+- optional seed;
+- played timestamp.
+
+v1.1 moves history querying into reusable domain helpers rather than keeping it only in the UI layer.
+
+`filter_history(...)` supports:
+
+- mode;
+- difficulty;
+- result (`win`/`loss`);
+- free-text query;
+- start date;
+- end date.
+
+Free-text matching includes:
+
+- timestamp;
+- mode;
+- difficulty;
+- result;
+- attempts;
+- seed.
+
+`group_history(...)` supports:
+
+- day;
+- mode;
+- difficulty;
+- result.
+
+## 2.4 Advanced history CLI
+
+Current examples:
 
 ```bash
+guessnova history --limit 20
 guessnova history --result win --difficulty hard
 guessnova history --since 2026-08-01 --until 2026-08-31
 guessnova history --search daily --group-by mode
 guessnova --plain --compact history --group-by result
 ```
 
-History rendering was typed with `Sequence[HistoryEntry]` to avoid list-invariance problems under strict mypy.
+History and leaderboard limits now require positive integers.
 
-Leaderboard `--limit` now uses the same positive-integer validation instead of accepting zero/negative limits.
+---
 
-## 2.3 Safe local profile lifecycle
+# 3. v1.1 profile lifecycle and undoable deletion
 
-A complete local profile-management surface was added.
+## 3.1 Profile commands
 
-Commands:
+Added:
 
 ```bash
 guessnova profiles list
@@ -168,7 +222,7 @@ guessnova profiles trash
 guessnova profiles restore NAME
 ```
 
-Additional options:
+Options:
 
 ```text
 profiles create NAME --no-activate
@@ -176,174 +230,244 @@ profiles delete NAME --yes
 profiles restore NAME --no-activate
 ```
 
-Storage APIs added:
+## 3.2 Storage APIs
 
-- `list_profile_names()`.
-- `active_profile_name()`.
-- `create_profile()`.
-- `set_active_profile()`.
-- `rename_profile()`.
-- `delete_profile()`.
-- `list_deleted_profile_names()`.
+Added:
+
+- `list_profile_names()`;
+- `active_profile_name()`;
+- `create_profile()`;
+- `set_active_profile()`;
+- `rename_profile()`;
+- `delete_profile()`;
+- `list_deleted_profile_names()`;
 - `restore_profile()`.
 
-Behavior:
+## 3.3 Profile invariants
 
-- Duplicate live profile creation is rejected.
-- Switching to a missing profile is rejected.
-- Rename to an existing live profile name is rejected.
-- Renaming a profile updates its local leaderboard rows.
-- Deleting a profile removes it from the live profile map.
-- Deleting a profile removes its active leaderboard rows.
-- The profile and removed leaderboard rows are moved into recoverable local trash.
-- Deleting the active profile selects another remaining profile when one exists.
-- When no live profile remains, the normal default profile name remains the fallback for future use.
-- Restoring a profile restores profile data and retained leaderboard rows.
-- Restore is rejected if a live profile with the same normalized name already exists.
-- Restore is rejected when no matching trash record exists.
+Implemented safeguards:
 
-## 2.4 Recoverable deletion / undo semantics
+- duplicate live names are rejected;
+- switching to a missing profile is rejected;
+- rename to a different existing live name is rejected;
+- profile rename updates matching local leaderboard player names;
+- deleting the active profile chooses another remaining live profile when possible;
+- imported/orphaned active-profile names are normalized to an existing live profile when live profiles exist;
+- restore is rejected on live-name collision;
+- restore is rejected for missing trash records.
 
-New constant:
+## 3.4 Recoverable local profile trash
+
+New bound:
 
 ```text
 MAX_DELETED_PROFILES = 20
 ```
 
-Top-level normalized state now includes additive `deleted_profiles` data.
+Normalized state now contains additive `deleted_profiles` data.
 
-Each valid trash record contains:
+A retained deleted-profile record contains:
 
 - deletion timestamp;
 - normalized profile payload;
-- retained normalized leaderboard rows owned by that profile.
+- normalized leaderboard rows that belonged to the deleted profile.
 
-Trash behavior:
+Deletion behavior:
 
-- bounded to the newest 20 deleted profiles;
-- normalized on load/save;
-- malformed trash records are discarded;
-- included in normal backup/export state;
-- restored only when there is no live-name collision.
+1. remove the profile from the live profile map;
+2. remove its leaderboard rows from the live leaderboard;
+3. save the profile and removed rows into recoverable trash;
+4. bound trash to the newest 20 records;
+5. update the active profile if necessary.
 
-Profile deletion normally requires the user to type the exact normalized profile name. `--yes` is available only for intentional non-interactive/scripted use.
+Restore behavior:
 
-This is deliberately recoverable deletion, not secure erasure. `PRIVACY.md` now explains that complete local deletion requires deleting the GuessNova application-data directory and separately deleting any user-created export copies.
+1. reject a live-name collision;
+2. load the normalized trash profile;
+3. return it to the live profile map;
+4. restore retained leaderboard rows through normal leaderboard insertion rules;
+5. optionally make the restored profile active;
+6. remove the recovered trash entry.
 
-## 2.5 Hindi localization shipped
+## 3.5 Delete confirmation
 
-The localization architecture now proves end-to-end multi-locale behavior rather than being English-only scaffolding.
+`guessnova profiles delete NAME` normally requires typing the exact normalized profile name.
 
-Shipped catalogs:
+`--yes` intentionally bypasses typed confirmation for explicit scripted/non-interactive workflows.
 
-- `en` — English, default/fallback.
+The operation is recoverable, not secure erasure.
+
+`PRIVACY.md` now distinguishes:
+
+- recoverable profile deletion;
+- deleting the entire GuessNova application-data directory;
+- separately deleting user-created backup/export copies.
+
+---
+
+# 4. Localization
+
+## 4.1 Shipped locales
+
+GuessNova now ships two complete offline catalogs:
+
+- `en` — English, default and fallback;
 - `hi` — Hindi.
 
-The Hindi catalog includes every English catalog key.
+## 4.2 Locale settings
 
-New/updated localization behavior:
+Locale is persisted per profile.
 
-- `available_locales()` returns stable shipped locale IDs.
-- `catalog_missing_keys(locale)` identifies missing English-reference keys in a shipped locale.
-- Automated tests require the Hindi catalog to have no missing English keys.
-- Named formatting placeholders are tested.
-- Unknown locale values still fall back to English.
-- Unknown message keys still fail as development errors.
-- Per-profile locale persistence now explicitly tests Hindi.
-- Full profile serialization now explicitly tests Hindi locale preservation.
+Examples:
 
-Catalog-backed presentation includes onboarding, gameplay status/prompts, reverse-mode messages, statistics/history headings, settings, profile-management messages, About/data-transfer messages, and Textual core labels.
+```bash
+guessnova settings --locale en
+guessnova settings --locale hi
+```
 
-Stable machine identifiers remain untranslated:
+Unknown/malformed persisted locale values fall back safely to English.
 
+## 4.3 Catalog completeness
+
+Added:
+
+- `available_locales()`;
+- `catalog_missing_keys(locale)`.
+
+Tests require the Hindi catalog to contain every English catalog key.
+
+Representative named placeholders are tested in both locales.
+
+## 4.4 Stable machine identifiers
+
+The following intentionally remain untranslated compatibility identifiers:
+
+- CLI command names;
+- environment variables;
 - mode IDs;
 - difficulty IDs;
-- command names;
-- environment variables;
-- achievement IDs;
 - schema keys;
+- achievement IDs;
 - replay field names.
 
-Engine-generated semantic hint prose remains a domain string for now. `docs/localization.md` explicitly documents that it should be converted to semantic hint data before translating it, rather than coupling serialized/domain behavior to display text.
+This keeps saves, commands, exports, and replay codes independent of presentation locale.
 
-## 2.6 Textual TUI persistence and interaction improvements
+## 4.5 Current localization boundary
 
-The TUI now uses injectable storage/game dependencies for deterministic testing.
+Catalog-backed presentation includes onboarding, gameplay status/prompts, reverse messages, statistics/history headings, settings, profile-management messages, About/data-transfer messages, and core Textual labels.
 
-Added/changed:
+Some engine-generated semantic hint prose remains a domain string. The localization documentation explicitly requires separating hint meaning from display text before translating those strings instead of changing serialized/domain semantics merely for presentation.
 
-- optional `profile_name` injection;
-- optional `GuessGame` injection;
-- optional `Storage` injection;
-- active profile locale loading;
+---
+
+# 5. Textual TUI work in v1.1
+
+## 5.1 Dependency injection and local persistence
+
+`GuessNovaApp` now accepts optional injected:
+
+- profile name;
+- `GuessGame`;
+- `Storage`.
+
+This enables deterministic pilot tests and temporary local state.
+
+Completed TUI changes:
+
+- loads active profile locale;
+- loads saved smart-hint preference;
 - localized core labels;
 - explicit Range Hint button;
-- initial focus on numeric guess input;
-- input re-focus after empty input, valid guesses, errors, and hints;
-- persisted completed rounds through the same `GameService` used by CLI gameplay;
-- exactly-once result-save guard for a finished TUI round;
-- reset preserves the current difficulty and mode;
-- reset clears result-save state;
+- initial focus on the numeric input;
+- predictable focus path;
+- refocus after empty input, guesses, errors, and hints;
+- persisted completed results through `GameService`;
+- exactly-once save guard per completed round;
 - priority `R` reset binding;
 - priority `Q` quit binding;
-- adaptive width (`92%`, maximum 64 columns) for the main card.
+- adaptive main-card width;
+- reset preserves difficulty;
+- reset preserves mode;
+- reset preserves deterministic seed;
+- reset clears the finished-result save guard.
 
-## 2.7 Textual pilot tests
+## 5.2 TUI regression tests
 
-`tests/test_tui.py` uses Textual's `run_test()` pilot with deterministic injected games and temporary storage.
+`tests/test_tui.py` covers:
 
-Coverage includes:
+- initial focus on guess input;
+- Tab from input to submit;
+- Tab from submit to hint;
+- Enter submission;
+- deterministic winning state;
+- persisted games-played/games-won;
+- explicit hint count;
+- no attempt consumption for range hints;
+- focus returning to input after hint;
+- reset clearing attempts;
+- reset producing an unfinished round;
+- reset refocusing input;
+- loading saved smart-hint preference;
+- deterministic seeded reset preserving the same seed/target.
 
-- initial focus is the guess input;
-- Tab order from input to submit to range-hint button;
-- Enter submission from the numeric input;
-- winning round becomes finished/won;
-- winning TUI result is persisted;
-- persisted games-played/games-won increment exactly as expected;
-- range-hint interaction increments hint count;
-- range hint does not consume an attempt;
-- hint interaction returns focus to guess input;
-- reset clears attempts;
-- reset starts an unfinished round;
-- reset returns focus to guess input.
+Pilot scenarios use `asyncio.run(...)` and Textual `run_test()` without adding `pytest-asyncio`.
 
-No `pytest-asyncio` dependency was added; pilot scenarios use `asyncio.run(...)` directly.
+---
 
-## 2.8 Accessibility release evidence
+# 6. Accessibility and manual evidence
+
+## 6.1 Current accessibility-oriented behavior
+
+- Keyboard-first CLI.
+- Keyboard-first TUI interaction.
+- Descriptive text rather than color-only meaning.
+- `--plain` no-color mode.
+- `--compact` reduced presentation mode.
+- High-contrast saved preference.
+- Reduced-motion saved preference.
+- Timed interaction only in opt-in timed mode.
+- Predictable TUI focus sequence.
+- Priority TUI reset/quit bindings.
+- Recoverable/described profile deletion.
+- Offline English/Hindi presentation.
+
+## 6.2 Release evidence template
 
 Created:
 
 - `docs/accessibility_evidence_template.md`.
 
-The template requires manual release-candidate evidence for:
+It requires release-candidate evidence for:
 
-- release version/tag/commit;
-- OS/terminal/font scale/locale;
-- keyboard-only CLI gameplay;
+- version/tag/commit;
+- OS and terminal;
+- font/scale;
+- locale;
+- keyboard-only CLI;
 - keyboard-only reverse mode;
-- profile lifecycle controls;
-- typed deletion confirmation;
-- history browsing/filtering;
+- profile management;
+- deletion confirmation;
+- history filtering;
 - plain/compact output;
-- no-color semantic clarity;
-- TUI initial focus;
-- TUI tab order;
+- no-color meaning;
+- TUI focus order;
 - Enter submission;
-- hint behavior;
-- reset/quit bindings;
-- completed-result persistence;
-- narrow-terminal behavior;
+- hint interaction;
+- reset/quit;
+- result persistence;
+- narrow terminal;
 - increased font scale;
 - high contrast;
 - reduced motion;
 - English rendering;
 - Hindi rendering;
-- defect disposition;
-- release sign-off.
+- defects and release sign-off.
 
-Automated tests are explicitly documented as supplemental, not a substitute for the manual accessibility evidence pass.
+Automated tests supplement this checklist; they do not falsely replace real terminal/screen-reader/scaling/contrast observations.
 
-## 2.9 Release media provenance
+---
+
+# 7. Release media authenticity
 
 Created:
 
@@ -351,131 +475,409 @@ Created:
 
 Rules:
 
-- no mock terminal screenshots may be presented as release captures;
-- no reconstructed/fabricated demo may be presented as a real release recording;
-- media must come from a signed-off release candidate;
-- media must identify the exact source commit/tag;
+- no fabricated terminal screenshot may be labeled as a real release capture;
+- no reconstructed/mock recording may be labeled as the release demo;
+- media must come from the exact signed-off release build;
+- exact source commit/tag must be recorded;
 - deterministic gameplay should be used where practical;
-- private terminal history, home paths, usernames, credentials, tokens, or unrelated data must be removed from the capture environment;
-- recommended screenshot/demo filenames are documented.
+- capture environment must not expose credentials, private terminal history, unrelated paths, tokens, or personal data.
 
-Real screenshots/demo media remain intentionally uncommitted until an exact build is manually captured. This is a manual release-candidate task, not missing source code.
+Real screenshots/demo media remain a manual release-candidate capture task. The repository intentionally does not contain fabricated media merely to mark the roadmap checkbox complete.
 
-## 2.10 Cross-platform packaging verification
+---
 
-CI now includes a `platform-package` matrix for:
+# 8. Persistence, import/export, and privacy
 
-- `ubuntu-latest`;
-- `windows-latest`;
-- `macos-latest`.
+## 8.1 State format
 
-Each platform job:
+State remains schema version `1` because v1.1 additions are additive and have safe defaults.
 
-1. checks out the exact commit;
-2. installs Python 3.13;
-3. installs `build` and `twine`;
-4. builds source/wheel distributions;
-5. runs Twine validation;
-6. installs the generated wheel;
-7. runs `python -m guessnova --help`;
-8. runs the end-to-end smoke test.
+Current normalized top-level state includes:
 
-Bash is explicitly selected for distribution-glob steps so Windows runner wildcard behavior does not make those checks shell-dependent.
+- `schema_version`;
+- `active_profile`;
+- `profiles`;
+- `leaderboard`;
+- `deleted_profiles`.
 
-## 2.11 Tagged-release cross-platform gate
+## 8.2 Additive compatibility
 
-The tag-triggered release workflow now has both:
+Existing schema-1 state remains readable when it lacks:
 
-- strict `verify` job;
-- three-platform `platform-package` matrix.
+- history;
+- locale;
+- onboarding state;
+- deleted-profile trash.
 
-`build-release` requires both groups to succeed before GitHub release artifacts can be created.
+No schema-2 migration was fabricated because no incompatible schema-2 design exists yet.
 
-The release `verify` job enforces:
+## 8.3 State normalization
 
-- tag/project-version match;
+Normalization covers:
+
+- integer schema version without treating booleans as integers;
+- negative/future schema rejection;
+- profiles-container type;
+- profile-name sanitization;
+- non-negative statistics;
+- coherent games-won/streak bounds;
+- achievement ID filtering;
+- known theme;
+- known locale;
+- strict booleans;
+- history mode/difficulty/result/value validation;
+- finite history timing;
+- bounded history;
+- leaderboard validation;
+- bounded/normalized profile trash;
+- orphaned active-profile repair;
+- dropping unknown top-level state fields.
+
+## 8.4 Atomic state and backup writes
+
+State writes use:
+
+- temporary file in the destination directory;
+- JSON rendering;
+- flush;
+- `fsync`;
+- replacement;
+- cleanup of leftover temp path on failure.
+
+Import/export includes:
+
+- GuessNova wrapper marker;
+- version check;
+- future-version rejection;
+- object payload validation;
+- maximum backup sizes;
+- atomic output;
+- imported-state normalization before final persistence.
+
+## 8.5 Runtime privacy
+
+GuessNova remains:
+
+- account-free;
+- telemetry-free;
+- analytics-free;
+- advertising-free;
+- free of required runtime network calls;
+- usable without donation/funding;
+- free of required secrets/API keys.
+
+---
+
+# 9. CI, security, portability, and release engineering
+
+## 9.1 Strict CI test job
+
+`.github/workflows/ci.yml` requires:
+
+1. Python 3.13.
+2. `.[dev]` installation.
+3. `ruff check .`.
+4. `ruff format --check .`.
+5. strict `mypy src/guessnova`.
+6. pytest with coverage.
+7. `compileall` over source/tests/scripts.
+8. release metadata verification.
+9. end-to-end smoke test.
+
+Superseded PR runs are cancelled through concurrency settings.
+
+## 9.2 Cross-platform package matrix
+
+CI additionally uses:
+
+- Ubuntu latest;
+- Windows latest;
+- macOS latest.
+
+Each platform:
+
+1. installs Python 3.13;
+2. installs build/Twine tooling;
+3. builds distributions;
+4. validates distributions;
+5. installs the generated wheel;
+6. launches `python -m guessnova --help`;
+7. runs the end-to-end smoke test.
+
+Bash is explicitly used for distribution wildcard commands so Windows runner shell expansion does not make those steps unreliable.
+
+## 9.3 Security workflow
+
+Security workflow retains:
+
+- dependency audit using `pip-audit`;
+- common committed secret-material rejection;
+- push/PR triggers;
+- scheduled runs;
+- concurrency handling.
+
+## 9.4 CodeQL
+
+Python CodeQL remains configured for:
+
+- `main` pushes;
+- pull requests;
+- scheduled analysis.
+
+## 9.5 Tagged release workflow
+
+The tag workflow now blocks publishing behind both:
+
+- strict verification job;
+- Ubuntu/Windows/macOS package matrix.
+
+Strict release verification includes:
+
+- exact tag/project-version match;
 - Ruff lint;
 - Ruff formatting;
 - strict mypy;
-- pytest coverage run;
+- pytest coverage;
 - compileall;
 - release metadata synchronization;
-- end-to-end smoke test;
+- smoke test;
 - dependency audit.
 
-## 2.12 Release metadata synchronization
+Only then may `build-release` create and validate final distributions and attach them to GitHub release notes.
+
+---
+
+# 10. Release metadata synchronization
 
 Created:
 
 - `scripts/verify_release_metadata.py`.
 
-It verifies:
+It verifies that:
 
-- `pyproject.toml` project version is valid;
-- `guessnova.__version__` equals project version;
-- `CITATION.cff` version equals project version;
-- `CHANGELOG.md` contains a heading for that version.
+- `pyproject.toml` has a valid project version;
+- `guessnova.__version__` matches it;
+- `CITATION.cff` matches it;
+- `CHANGELOG.md` has a heading for it.
 
-Current synchronized version:
+Current version values are synchronized at:
 
 ```text
 1.1.0
 ```
 
-The verifier is run by normal CI and by the tag release workflow.
+The verifier runs in normal CI, `make check`, and tag-release verification.
 
-## 2.13 Package typing marker
+A `src/guessnova/py.typed` marker is included so downstream type checkers can recognize the package's inline typing information.
 
-Created:
+---
 
-- `src/guessnova/py.typed`.
+# 11. v1.1 end-to-end smoke coverage
 
-This marks the distributed package as supplying inline typing information.
+`scripts/smoke_test.py` now checks:
 
-## 2.14 Smoke test expanded for v1.1
-
-`scripts/smoke_test.py` now exercises:
-
-- deterministic winning gameplay;
+- deterministic winning game;
 - profile progression;
 - first-win achievement;
 - leaderboard insertion;
-- win history filtering;
-- replay encode/decode;
+- filtered winning history;
+- replay round trip;
 - profile rename;
 - active-profile rename behavior;
 - leaderboard rename behavior;
-- recoverable profile deletion;
+- profile deletion to trash;
 - trash listing;
 - profile restoration;
 - leaderboard restoration;
 - Hindi catalog completeness;
 - representative Hindi formatting;
-- export/import;
+- backup/export;
+- backup/import;
 - reverse binary search.
 
-The same smoke test is used by local checks, strict CI, platform package jobs, and tagged-release verification.
+This smoke script is reused by CI and package/release jobs.
 
-## 2.15 Makefile quality parity
+---
 
-`Makefile` now exposes:
+# 12. Tests added/expanded in v1.1
 
-- `install`;
-- `test`;
-- `lint`;
-- `format`;
-- `type`;
-- `compile`;
-- `metadata`;
-- `smoke`;
-- `check`;
-- `build`.
+## 12.1 History
 
-`make check` runs lint, format, strict typing, tests, compile, metadata verification, and smoke coverage.
+Coverage includes:
 
-## 2.16 Source distribution metadata coverage
+- serialization round trip;
+- 200-record bound;
+- recent-record retention;
+- malformed-record rejection;
+- result filter;
+- difficulty filter;
+- since-date filter;
+- until-date filter;
+- case-insensitive search;
+- seed search;
+- invalid date handling;
+- day grouping;
+- mode grouping;
+- difficulty grouping;
+- result grouping;
+- unsupported grouping rejection.
 
-`MANIFEST.in` now explicitly includes:
+## 12.2 Profile lifecycle
+
+Coverage includes:
+
+- create;
+- list;
+- active switch;
+- duplicate rejection;
+- missing-switch rejection;
+- rename;
+- active rename;
+- leaderboard rename;
+- rename collision;
+- delete;
+- leaderboard removal;
+- trash bound;
+- restore;
+- XP restoration;
+- leaderboard restoration;
+- restore collision;
+- missing trash rejection.
+
+## 12.3 State normalization
+
+Coverage includes:
+
+- schema-0 migration;
+- future-schema rejection;
+- invalid JSON;
+- invalid profile container;
+- untrusted profile/stat normalization;
+- leaderboard normalization;
+- deleted-profile record normalization;
+- malformed trash rejection;
+- active profile selection after delete;
+- orphaned active-profile repair.
+
+## 12.4 CLI
+
+Coverage includes:
+
+- advanced history arguments;
+- parsed ISO date filters;
+- grouping values;
+- positive limits;
+- profile create/rename/delete/restore integration;
+- saved-session filtering/grouping;
+- zero-limit parser rejection.
+
+## 12.5 Localization
+
+Coverage includes:
+
+- English default;
+- English/Hindi available locale list;
+- Hindi formatted messages;
+- complete Hindi key set;
+- unknown-locale fallback;
+- unsupported catalog validation;
+- unknown key rejection;
+- missing placeholder rejection;
+- Hindi settings round trip;
+- Hindi profile round trip.
+
+## 12.6 Textual
+
+Coverage includes:
+
+- initial focus;
+- Tab order;
+- Enter submission;
+- result persistence;
+- hint interaction;
+- hint attempt preservation;
+- focus restoration;
+- reset;
+- smart-hint setting loading;
+- seeded reset determinism.
+
+Existing v1 suites for engine, achievements, replay, import/export, leaderboard, profile, service, settings, themes, security helpers, RNG, daily challenge, and other domain paths remain in the repository.
+
+---
+
+# 13. Documentation and repository quality
+
+## 13.1 Updated/created documentation
+
+- `README.md` — v1.1 commands/features/localization/profile/history/TUI/portability.
+- `CHANGELOG.md` — v1.1 release changes.
+- `ROADMAP.md` — current completion and manual-media gate.
+- `PRIVACY.md` — recoverable deletion/backup behavior.
+- `CONTRIBUTING.md` — strict quality/localization/TUI/accessibility rules.
+- `what_changed.md` — this complete continuation checkpoint.
+- `docs/data_format.md` — canonical detailed state/replay/export format.
+- `docs/DATA_FORMAT.md` — synchronized concise data reference.
+- `docs/localization.md` — English/Hindi architecture and contributor rules.
+- `docs/testing.md` — complete testing strategy.
+- `docs/TESTING.md` — synchronized concise testing reference.
+- `docs/accessibility.md` — current accessibility behavior.
+- `docs/ACCESSIBILITY.md` — synchronized concise accessibility reference.
+- `docs/accessibility_evidence_template.md` — manual release checklist.
+- `docs/release.md` — complete release process.
+- `docs/RELEASING.md` — synchronized concise releasing reference.
+- `docs/media/README.md` — authentic release-media rules.
+
+## 13.2 Repository/governance material retained
+
+- MIT `LICENSE`.
+- `CODE_OF_CONDUCT.md`.
+- `SECURITY.md`.
+- `SUPPORT.md`.
+- `CITATION.cff`.
+- `.editorconfig`.
+- `.gitattributes`.
+- `.gitignore`.
+- `.env.example`.
+- `MANIFEST.in`.
+- `Makefile`.
+- `CODEOWNERS`.
+- Funding config.
+- Issue forms.
+- Pull-request template.
+- Dependabot config.
+- CI workflow.
+- Security workflow.
+- CodeQL workflow.
+- Release workflow.
+- SVG logo/banner assets.
+
+## 13.3 Pull-request checklist
+
+The PR template now asks contributors to verify:
+
+- Ruff lint;
+- Ruff format;
+- strict mypy;
+- pytest;
+- compileall;
+- release metadata;
+- smoke test;
+- privacy;
+- compatibility;
+- recoverable destructive actions;
+- localization;
+- stable serialized identifiers;
+- color-independent meaning;
+- keyboard focus/bindings;
+- temporary/deterministic test state;
+- changelog/work-continuity updates;
+- accessibility/media release impact.
+
+---
+
+# 14. Source distribution/package metadata
+
+`MANIFEST.in` explicitly includes:
 
 - README;
 - license;
@@ -487,168 +889,26 @@ The same smoke test is used by local checks, strict CI, platform package jobs, a
 - roadmap;
 - security policy;
 - support document;
-- `what_changed.md`;
+- work-continuity document;
 - SVG assets;
 - Markdown documentation tree.
 
-## 2.17 Citation/version metadata
+Current metadata:
 
-`CITATION.cff` is updated to version `1.1.0` with release date `2026-08-19`, matching the planned v1.1 release line.
-
-`pyproject.toml` is `1.1.0`.
-
-`src/guessnova/__init__.py` exposes `__version__ = "1.1.0"`.
-
-`CHANGELOG.md` contains a full `1.1.0` section.
-
-## 2.18 Privacy documentation
-
-`PRIVACY.md` now explicitly documents:
-
-- local profile/settings/stats/history/leaderboard data;
-- recoverable deleted-profile records;
-- no runtime telemetry/analytics/ads/account requirement;
-- backup contents;
-- recoverable profile-delete behavior;
-- 20-profile trash bound;
-- difference between recoverable profile deletion and complete application-data deletion;
-- separately deleting user-created backup copies when complete removal is desired.
+- project version: `1.1.0`;
+- runtime version: `1.1.0`;
+- citation version: `1.1.0`;
+- Python requirement: `>=3.13`;
+- license: MIT;
+- author email in package metadata: `sanskarin@outlook.in`.
 
 ---
 
-# 3. v1.1 test coverage added/expanded
+# 15. Complete v1.1 PR commit map
 
-## 3.1 History
+The merged PR retained 56 focused commits.
 
-Tests cover:
-
-- round-trip serialization;
-- bounded retention;
-- invalid record rejection;
-- structured result filter;
-- difficulty filter;
-- date `since` filter;
-- date `until` filter;
-- case-insensitive text search;
-- seed text search;
-- unparseable timestamp behavior under date filters;
-- grouping by day;
-- grouping by mode;
-- grouping by difficulty;
-- grouping by result;
-- unsupported grouping rejection.
-
-## 3.2 Profile lifecycle
-
-Tests cover:
-
-- create;
-- list;
-- switch active profile;
-- duplicate create rejection;
-- missing switch rejection;
-- rename;
-- active-profile rename;
-- leaderboard rename;
-- live-name collision rejection;
-- delete to trash;
-- leaderboard removal on delete;
-- bounded trash retention;
-- restore;
-- XP restoration;
-- leaderboard restoration;
-- live-name collision on restore;
-- missing trash-record rejection.
-
-## 3.3 State normalization
-
-Additional tests cover:
-
-- schema-0 migration gaining empty deleted-profile trash;
-- malformed deleted-profile record rejection;
-- normalized deleted profile payload;
-- normalized retained trash leaderboard;
-- active-profile fallback after deleting the active profile.
-
-## 3.4 CLI integration
-
-Additional tests cover:
-
-- parsing advanced history filters;
-- parsed ISO date boundaries;
-- grouping parser values;
-- positive history limits;
-- profile create through CLI;
-- profile rename through CLI;
-- profile delete through CLI;
-- profile restore through CLI;
-- filtered/grouped saved history through CLI;
-- zero history limit rejection.
-
-## 3.5 Localization
-
-Tests cover:
-
-- English remains default;
-- English and Hindi are listed;
-- Hindi representative formatted message;
-- no missing Hindi catalog keys;
-- unknown locale English fallback;
-- unsupported catalog-validation locale rejection;
-- unknown message-key rejection;
-- missing format-value rejection;
-- Hindi settings round trip;
-- English settings preservation;
-- Hindi full-profile serialization.
-
-## 3.6 Textual TUI
-
-Tests cover:
-
-- initial focus;
-- Tab ordering;
-- input submission;
-- winning state;
-- local result persistence;
-- range hint;
-- no attempt consumption for hint;
-- focus restoration;
-- reset behavior.
-
----
-
-# 4. Documentation updated for v1.1
-
-Updated/created documentation includes:
-
-- `README.md` — full v1.1 features, history/profile commands, Hindi, TUI, portability, release evidence.
-- `CHANGELOG.md` — v1.1 additions/changes/compatibility.
-- `ROADMAP.md` — v1.1 completed engineering items and remaining real-media capture gate.
-- `PRIVACY.md` — recoverable deletion and backup implications.
-- `docs/data_format.md` — deleted-profile state format and compatibility.
-- `docs/DATA_FORMAT.md` — concise synchronized reference.
-- `docs/localization.md` — English/Hindi catalogs and contributor rules.
-- `docs/testing.md` — strict local suite, pilot tests, profile/history/localization coverage, platform matrix.
-- `docs/TESTING.md` — synchronized concise test reference.
-- `docs/accessibility.md` — active focus/binding/profile-delete/plain/compact/localization guidance.
-- `docs/ACCESSIBILITY.md` — synchronized concise accessibility reference.
-- `docs/accessibility_evidence_template.md` — manual RC evidence checklist.
-- `docs/release.md` — complete v1.1 release gates.
-- `docs/RELEASING.md` — synchronized concise release reference.
-- `docs/media/README.md` — authentic release-media capture rules.
-- `CITATION.cff` — v1.1 metadata.
-- `MANIFEST.in` — expanded source-distribution metadata/document inclusion.
-- `Makefile` — strict quality target parity.
-
-Older useful documentation was not deleted merely because both uppercase concise references and lowercase canonical guides exist. Where topics overlap, concise uppercase pages now point readers to the canonical detailed page instead of silently remaining stale.
-
----
-
-# 5. v1.1 commit map
-
-The branch intentionally uses many focused commits.
-
-## 5.1 Feature/test commits
+## 15.1 History/profile/localization/TUI implementation
 
 - `373ee6d3` — `feat: add reusable history filtering and grouping`
 - `29401237` — `test: cover history query and grouping helpers`
@@ -664,14 +924,8 @@ The branch intentionally uses many focused commits.
 - `d9a71179` — `test: add Textual pilot coverage for focus submit reset and hints`
 - `e874599c` — `fix: make TUI reset and quit bindings globally reliable`
 - `0250d6a2` — `test: harden profile lifecycle edge cases and trash bounds`
-- `c91d25c7` — `test: extend smoke flow across 1.1 profile history and locale features`
-- `68e9eaea` — `test: cover deleted profile state normalization`
-- `54721709` — `fix: tighten history renderer typing and formatting`
-- `f6c4ecbe` — `style: format profile command handlers for strict checks`
-- `599056e5` — `test: verify Hindi locale persists in profile settings`
-- `cabe3c09` — `test: cover locale through profile serialization`
 
-## 5.2 Documentation/release commits
+## 15.2 Accessibility/docs/release preparation
 
 - `4c5df0b9` — `docs: add accessibility release evidence template`
 - `401892e0` — `docs: define verified release media workflow`
@@ -683,21 +937,27 @@ The branch intentionally uses many focused commits.
 - `818a2d05` — `docs: extend release checklist for portability and accessibility`
 - `fdf7ecb0` — `docs: advance roadmap through v1.1 and portability work`
 - `299fbb85` — `docs: update README for GuessNova 1.1.0`
+
+## 15.3 Packaging/CI/metadata work
+
+- `280c5aa0` — `ci: verify package and smoke flow across major platforms`
+- `7cb8bcca` — `ci: make distribution glob checks portable on windows`
+- `606e371f` — `build: bump package metadata to 1.1.0`
+- `dd6ae022` — `build: expose GuessNova 1.1.0 runtime version`
 - `f1e0f117` — `docs: update citation metadata for 1.1.0`
 - `bf86bf40` — `docs: clarify recoverable profile deletion privacy`
 - `17024c1d` — `docs: align concise releasing reference with 1.1 process`
 - `97c1f185` — `docs: align concise testing reference with 1.1 suite`
 - `bc4af975` — `docs: align concise accessibility reference with 1.1 controls`
 - `97b9a3eb` — `docs: align concise data format reference with recoverable profiles`
-
-## 5.3 Build/CI/package commits
-
-- `280c5aa0` — `ci: verify package and smoke flow across major platforms`
-- `7cb8bcca` — `ci: make distribution glob checks portable on windows`
-- `606e371f` — `build: bump package metadata to 1.1.0`
-- `dd6ae022` — `build: expose GuessNova 1.1.0 runtime version`
+- `c91d25c7` — `test: extend smoke flow across 1.1 profile history and locale features`
+- `68e9eaea` — `test: cover deleted profile state normalization`
 - `dc1478c4` — `build: align make targets with strict quality gates`
 - `2bb0b6b1` — `build: include governance and citation metadata in source distribution`
+- `54721709` — `fix: tighten history renderer typing and formatting`
+- `f6c4ecbe` — `style: format profile command handlers for strict checks`
+- `599056e5` — `test: verify Hindi locale persists in profile settings`
+- `cabe3c09` — `test: cover locale through profile serialization`
 - `ada21dcd` — `ci: gate releases on cross-platform package verification`
 - `a3007e5e` — `build: add release metadata consistency verifier`
 - `6a1915bb` — `ci: verify synchronized release metadata`
@@ -705,170 +965,130 @@ The branch intentionally uses many focused commits.
 - `5c0aef53` — `ci: verify metadata before publishing release artifacts`
 - `1c8ea3c8` — `build: mark GuessNova package as typed`
 
-This checkpoint update itself is intentionally another focused documentation commit.
+## 15.4 Final audit/fix/documentation commits
+
+- `bbd14834` — `docs: record complete GuessNova 1.1 continuation checkpoint`
+- `3764de3c` — `fix: honor TUI hint preference and deterministic reset`
+- `cbededf3` — `test: cover TUI saved hint preference and seeded reset`
+- `3913b40e` — `style: format advanced history regression tests`
+- `a7216b74` — `fix: normalize orphaned active profile references`
+- `ce50d515` — `test: cover orphaned active profile normalization`
+- `0434395e` — `docs: align contribution guide with 1.1 quality gates`
+- `f74c76bc` — `docs: strengthen pull request validation checklist`
+
+The PR merge commit is:
+
+- `b303b764c83dbbca5183ee5b974bd280e7fca0cd` — `feat: ship GuessNova 1.1 UX accessibility and portability`
+
+This current `what_changed.md` update is a post-merge main-branch checkpoint and is intentionally separate from the 56 preserved PR commits.
 
 ---
 
-# 6. Compatibility rules for v1.1
+# 16. Exact workflow status at PR merge
 
-v1.1 intentionally keeps state schema version `1` because the new data is additive and has safe defaults.
-
-Compatibility guarantees in this implementation:
-
-- schema-1 files without `deleted_profiles` load with empty trash;
-- profiles without history still load;
-- profiles without locale still default to English;
-- profiles without onboarding state still receive the safe default;
-- earlier replay version-1 codes remain readable when they omit later optional hint metadata;
-- stable serialized mode/difficulty/achievement/schema/replay identifiers are not translated;
-- existing live leaderboard rows remain valid;
-- profile rename rewrites matching local leaderboard player names;
-- deleted-profile leaderboard rows can be restored through trash;
-- future schema versions are rejected instead of destructively downgraded.
-
-No schema-2 migration was invented because no incompatible schema-2 change exists yet. The roadmap explicitly retains schema-2 fixtures for the time a real schema-2 design is introduced.
-
----
-
-# 7. Security/privacy review for v1.1 changes
-
-The new profile/history/localization/TUI work does not introduce a runtime network dependency.
-
-Review points:
-
-- Profile names continue through existing sanitization.
-- Profile rename/create collision checks are explicit.
-- Profile delete is recoverable and confirmed.
-- Trash is bounded.
-- Trash is normalized.
-- Trash leaderboards go through existing typed leaderboard deserialization.
-- Imported backups still pass through state normalization before persistence.
-- Hindi/localization is fully offline.
-- No translation service/API is used.
-- TUI persistence uses the existing local `GameService`/`Storage` path.
-- TUI test storage uses temporary directories.
-- New tests do not use production user state.
-- No new secrets are required.
-- Secret-material and dependency audits remain enabled.
-- CodeQL remains enabled.
-- Release artifacts remain blocked behind verification jobs.
-
----
-
-# 8. Current verification status for this v1.1 checkpoint
-
-## 8.1 What is known from the prior stable baseline
-
-The v1.0 implementation had previously completed local core validation recorded in the earlier checkpoint, including:
+The final PR head was:
 
 ```text
-PYTHONPATH=src pytest -q
-39 tests passed
+f74c76bc7a010a29b14c592ab9a4ca83f1c1496c
 ```
 
-and successful compile/smoke/CLI-help checks for that earlier code state.
+Immediately before/after merge, the connector reported these pull-request workflow states for that exact head:
 
-Those historical results are not misrepresented as validation of the new v1.1 code.
+- CI run `32215436765`: `queued`, no conclusion.
+- CodeQL run `32215436694`: `queued`, no conclusion.
+- Security checks run `32215436661`: `pending`, no conclusion.
 
-## 8.2 v1.1 GitHub Actions state
+The earlier runs that showed `cancelled` conclusions were superseded by later branch commits under the configured concurrency behavior; they were not test failures.
 
-During v1.1 development, pull-request-triggered CI, CodeQL, and Security-check runs were repeatedly created for the current PR as commits landed.
+No final-head workflow returned a failure conclusion before the merge.
 
-The branch uses CI concurrency cancellation so superseded runs do not waste runners. Earlier queued runs therefore may be cancelled when newer commits are pushed.
+This file **does not claim the queued/pending final-head workflows passed**. The merge was completed because the user requested the complete repository work in the current interaction and the GitHub-hosted runners remained queued rather than producing actionable failure logs.
 
-At this checkpoint, the v1.1 branch has been intentionally frozen except for this `what_changed.md` update. A new final workflow set should be observed for the resulting head.
+The v1.1 code was subjected to a file-by-file static review in addition to the added tests/workflows, including targeted fixes for:
 
-Required final checks:
+- history renderer list-invariance typing;
+- profile command formatting;
+- Windows distribution-glob shell behavior;
+- TUI priority reset/quit bindings;
+- TUI smart-hint setting usage;
+- deterministic reset seed preservation;
+- orphaned active-profile normalization;
+- stale privacy/release/testing/accessibility/data-format docs;
+- metadata drift prevention.
 
-- CI strict test job:
-  - install `.[dev]`;
-  - Ruff lint;
-  - Ruff format check;
-  - strict mypy;
-  - pytest with coverage;
-  - compileall;
-  - release metadata verifier;
-  - smoke test.
-- CI package jobs:
-  - Ubuntu;
-  - Windows;
-  - macOS.
-- Security checks:
-  - dependency audit;
-  - committed secret-material rejection.
-- CodeQL Python analysis.
-
-Do not claim these final-head checks passed until GitHub reports success for the exact final commit.
-
-## 8.3 Environment limitations
-
-This ChatGPT execution environment does not provide a normal editable local checkout of the connected GitHub repository through the GitHub connector, so the exact connected branch is being verified using GitHub Actions rather than falsely reporting commands as run locally against a checkout that was not present.
-
-The connector allows repository reads/writes, PR management, workflow status/jobs/log inspection, and merging. It does not expose every repository administration setting; therefore settings such as branch protection are documented but are not falsely claimed to have been enabled through source-file commits.
+If those GitHub runs later execute and expose a reproducible failure, the next continuation should inspect the exact failed job/step, add a focused regression fix, and preserve the same granular commit discipline.
 
 ---
 
-# 9. Remaining release-candidate-only work
+# 17. Manual release-candidate gates not falsely automated
 
-## 9.1 Real screenshots/demo
+Two categories intentionally still require real release-candidate evidence.
 
-Source code and capture instructions are complete, but real screenshots/demo recordings must be captured manually from the exact signed-off build.
+## 17.1 Manual accessibility evidence
 
-This remains the one intentionally incomplete v1.1 roadmap item because generating a mock image and labeling it as a real terminal capture would be misleading.
+The source checklist is complete, but a person must complete its observation fields against an exact candidate build/terminal.
 
-Required evidence/capture docs already exist:
+File:
 
 - `docs/accessibility_evidence_template.md`
+
+## 17.2 Real screenshots/demo media
+
+Capture instructions and provenance rules are complete, but no fabricated screenshot/demo was added.
+
+File:
+
 - `docs/media/README.md`
 
-## 9.2 Manual accessibility evidence
+A real capture must come from a signed-off commit/tag and record that provenance.
 
-The checklist exists, but its release-candidate observation fields must be completed by a person on the exact build/terminal being signed off. Automated pilot tests cannot truthfully substitute for terminal scaling, visual contrast, and screen-reader/manual keyboard observations.
-
----
-
-# 10. Merge/release procedure from this checkpoint
-
-1. Read the newest PR head after this file update.
-2. Observe CI, CodeQL, and Security checks for that exact head.
-3. If a check fails, inspect the failed job steps/log and create a focused fix + regression test/documentation update.
-4. Re-run/observe the exact new head.
-5. Mark PR `#7` ready for review only after the implementation is stable.
-6. Merge with normal `merge` method, not squash, to preserve the granular commit history requested for this project.
-7. Record the actual merge commit in `what_changed.md` on `main`.
-8. Do not create `v1.1.0` until the release gates and manual release-candidate requirements are satisfied.
-9. If `v1.1.0` is tagged, the tag must exactly match `project.version = 1.1.0`; the release workflow will reject a mismatch.
-10. Do not rewrite a published tag. Any defect after release should be fixed through a new patch version.
+These are release-candidate evidence tasks, not missing application source code.
 
 ---
 
-# 11. Project identity retained
+# 18. Tag/release rule
+
+Do **not** create or move `v1.1.0` merely because the implementation is merged.
+
+Before tagging:
+
+1. observe successful required checks for the release candidate;
+2. complete manual accessibility evidence;
+3. capture any desired real release media from the signed-off build;
+4. confirm `pyproject.toml`, runtime version, citation version, and changelog still match `1.1.0`;
+5. create immutable `v1.1.0` only from the selected release commit.
+
+The release workflow independently re-runs strict verification and the three-platform package matrix before it can publish artifacts.
+
+Published tags should not be rewritten. A post-release defect should become a new patch version.
+
+---
+
+# 19. Remaining optional future work
+
+Not blockers for the merged Python terminal v1.1 implementation:
+
+- manual release-candidate accessibility evidence;
+- authentic signed-off terminal screenshots/demo recording;
+- schema-2 migration fixtures only when a real incompatible schema-2 design exists;
+- property-testing dependency evaluation only if future parser/state defects justify it;
+- additional offline locales;
+- semantic localization of engine-generated hint meaning after separating semantics from display prose;
+- richer multi-screen Textual profile/history/settings UI;
+- optional TypeScript/Web/PWA edition only if privacy, deterministic rules, stable challenge/replay semantics, offline usability, and keyboard accessibility remain intact.
+
+---
+
+# 20. Project identity
 
 - Project: **GuessNova**
 - Repository: `https://github.com/sanskarIN/guessnova`
 - GitHub profile: `https://github.com/sanskarIN`
 - License: MIT
 - Credit: **Made by the Sanskar**
-- Business: `sanskarin@outlook.in`
-- Business: `sanskarin.business@gmail.com`
-- Support: `supportramsandesh@gmail.com`
+- Business email: `sanskarin@outlook.in`
+- Business email: `sanskarin.business@gmail.com`
+- Support email: `supportramsandesh@gmail.com`
 - Buy Me a Coffee: `https://buymeacoffee.com/sanskarIN`
 
-No runtime feature is paywalled behind funding.
-
----
-
-# 12. Optional future work after v1.1
-
-Not blockers for the Python terminal v1.1 implementation:
-
-- real signed-off release screenshots/demo capture;
-- completed manual accessibility evidence for a specific tag candidate;
-- schema-2 migrations only when a real incompatible schema-2 design exists;
-- evaluation of property-testing dependencies if future parser/state defects justify the added dependency;
-- further offline locales;
-- semantic localization of engine hint meaning after hint semantics are separated from display text;
-- richer multi-screen Textual profile/history/settings UI if desired;
-- optional TypeScript/Web/PWA edition only if deterministic rules, privacy-first behavior, keyboard accessibility, offline usability, and compatibility are preserved.
-
-This file must be updated again after PR `#7` verification/merge so the final merge SHA and exact workflow conclusions are recorded rather than inferred.
+Every core GuessNova feature remains usable without donating.
