@@ -28,10 +28,10 @@ def default_data_dir() -> Path:
 
 
 def _migrate(payload: dict[str, object]) -> dict[str, object]:
-    try:
-        version = int(payload.get("schema_version", 0))
-    except (TypeError, ValueError) as exc:
-        raise ValueError("state schema_version must be an integer") from exc
+    raw_version = payload.get("schema_version", 0)
+    if isinstance(raw_version, bool) or not isinstance(raw_version, int):
+        raise ValueError("state schema_version must be an integer")
+    version = raw_version
     if version < 0:
         raise ValueError("state schema_version cannot be negative")
     if version == 0:
@@ -87,7 +87,7 @@ class Storage:
             )
         try:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
+        except (UnicodeDecodeError, ValueError) as exc:
             raise ValueError("state file contains invalid JSON") from exc
         if not isinstance(payload, dict):
             raise ValueError("state file root must be an object")
