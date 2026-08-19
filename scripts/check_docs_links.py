@@ -17,10 +17,10 @@ INLINE_LINK_RE = re.compile(
     r"!?\[[^\]\n]*\]\(\s*(?:<(?P<angle>[^>\n]+)>|(?P<plain>[^\s)\n]+))"
 )
 REFERENCE_LINK_RE = re.compile(
-    r"(?m)^\s{0,3}\[[^\]\n]+\]:\s*(?:<(?P<angle>[^>\n]+)>|(?P<plain>\S+))"
+    r"(?m)^\s{0,3}\[(?!\^)[^\]\n]+\]:\s*(?:<(?P<angle>[^>\n]+)>|(?P<plain>\S+))"
 )
 HTML_LINK_RE = re.compile(r"(?i)\b(?:href|src)\s*=\s*[\"'](?P<target>[^\"']+)[\"']")
-INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
+INLINE_CODE_RE = re.compile(r"(?P<ticks>`+)[^\n]*?(?P=ticks)")
 SKIP_DIRECTORIES = frozenset(
     {
         ".git",
@@ -66,8 +66,8 @@ def _strip_fenced_code(content: str) -> str:
             output.append(line)
             continue
 
-        closing_prefix = fence_character * fence_length
-        if stripped.startswith(closing_prefix):
+        closing_pattern = rf"{re.escape(fence_character)}{{{fence_length},}}\s*"
+        if re.fullmatch(closing_pattern, stripped):
             fence_character = None
             fence_length = 0
         output.append("")
