@@ -28,10 +28,16 @@ from .domain import DIFFICULTIES, GameMode, GuessOutcome
 from .engine import GuessGame
 from .history import HistoryResult
 from .i18n import available_locales, text
+from .profile import Profile
 from .service import GameService
 from .storage import Storage
 from .themes import THEMES
-from .tui_workspace import profile_summary, save_workspace_settings, select_history
+from .tui_workspace import (
+    profile_summary,
+    save_workspace_settings,
+    select_history,
+    select_leaderboard,
+)
 
 
 class GuessNovaApp(App[None]):
@@ -58,9 +64,15 @@ class GuessNovaApp(App[None]):
     .field-label { width: 22; content-align: left middle; }
     .field-control { width: 1fr; }
     .status { height: auto; min-height: 2; margin-top: 1; }
-    #history-table { height: 1fr; min-height: 12; }
+    #history-table, #leaderboard-table { height: 1fr; min-height: 12; }
     Input { margin-top: 1; }
     #card Button { width: 100%; margin-top: 1; }
+    Screen.high-contrast #card,
+    Screen.high-contrast .section { border: double white; }
+    Screen.high-contrast Button:focus,
+    Screen.high-contrast Input:focus,
+    Screen.high-contrast Select:focus,
+    Screen.high-contrast Switch:focus { outline: solid yellow; }
     """
     BINDINGS = [
         Binding("q", "quit", text("tui.binding.quit")),
@@ -70,8 +82,9 @@ class GuessNovaApp(App[None]):
         Binding("ctrl+1", "show_tab('play')", text("tui.tab.play"), show=False),
         Binding("ctrl+2", "show_tab('profiles')", text("tui.tab.profiles"), show=False),
         Binding("ctrl+3", "show_tab('history')", text("tui.tab.history"), show=False),
-        Binding("ctrl+4", "show_tab('settings')", text("tui.tab.settings"), show=False),
-        Binding("ctrl+5", "show_tab('recovery')", text("tui.tab.recovery"), show=False),
+        Binding("ctrl+4", "show_tab('leaderboard')", text("leaderboard.title"), show=False),
+        Binding("ctrl+5", "show_tab('settings')", text("tui.tab.settings"), show=False),
+        Binding("ctrl+6", "show_tab('recovery')", text("tui.tab.recovery"), show=False),
     ]
 
     def __init__(
@@ -95,6 +108,18 @@ class GuessNovaApp(App[None]):
 
     def _trash_options(self) -> list[tuple[str, str]]:
         return [(name, name) for name in self.storage.list_deleted_profile_names()]
+
+    def _mode_options(self) -> list[tuple[str, str]]:
+        return [
+            (text("tui.history.all", locale=self.locale), "all"),
+            *[(mode.value, mode.value) for mode in GameMode if mode != GameMode.REVERSE],
+        ]
+
+    def _difficulty_options(self) -> list[tuple[str, str]]:
+        return [
+            (text("tui.history.all", locale=self.locale), "all"),
+            *[(name, name) for name in sorted(DIFFICULTIES)],
+        ]
 
     def compose(self) -> ComposeResult:
         profile = self.storage.load_profile(self.profile_name)
@@ -124,6 +149,7 @@ class GuessNovaApp(App[None]):
                 with VerticalScroll(classes="pane-scroll"):
                     with Vertical(classes="section"):
                         yield Static("", id="profile-summary")
+                        yield Static("", id="profile-achievements")
                         with Horizontal(classes="form-row"):
                             yield Select(
                                 self._profile_options(),
@@ -133,7 +159,8 @@ class GuessNovaApp(App[None]):
                                 classes="field-control",
                             )
                             yield Button(
-                                text("tui.profile.use", locale=self.locale), id="profile-use"
+                                text("tui.profile.use", locale=self.locale),
+                                id="profile-use",
                             )
                             yield Button(
                                 text("tui.profile.refresh", locale=self.locale),
@@ -196,24 +223,14 @@ class GuessNovaApp(App[None]):
                             classes="field-control",
                         )
                         yield Select(
-                            [
-                                (text("tui.history.all", locale=self.locale), "all"),
-                                *[
-                                    (mode.value, mode.value)
-                                    for mode in GameMode
-                                    if mode != GameMode.REVERSE
-                                ],
-                            ],
+                            self._mode_options(),
                             value="all",
                             allow_blank=False,
                             id="history-mode",
                             classes="field-control",
                         )
                         yield Select(
-                            [
-                                (text("tui.history.all", locale=self.locale), "all"),
-                                *[(name, name) for name in sorted(DIFFICULTIES)],
-                            ],
+                            self._difficulty_options(),
                             value="all",
                             allow_blank=False,
                             id="history-difficulty",
@@ -244,10 +261,45 @@ class GuessNovaApp(App[None]):
                             variant="primary",
                         )
                         yield Button(
-                            text("tui.history.clear", locale=self.locale), id="history-clear"
+                            text("tui.history.clear", locale=self.locale),
+                            id="history-clear",
                         )
                     yield Static("", id="history-status", classes="status")
                     yield DataTable(id="history-table")
+
+            with TabPane(text("leaderboard.title", locale=self.locale), id="leaderboard"):
+                with Vertical(classes="pane-scroll"):
+                    with Horizontal(classes="form-row"):
+                        yield Select(
+                            self._mode_options(),
+                            value="all",
+                            allow_blank=False,
+                            id="leaderboard-mode",
+                            classes="field-control",
+                        )
+                        yield Select(
+                            self._difficulty_options(),
+                            value="all",
+                            allow_blank=False,
+                            id="leaderboard-difficulty",
+                            classes="field-control",
+                        )
+                    yield Input(
+                        placeholder=text("leaderboard.player", locale=self.locale),
+                        id="leaderboard-player",
+                    )
+                    with Horizontal(classes="form-row"):
+                        yield Button(
+                            text("tui.history.apply", locale=self.locale),
+                            id="leaderboard-apply",
+                            variant="primary",
+                        )
+                        yield Button(
+                            text("tui.history.clear", locale=self.locale),
+                            id="leaderboard-clear",
+                        )
+                    yield Static("", id="leaderboard-status", classes="status")
+                    yield DataTable(id="leaderboard-table")
 
             with TabPane(text("tui.tab.settings", locale=self.locale), id="settings"):
                 with VerticalScroll(classes="pane-scroll"):
@@ -356,6 +408,13 @@ class GuessNovaApp(App[None]):
         yield Footer()
 
     def on_mount(self) -> None:
+        self._configure_history_table()
+        self._configure_leaderboard_table()
+        self._apply_accessibility_preferences()
+        self._refresh_workspace()
+        self.query_one("#guess", Input).focus()
+
+    def _configure_history_table(self) -> None:
         table = self.query_one("#history-table", DataTable)
         table.cursor_type = "row"
         table.zebra_stripes = True
@@ -367,10 +426,20 @@ class GuessNovaApp(App[None]):
             text("history.attempts", locale=self.locale),
             text("history.time", locale=self.locale),
         )
-        self._refresh_profile_widgets()
-        self._populate_history_table()
-        self._refresh_recovery()
-        self.query_one("#guess", Input).focus()
+
+    def _configure_leaderboard_table(self) -> None:
+        table = self.query_one("#leaderboard-table", DataTable)
+        table.cursor_type = "row"
+        table.zebra_stripes = True
+        table.add_columns(
+            "#",
+            text("leaderboard.player", locale=self.locale),
+            text("history.mode", locale=self.locale),
+            text("history.difficulty", locale=self.locale),
+            text("history.attempts", locale=self.locale),
+            text("history.time", locale=self.locale),
+            text("history.when", locale=self.locale),
+        )
 
     def _range_text(self) -> str:
         difficulty = self.game.difficulty
@@ -382,14 +451,28 @@ class GuessNovaApp(App[None]):
             attempts_left=self.game.attempts_left,
         )
 
+    def _reset_round(self, *, show_play: bool, focus: bool) -> None:
+        self.game = GuessGame(
+            difficulty_name=self.game.difficulty_name,
+            mode=self.game.mode,
+            seed=self.game.seed,
+        )
+        self._result_saved = False
+        self.query_one("#range", Label).update(self._range_text())
+        self.query_one("#feedback", Static).update("")
+        field = self.query_one("#guess", Input)
+        field.value = ""
+        if show_play:
+            self.query_one("#workspace", TabbedContent).active = "play"
+        if focus:
+            field.focus()
+
     def _save_finished_result(self) -> None:
         if self._result_saved or not self.game.is_finished:
             return
         GameService(self.storage).record(self.game.summary(), self.profile_name)
         self._result_saved = True
-        self._refresh_profile_widgets()
-        self._populate_history_table()
-        self._refresh_recovery()
+        self._refresh_workspace()
 
     def _submit_guess(self) -> None:
         field = self.query_one("#guess", Input)
@@ -443,6 +526,15 @@ class GuessNovaApp(App[None]):
     def _set_profile_status(self, message: str) -> None:
         self.query_one("#profile-status", Static).update(message)
 
+    def _achievement_labels(self, profile: Profile) -> str:
+        labels: list[str] = []
+        for achievement in sorted(profile.stats.achievements):
+            try:
+                labels.append(text(f"achievement.{achievement}", locale=self.locale))
+            except KeyError:
+                labels.append(achievement)
+        return ", ".join(labels) if labels else "—"
+
     def _refresh_profile_widgets(self) -> None:
         profile = self.storage.load_profile(self.profile_name)
         summary = profile_summary(profile)
@@ -459,6 +551,10 @@ class GuessNovaApp(App[None]):
                 best=summary.best_streak,
                 achievements=summary.achievement_count,
             )
+        )
+        self.query_one("#profile-achievements", Static).update(
+            f"{text('stats.achievements', locale=self.locale)}: "
+            f"{self._achievement_labels(profile)}"
         )
         profile_select = self.query_one("#profile-select", Select)
         profile_names = self.storage.list_profile_names()
@@ -479,15 +575,24 @@ class GuessNovaApp(App[None]):
         self.query_one("#settings-sound", Switch).value = profile.settings.sound
         self.query_one("#settings-smart-hints", Switch).value = profile.settings.show_smart_hints
 
+    def _apply_accessibility_preferences(self) -> None:
+        profile = self.storage.load_profile(self.profile_name)
+        self.screen.set_class(profile.settings.high_contrast, "high-contrast")
+
+    def _refresh_workspace(self) -> None:
+        self._refresh_profile_widgets()
+        self._populate_history_table()
+        self._populate_leaderboard_table()
+        self._refresh_recovery()
+
     def _activate_profile(self, name: str) -> None:
         profile = self.storage.set_active_profile(name)
         self.profile_name = profile.name
-        self.locale = profile.settings.locale
         self.show_smart_hints = profile.settings.show_smart_hints
         self._load_profile_settings()
-        self._refresh_profile_widgets()
-        self._populate_history_table()
-        self._refresh_recovery()
+        self._apply_accessibility_preferences()
+        self._reset_round(show_play=False, focus=False)
+        self._refresh_workspace()
 
     def _profile_use(self) -> None:
         selected = self._selected_string("#profile-select")
@@ -512,7 +617,6 @@ class GuessNovaApp(App[None]):
         try:
             created = self.storage.create_profile(field.value, make_active=True)
             self.profile_name = created.name
-            self.locale = created.settings.locale
             self.show_smart_hints = created.settings.show_smart_hints
         except ValueError as exc:
             self._set_profile_status(str(exc))
@@ -520,9 +624,9 @@ class GuessNovaApp(App[None]):
             return
         field.value = ""
         self._load_profile_settings()
-        self._refresh_profile_widgets()
-        self._populate_history_table()
-        self._refresh_recovery()
+        self._apply_accessibility_preferences()
+        self._reset_round(show_play=False, focus=False)
+        self._refresh_workspace()
         self._set_profile_status(
             text("profiles.created", locale=self.locale, name=created.name)
         )
@@ -546,9 +650,7 @@ class GuessNovaApp(App[None]):
         if self.profile_name == selected:
             self.profile_name = renamed.name
         field.value = ""
-        self._refresh_profile_widgets()
-        self._populate_history_table()
-        self._refresh_recovery()
+        self._refresh_workspace()
         self._set_profile_status(
             text("profiles.renamed", locale=self.locale, name=renamed.name)
         )
@@ -563,21 +665,21 @@ class GuessNovaApp(App[None]):
             self._set_profile_status(text("tui.profile.delete_type", locale=self.locale))
             field.focus()
             return
+        deleting_active = self.profile_name == selected
         try:
             self.storage.delete_profile(selected)
         except ValueError as exc:
             self._set_profile_status(str(exc))
             return
         field.value = ""
-        if self.profile_name == selected:
+        if deleting_active:
             profile = self.storage.load_profile(self.storage.active_profile_name())
             self.profile_name = profile.name
-            self.locale = profile.settings.locale
             self.show_smart_hints = profile.settings.show_smart_hints
             self._load_profile_settings()
-        self._refresh_profile_widgets()
-        self._populate_history_table()
-        self._refresh_recovery()
+            self._apply_accessibility_preferences()
+            self._reset_round(show_play=False, focus=False)
+        self._refresh_workspace()
         self._set_profile_status(
             text("profiles.deleted", locale=self.locale, name=selected)
         )
@@ -595,12 +697,11 @@ class GuessNovaApp(App[None]):
             self._set_profile_status(str(exc))
             return
         self.profile_name = restored.name
-        self.locale = restored.settings.locale
         self.show_smart_hints = restored.settings.show_smart_hints
         self._load_profile_settings()
-        self._refresh_profile_widgets()
-        self._populate_history_table()
-        self._refresh_recovery()
+        self._apply_accessibility_preferences()
+        self._reset_round(show_play=False, focus=False)
+        self._refresh_workspace()
         self._set_profile_status(
             text("profiles.restored", locale=self.locale, name=restored.name)
         )
@@ -672,6 +773,36 @@ class GuessNovaApp(App[None]):
         self.query_one("#history-until", Input).value = ""
         self._populate_history_table()
 
+    def _populate_leaderboard_table(self) -> None:
+        entries = select_leaderboard(
+            self.storage.load_leaderboard(),
+            mode=self._history_choice("#leaderboard-mode"),
+            difficulty=self._history_choice("#leaderboard-difficulty"),
+            player=self.query_one("#leaderboard-player", Input).value or None,
+            limit=100,
+        )
+        table = self.query_one("#leaderboard-table", DataTable)
+        table.clear()
+        for rank, entry in enumerate(entries, 1):
+            table.add_row(
+                str(rank),
+                entry.player,
+                entry.mode,
+                entry.difficulty,
+                str(entry.attempts),
+                f"{entry.elapsed_seconds:.2f}s",
+                entry.created_at,
+            )
+        self.query_one("#leaderboard-status", Static).update(
+            f"{text('leaderboard.title', locale=self.locale)}: {len(entries)}"
+        )
+
+    def _clear_leaderboard_filters(self) -> None:
+        self.query_one("#leaderboard-mode", Select).value = "all"
+        self.query_one("#leaderboard-difficulty", Select).value = "all"
+        self.query_one("#leaderboard-player", Input).value = ""
+        self._populate_leaderboard_table()
+
     def _save_settings(self) -> None:
         theme = self._selected_string("#settings-theme")
         locale = self._selected_string("#settings-locale")
@@ -688,6 +819,7 @@ class GuessNovaApp(App[None]):
             show_smart_hints=self.query_one("#settings-smart-hints", Switch).value,
         )
         self.show_smart_hints = profile.settings.show_smart_hints
+        self._apply_accessibility_preferences()
         self.query_one("#settings-status", Static).update(
             text(
                 "tui.settings.saved",
@@ -781,7 +913,7 @@ class GuessNovaApp(App[None]):
         elif button_id == "profile-use":
             self._profile_use()
         elif button_id == "profile-refresh":
-            self._refresh_profile_widgets()
+            self._refresh_workspace()
         elif button_id == "profile-create":
             self._profile_create()
         elif button_id == "profile-rename":
@@ -794,6 +926,10 @@ class GuessNovaApp(App[None]):
             self._populate_history_table()
         elif button_id == "history-clear":
             self._clear_history_filters()
+        elif button_id == "leaderboard-apply":
+            self._populate_leaderboard_table()
+        elif button_id == "leaderboard-clear":
+            self._clear_leaderboard_filters()
         elif button_id == "settings-save":
             self._save_settings()
         elif button_id == "recovery-refresh":
@@ -806,25 +942,31 @@ class GuessNovaApp(App[None]):
             self._submit_guess()
         elif event.input.id == "history-search":
             self._populate_history_table()
+        elif event.input.id == "leaderboard-player":
+            self._populate_leaderboard_table()
         elif event.input.id == "recovery-backup-path":
             self._verify_backup()
 
+    def _focus_tab(self, tab_id: str) -> None:
+        if tab_id == "play":
+            self.query_one("#guess", Input).focus()
+        elif tab_id == "profiles":
+            self.query_one("#profile-name", Input).focus()
+        elif tab_id == "history":
+            self.query_one("#history-search", Input).focus()
+        elif tab_id == "leaderboard":
+            self.query_one("#leaderboard-player", Input).focus()
+        elif tab_id == "settings":
+            self.query_one("#settings-theme", Select).focus()
+        elif tab_id == "recovery":
+            self.query_one("#recovery-backup-path", Input).focus()
+
     def action_show_tab(self, tab_id: str) -> None:
         self.query_one("#workspace", TabbedContent).active = tab_id
+        self._focus_tab(tab_id)
 
     def action_reset(self) -> None:
-        self.game = GuessGame(
-            difficulty_name=self.game.difficulty_name,
-            mode=self.game.mode,
-            seed=self.game.seed,
-        )
-        self._result_saved = False
-        self.query_one("#range", Label).update(self._range_text())
-        self.query_one("#feedback", Static).update("")
-        self.query_one("#workspace", TabbedContent).active = "play"
-        field = self.query_one("#guess", Input)
-        field.value = ""
-        field.focus()
+        self._reset_round(show_play=True, focus=True)
 
 
 def run() -> None:
