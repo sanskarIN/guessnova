@@ -9,6 +9,7 @@ from datetime import date
 from pathlib import Path
 
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
 from rich.theme import Theme as RichTheme
@@ -114,7 +115,9 @@ def _show_onboarding(
         f"{text('onboarding.settings', locale=locale)}"
     )
     if args.compact:
-        console.print(f"{text('onboarding.title', locale=locale)}: {body.replace(chr(10), ' ')}")
+        console.print(
+            f"{text('onboarding.title', locale=locale)}: {body.replace(chr(10), ' ')}"
+        )
     else:
         console.print(Panel.fit(body, title=text("onboarding.title", locale=locale)))
     if not args.no_save:
@@ -165,7 +168,7 @@ def play(args: argparse.Namespace) -> int:
                         f"[hint]{game.request_hint(penalize=args.hint_penalty)}[/hint]"
                     )
                 except RuntimeError as exc:
-                    console.print(f"[warning]{exc}[/warning]")
+                    console.print(f"[warning]{escape(str(exc))}[/warning]")
                 continue
             feedback = game.guess(int(raw))
         except ValueError:
@@ -221,7 +224,7 @@ def reverse(args: argparse.Namespace) -> int:
         try:
             engine.respond(response)
         except ValueError as exc:
-            console.print(f"[warning]{exc}[/warning]")
+            console.print(f"[warning]{escape(str(exc))}[/warning]")
             return 2
     console.print(
         f"[success]{text('reverse.solved', locale=args.locale, attempts=engine.attempts)}[/success]"
@@ -254,8 +257,8 @@ def stats(args: argparse.Namespace) -> int:
         )
         return 0
     table = Table(title=text("stats.title", locale=args.locale, profile=profile.name))
-    table.add_column("Metric")
-    table.add_column("Value", justify="right")
+    table.add_column(text("stats.metric", locale=args.locale))
+    table.add_column(text("stats.value", locale=args.locale), justify="right")
     for row in values:
         table.add_row(*row)
     console.print(table)
@@ -431,9 +434,15 @@ def build_parser() -> argparse.ArgumentParser:
         prog="guessnova",
         description=text("app.description"),
     )
-    parser.add_argument("--plain", action="store_true", help="disable terminal color for simpler output")
     parser.add_argument(
-        "--compact", action="store_true", help="prefer concise text instead of rich tables/panels"
+        "--plain",
+        action="store_true",
+        help="disable terminal color for simpler output",
+    )
+    parser.add_argument(
+        "--compact",
+        action="store_true",
+        help="prefer concise text instead of rich tables/panels",
     )
     sub = parser.add_subparsers(dest="command")
 
@@ -472,7 +481,8 @@ def build_parser() -> argparse.ArgumentParser:
     history_parser = sub.add_parser("history", help="show local session history")
     history_parser.add_argument("--profile")
     history_parser.add_argument(
-        "--mode", choices=[m.value for m in GameMode if m != GameMode.REVERSE]
+        "--mode",
+        choices=[m.value for m in GameMode if m != GameMode.REVERSE],
     )
     history_parser.add_argument("--difficulty", choices=sorted(DIFFICULTIES))
     history_parser.add_argument("--limit", type=int, default=20)
@@ -480,7 +490,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     leaderboard_parser = sub.add_parser("leaderboard", help="show local best results")
     leaderboard_parser.add_argument(
-        "--mode", choices=[m.value for m in GameMode if m != GameMode.REVERSE]
+        "--mode",
+        choices=[m.value for m in GameMode if m != GameMode.REVERSE],
     )
     leaderboard_parser.add_argument("--difficulty", choices=sorted(DIFFICULTIES))
     leaderboard_parser.add_argument("--limit", type=int, default=10)
@@ -489,21 +500,36 @@ def build_parser() -> argparse.ArgumentParser:
     settings_parser = sub.add_parser("settings", help="show or update local profile settings")
     settings_parser.add_argument("--profile")
     settings_parser.add_argument("--theme", choices=sorted(THEMES))
-    settings_parser.add_argument("--locale", dest="locale_setting", choices=available_locales())
     settings_parser.add_argument(
-        "--reduced-motion", action=argparse.BooleanOptionalAction, default=None
+        "--locale",
+        dest="locale_setting",
+        choices=available_locales(),
     )
     settings_parser.add_argument(
-        "--high-contrast", action=argparse.BooleanOptionalAction, default=None
+        "--reduced-motion",
+        action=argparse.BooleanOptionalAction,
+        default=None,
     )
-    settings_parser.add_argument("--sound", action=argparse.BooleanOptionalAction, default=None)
     settings_parser.add_argument(
-        "--smart-hints", action=argparse.BooleanOptionalAction, default=None
+        "--high-contrast",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+    )
+    settings_parser.add_argument(
+        "--sound",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+    )
+    settings_parser.add_argument(
+        "--smart-hints",
+        action=argparse.BooleanOptionalAction,
+        default=None,
     )
     settings_parser.set_defaults(func=settings_cmd)
 
     about_parser = sub.add_parser(
-        "about", help="show project, license, support, and funding details"
+        "about",
+        help="show project, license, support, and funding details",
     )
     about_parser.set_defaults(func=about_cmd)
 
@@ -531,7 +557,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         console.print(f"\n{WATERMARK} · Support: {BMC_URL}")
         return 0
-    return int(args.func(args))
+    try:
+        return int(args.func(args))
+    except (OSError, ValueError) as exc:
+        console.print(f"[error]Error: {escape(str(exc))}[/error]")
+        return 2
 
 
 if __name__ == "__main__":
