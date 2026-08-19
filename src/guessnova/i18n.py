@@ -34,6 +34,8 @@ EN_MESSAGES: Final[dict[str, str]] = {
     "reverse.prompt": "Is it {guess}? [higher/lower/correct] › ",
     "reverse.solved": "Solved in {attempts} guesses.",
     "stats.title": "{profile} · Statistics",
+    "stats.metric": "Metric",
+    "stats.value": "Value",
     "stats.games": "Games",
     "stats.wins": "Wins",
     "stats.win_rate": "Win rate",
@@ -76,6 +78,9 @@ EN_MESSAGES: Final[dict[str, str]] = {
     "tui.title": "Guess the hidden number",
     "tui.input_placeholder": "Enter a whole number",
     "tui.submit": "Launch Guess",
+    "tui.hint": "Range Hint",
+    "tui.binding.quit": "Quit",
+    "tui.binding.new_game": "New Game",
     "tui.range": "Range {minimum}–{maximum} · {attempts_left} attempts",
     "tui.enter_first": "Enter a number first.",
     "tui.correct": "Correct! The target was {target}. Press R for a new game.",
@@ -99,5 +104,5 @@ def text(key: str, /, *, locale: str = DEFAULT_LOCALE, **values: object) -> str:
         raise KeyError(f"unknown message key: {key}")
     try:
         return template.format(**values)
-    except (KeyError, ValueError) as exc:
+    except (KeyError, TypeError, ValueError) as exc:
         raise ValueError(f"invalid values for message key: {key}") from exc
