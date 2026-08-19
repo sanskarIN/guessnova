@@ -70,6 +70,16 @@ def _render(
         console.print("No repair was needed.")
 
 
+def _render_json_error(message: str) -> None:
+    console.print_json(
+        json.dumps(
+            {"healthy": False, "error": message},
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="guessnova-doctor",
@@ -97,6 +107,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.json and args.repair and not args.yes:
+        _render_json_error("--json --repair requires --yes to avoid an interactive prompt")
+        return 2
+
     storage = Storage()
     try:
         report = diagnose(storage)
@@ -107,11 +121,10 @@ def main(argv: list[str] | None = None) -> int:
                     "Type REPAIR to create a backup and normalize local state: "
                 ).strip()
                 if response != "REPAIR":
-                    if not args.json:
-                        console.print("Repair cancelled.")
+                    console.print("Repair cancelled.")
                     _render(
                         report,
-                        as_json=args.json,
+                        as_json=False,
                         compact=args.compact,
                         repair_requested=True,
                     )
@@ -128,13 +141,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if report.healthy else 2
     except (OSError, ValueError) as exc:
         if args.json:
-            console.print_json(
-                json.dumps(
-                    {"healthy": False, "error": str(exc)},
-                    ensure_ascii=False,
-                    sort_keys=True,
-                )
-            )
+            _render_json_error(str(exc))
         else:
             console.print(f"Error: {exc}")
         return 2
