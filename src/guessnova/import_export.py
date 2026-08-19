@@ -28,13 +28,28 @@ def _payload_digest(payload: dict[str, object]) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
+def _validate_schema_version(value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError("export schema version is invalid")
+    if value < 0:
+        raise ValueError("export schema version is invalid")
+    if value > SCHEMA_VERSION:
+        raise ValueError("export uses a newer schema")
+    return value
+
+
+def _payload_schema_version(payload: dict[str, object]) -> int:
+    return _validate_schema_version(payload.get("schema_version", 0))
+
+
 def export_state(payload: dict[str, object], destination: Path) -> Path:
     destination = destination.expanduser()
     destination.parent.mkdir(parents=True, exist_ok=True)
+    payload_schema = _payload_schema_version(payload)
     wrapped = {
         "format": EXPORT_FORMAT,
         "version": EXPORT_VERSION,
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": payload_schema,
         "integrity": {
             "algorithm": INTEGRITY_ALGORITHM,
             "payload_sha256": _payload_digest(payload),
@@ -74,16 +89,6 @@ def _validate_version(value: object) -> int:
     return value
 
 
-def _validate_schema_version(value: object) -> int:
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise ValueError("export schema version is invalid")
-    if value < 0:
-        raise ValueError("export schema version is invalid")
-    if value > SCHEMA_VERSION:
-        raise ValueError("export uses a newer schema")
-    return value
-
-
 def _validate_integrity(wrapped: dict[str, object], payload: dict[str, object]) -> None:
     integrity = wrapped.get("integrity")
     if not isinstance(integrity, dict):
@@ -117,9 +122,12 @@ def import_state(source: Path) -> dict[str, object]:
     if version == LEGACY_EXPORT_VERSION:
         # GuessNova <=1.1 coupled wrapper version to schema version. Keep those
         # backups readable; Storage.save_raw performs the forward migration.
-        _validate_schema_version(payload.get("schema_version", 0))
+        _payload_schema_version(payload)
         return payload
 
-    _validate_schema_version(wrapped.get("schema_version"))
+    wrapper_schema = _validate_schema_version(wrapped.get("schema_version"))
+    payload_schema = _payload_schema_version(payload)
+    if wrapper_schema != payload_schema:
+        raise ValueError("export schema metadata does not match payload")
     _validate_integrity(wrapped, payload)
     return payload
