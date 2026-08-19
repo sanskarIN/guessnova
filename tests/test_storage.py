@@ -59,12 +59,26 @@ def test_storage_normalizes_untrusted_profile_and_leaderboard_data() -> None:
             "unexpected": "dropped",
         }
     )
-    assert normalized["active_profile"] == "Player"
+    assert normalized["active_profile"] == "Tester"
     assert "unexpected" not in normalized
     assert normalized["leaderboard"] == []
     profiles = normalized["profiles"]
     assert isinstance(profiles, dict)
     assert profiles["Tester"]["stats"]["games_won"] == 2  # type: ignore[index]
+
+
+def test_storage_selects_existing_profile_for_orphaned_active_name() -> None:
+    normalized = normalize_state(
+        {
+            "schema_version": 1,
+            "active_profile": "Missing",
+            "profiles": {
+                "Beta": {"name": "Beta", "stats": {}, "settings": {}},
+                "Alpha": {"name": "Alpha", "stats": {}, "settings": {}},
+            },
+        }
+    )
+    assert normalized["active_profile"] == "Alpha"
 
 
 def test_storage_normalizes_recoverable_deleted_profile_records() -> None:
