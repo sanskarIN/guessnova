@@ -33,7 +33,13 @@ def main(argv: list[str] | None = None) -> int:
     if routed is not None:
         return doctor_main(routed)
 
+    if arguments in (["--help"], ["-h"]):
+        try:
+            return game_main(arguments)
+        finally:
+            _print_doctor_hint()
+
     result = game_main(arguments)
-    if not arguments or arguments in (["--help"], ["-h"]):
+    if not arguments:
         _print_doctor_hint()
     return result
