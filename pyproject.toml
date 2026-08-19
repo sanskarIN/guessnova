@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling>=1.31"]
+build-backend = "hatchling.build"
+
+[project]
+name = "guessnova"
+version = "1.0.0"
+description = "A polished, privacy-first number guessing game for the terminal."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [{ name = "Sanskar", email = "sanskarin@outlook.in" }]
+keywords = ["game", "terminal", "textual", "rich", "number-guessing"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Games/Entertainment :: Puzzle Games",
+]
+dependencies = [
+  "rich>=15.0,<16",
+  "textual>=8.2.8,<9",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=9.0,<10",
+  "pytest-cov>=6.2,<7",
+  "ruff>=0.12,<1",
+]
+
+[project.scripts]
+guessnova = "guessnova.cli:main"
+guessnova-tui = "guessnova.tui:run"
+
+[project.urls]
+Homepage = "https://github.com/sanskarIN/guessnova"
+Repository = "https://github.com/sanskarIN/guessnova"
+Issues = "https://github.com/sanskarIN/guessnova/issues"
+Funding = "https://buymeacoffee.com/sanskarIN"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/guessnova"]
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]
