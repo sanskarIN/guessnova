@@ -14,9 +14,14 @@ def _nonnegative_int(data: dict[str, object], key: str) -> int:
     value = data.get(key, 0)
     if isinstance(value, bool):
         return 0
-    try:
-        parsed = int(value)
-    except (TypeError, ValueError):
+    if isinstance(value, int):
+        parsed = value
+    elif isinstance(value, str):
+        try:
+            parsed = int(value)
+        except ValueError:
+            return 0
+    else:
         return 0
     return max(0, parsed)
 
@@ -46,11 +51,15 @@ class Profile:
         raw_stats = data.get("stats", {})
         stats_data = raw_stats if isinstance(raw_stats, dict) else {}
         raw_achievements = stats_data.get("achievements", [])
-        achievements = {
-            item
-            for item in raw_achievements
-            if isinstance(item, str) and 0 < len(item) <= 64
-        } if isinstance(raw_achievements, list) else set()
+        achievements = (
+            {
+                item
+                for item in raw_achievements
+                if isinstance(item, str) and 0 < len(item) <= 64
+            }
+            if isinstance(raw_achievements, list)
+            else set()
+        )
         stats = PlayerStats(
             games_played=_nonnegative_int(stats_data, "games_played"),
             games_won=_nonnegative_int(stats_data, "games_won"),
@@ -62,7 +71,10 @@ class Profile:
         )
         stats.games_won = min(stats.games_won, stats.games_played)
         stats.current_streak = min(stats.current_streak, stats.games_won)
-        stats.best_streak = max(stats.current_streak, min(stats.best_streak, stats.games_won))
+        stats.best_streak = max(
+            stats.current_streak,
+            min(stats.best_streak, stats.games_won),
+        )
         settings_data = data.get("settings", {})
         settings = Settings.from_dict(settings_data if isinstance(settings_data, dict) else {})
         raw_name = data.get("name", "Player")
