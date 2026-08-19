@@ -86,6 +86,32 @@ def test_docs_link_checker_handles_reference_html_and_code_examples(tmp_path: Pa
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+def test_docs_link_checker_ignores_footnotes_and_complex_code_examples(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "real.md").write_text("# Real\n", encoding="utf-8")
+    (tmp_path / "README.md").write_text(
+        "\n".join(
+            [
+                "# Project",
+                "[^note]: This footnote text is not a reference-link destination.",
+                "``[Double-backtick example](missing/double.md)``",
+                "```markdown",
+                "[Fenced example](missing/fenced.md)",
+                "```python",
+                "[Still fenced](missing/still-fenced.md)",
+                "```",
+                "[Real](docs/real.md)",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run_checker(tmp_path)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 def test_docs_link_checker_rejects_paths_outside_repository(tmp_path: Path) -> None:
     outside = tmp_path.parent / "outside.md"
     outside.write_text("outside\n", encoding="utf-8")
