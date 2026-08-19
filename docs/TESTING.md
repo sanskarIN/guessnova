@@ -2,7 +2,7 @@
 
 This is the concise testing reference. The canonical detailed strategy is [`testing.md`](testing.md).
 
-The automated suite covers deterministic gameplay, timed/reverse/daily behavior, hints, achievements, profile serialization and recoverable lifecycle operations, bounded/filtered/grouped history, schema-2 migration fixtures, bounded atomic local storage, backup-v2 integrity and legacy compatibility, backup importability preflight, Doctor state/backup/repair behavior, leaderboard ordering, replay integrity, English/Hindi catalogs, CLI routing/parsing, service coordination, reusable TUI workspace/challenge helpers, and focused Textual pilot interactions across all six panes plus v1.5 Challenge Setup.
+The automated suite covers deterministic gameplay, timed/reverse/daily behavior, hints, achievements, profile serialization and recoverable lifecycle operations, bounded/filtered/grouped history, schema-2 migration fixtures, bounded atomic local storage, backup-v2 integrity and legacy compatibility, backup importability preflight, Doctor state/backup/repair behavior, leaderboard ordering, replay integrity, English/Hindi catalogs, CLI routing/parsing, service coordination, reusable TUI workspace/challenge helpers, focused Textual pilot interactions across all six panes plus v1.5 Challenge Setup, and offline repository-local documentation-link validation.
 
 ## Full development checks
 
@@ -14,6 +14,7 @@ mypy src/guessnova
 pytest --cov=guessnova --cov-report=term-missing
 python -m compileall -q src tests scripts
 python scripts/verify_release_metadata.py
+python scripts/check_docs_links.py
 python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
@@ -22,11 +23,17 @@ python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
-`make check` includes both Textual import checks.
+`make check` includes release-metadata verification, the offline documentation-link gate, and both Textual import checks.
 
-CI additionally builds, validates, installs, imports both the stable workspace and shipped challenge app, checks the game CLI plus both Doctor entry paths, verifies Doctor version output, and smoke-tests package artifacts on Ubuntu, Windows, and macOS. Security checks and CodeQL run separately.
+CI additionally verifies repository-local Markdown link/image targets, builds, validates, installs, imports both the stable workspace and shipped challenge app, checks the game CLI plus both Doctor entry paths, verifies Doctor version output, and smoke-tests package artifacts on Ubuntu, Windows, and macOS. Security checks and CodeQL run separately.
 
 Final release claims require successful exact-head workflow conclusions; configured jobs alone are not evidence of a pass.
+
+## Documentation-link gate
+
+`scripts/check_docs_links.py` scans repository Markdown without network access. It validates ordinary Markdown links/images, reference definitions, and HTML `href`/`src` targets that resolve locally. External URLs and fragment-only links are not fetched; local targets must exist and must not escape the repository root. Fenced and inline code examples are excluded so example syntax does not create false failures.
+
+The checker is covered by `tests/test_docs_links.py`, runs in `make check`, runs in normal CI, and is required by the tagged-release verification job.
 
 ## Migration, state, and backup reliability
 
@@ -79,4 +86,4 @@ guessnova-tui
 
 Automated Textual pilot coverage supplements rather than replaces manual review. The exact release candidate must complete [`accessibility_evidence_template.md`](accessibility_evidence_template.md), including Challenge Setup, every workspace pane, keyboard shortcut, profile lifecycle action, high-contrast path, localization path, and read-only Recovery flow.
 
-Tests must never depend on network access or a user's real profile/state directory.
+Tests and documentation checks must never depend on network access or a user's real profile/state directory.
