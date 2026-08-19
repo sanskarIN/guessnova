@@ -118,11 +118,8 @@ def _validate_integrity(wrapped: dict[str, object], payload: dict[str, object]) 
 
 
 def _read_bounded_json(source: Path) -> tuple[dict[str, object], int]:
-    try:
-        with source.open("rb") as handle:
-            raw = handle.read(MAX_EXPORT_BYTES + 1)
-    except OSError:
-        raise
+    with source.open("rb") as handle:
+        raw = handle.read(MAX_EXPORT_BYTES + 1)
     if len(raw) > MAX_EXPORT_BYTES:
         raise ValueError("export file is too large")
     try:
