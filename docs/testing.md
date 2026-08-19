@@ -1,6 +1,6 @@
 # Testing
 
-GuessNova uses pytest with deterministic seeds, injected clocks, and temporary directories so tests do not depend on production credentials or persistent user data.
+GuessNova uses pytest with deterministic seeds, injected clocks, temporary directories, and Textual's test pilot so tests do not depend on production credentials or persistent user data.
 
 ## Full local quality suite
 
@@ -14,7 +14,7 @@ python -m compileall -q src tests scripts
 python scripts/smoke_test.py
 ```
 
-CI also builds the wheel/source distribution and validates package metadata with Twine. Separate workflows perform CodeQL and dependency/secret checks.
+CI also builds, validates, installs, starts the CLI, and smoke-tests distributions on Ubuntu, Windows, and macOS. Separate workflows perform CodeQL and dependency/secret checks.
 
 ## Coverage areas
 
@@ -23,11 +23,14 @@ CI also builds the wheel/source distribution and validates package metadata with
 - Reverse binary-search behavior and inconsistent responses.
 - Daily challenge reproducibility.
 - Achievements, XP, streaks, settings, and defensive profile serialization.
-- Bounded session-history serialization and invalid-input filtering.
-- Atomic storage/migration behavior, corruption errors, and normalized imported state.
+- Bounded session-history serialization, result/date/text filters, and grouping helpers.
+- Safe profile lifecycle: create/list/use/rename/delete/trash/restore, active-profile changes, and leaderboard restoration.
+- Atomic storage/migration behavior, corruption errors, normalized imported state, and bounded recoverable profile trash.
 - Leaderboard ranking and serialization.
 - Import/export validation and replay-code integrity/backward compatibility.
-- Input/path safety helpers, application-service coordination, and CLI parser/settings/history behavior.
+- English/Hindi catalog completeness, representative formatting, and English fallback behavior.
+- CLI parser/settings/history/profile command integration.
+- Textual pilot tests for initial focus, tab order, Enter submission, hint interaction, reset, and persisted winning results.
 - End-to-end smoke coverage for gameplay, persistence, replay, backup/restore, achievements, leaderboard, and reverse mode.
 
 ## Regression policy
@@ -38,6 +41,18 @@ Every reproducible bug should receive a focused regression test where practical.
 
 Use explicit game targets, fixed seeds, fixed ISO dates, or injected clocks in tests. Never depend on today's challenge target, wall-clock timing, production state, or network services.
 
-## UI testing
+## Textual pilot testing
 
-Core rules remain outside the UI so most behavior can be tested without terminal automation. Textual pilot/widget tests should cover critical interactive states as the TUI evolves, supplemented by keyboard/manual accessibility checks.
+`tests/test_tui.py` uses `GuessNovaApp.run_test()` with Textual's pilot API and injected `Storage(tmp_path)`/deterministic `GuessGame(target=...)` instances. This keeps interactive checks reproducible and prevents test runs from touching a real user profile.
+
+Pilot tests supplement rather than replace manual terminal review. Before release, complete `docs/accessibility_evidence_template.md` on the signed-off release candidate.
+
+## Cross-platform package verification
+
+The CI `platform-package` matrix runs on:
+
+- `ubuntu-latest`
+- `windows-latest`
+- `macos-latest`
+
+Each runner builds the source and wheel distributions, runs Twine metadata validation, installs the generated wheel, verifies `python -m guessnova --help`, and executes the smoke test. A failure on one platform is a release blocker until reproduced or documented as an infrastructure-only failure.
