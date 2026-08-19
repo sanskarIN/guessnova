@@ -10,6 +10,7 @@ from guessnova.import_export import (
     MAX_EXPORT_BYTES,
     export_state,
     import_state,
+    load_validated_export,
 )
 
 
@@ -25,6 +26,21 @@ def test_export_import_round_trip(tmp_path: Path) -> None:
     assert wrapped["schema_version"] == SCHEMA_VERSION
     assert wrapped["integrity"]["algorithm"] == "sha256"
     assert len(wrapped["integrity"]["payload_sha256"]) == 64
+
+
+def test_load_validated_export_reports_current_metadata(tmp_path: Path) -> None:
+    payload = {"schema_version": SCHEMA_VERSION, "profiles": {"Nova": {}}}
+    target = tmp_path / "backup.json"
+    export_state(payload, target)
+
+    validated = load_validated_export(target)
+    assert validated.path == target
+    assert validated.size_bytes == target.stat().st_size
+    assert validated.version == EXPORT_VERSION
+    assert validated.schema_version == SCHEMA_VERSION
+    assert validated.integrity_protected is True
+    assert validated.integrity_algorithm == "sha256"
+    assert validated.payload == payload
 
 
 def test_export_records_legacy_payload_schema_for_repair_backup(tmp_path: Path) -> None:
@@ -45,6 +61,11 @@ def test_import_accepts_legacy_version1_backup(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert import_state(target) == payload
+    validated = load_validated_export(target)
+    assert validated.version == 1
+    assert validated.schema_version == 1
+    assert validated.integrity_protected is False
+    assert validated.integrity_algorithm is None
 
 
 def test_import_rejects_wrong_format(tmp_path: Path) -> None:

@@ -54,6 +54,22 @@ def test_diagnose_invalid_json_is_not_repairable(tmp_path: Path) -> None:
         repair(storage)
 
 
+def test_diagnose_oversized_state_is_not_repairable(
+    tmp_path: Path, monkeypatch
+) -> None:
+    storage = Storage(tmp_path)
+    storage.data_dir.mkdir(parents=True, exist_ok=True)
+    storage.path.write_bytes(b"{" + b"x" * 128 + b"}")
+    monkeypatch.setattr("guessnova.storage.MAX_STATE_BYTES", 64)
+
+    report = diagnose(storage)
+    assert report.readable is False
+    assert report.healthy is False
+    assert any("too large" in issue for issue in report.issues)
+    with pytest.raises(ValueError, match="not safely repairable"):
+        repair(storage)
+
+
 def test_diagnose_future_schema_is_not_repairable(tmp_path: Path) -> None:
     storage = Storage(tmp_path)
     storage.data_dir.mkdir(parents=True, exist_ok=True)

@@ -24,28 +24,37 @@ pytest
 python -m compileall -q src tests scripts
 python scripts/verify_release_metadata.py
 python scripts/smoke_test.py
+python -m guessnova --help
+python -m guessnova doctor --help
+python -m guessnova.doctor_cli --help
 ```
 
-`make check` runs the same core quality sequence on systems with Make available.
+`make check` runs the same core quality sequence plus entry-point verification on systems with Make available.
 
 ## Contribution rules
 
-- Keep game/domain logic independent of Rich/Textual presentation, diagnostics, backup wrappers, and filesystem I/O.
+- Keep game/domain logic independent of Rich/Textual presentation, diagnostics, backup wrappers, command dispatch, and filesystem I/O.
+- Keep `entrypoint.py` limited to routing; do not duplicate gameplay or Doctor business logic there.
 - Add or update focused tests for behavior changes and regression fixes.
 - Preserve deterministic behavior for seeded and daily challenges.
 - Use temporary storage and deterministic targets/seeds/clocks in tests; never touch a contributor's real GuessNova state.
 - Preserve keyboard-only operation and avoid color-only meaning.
 - Keep destructive local-data operations confirmed and recoverable where practical.
-- Keep state, replay, and backup compatibility explicit. Do not invent a schema migration unless a concrete state-format boundary exists.
+- Keep state, replay, backup, and Doctor-report compatibility explicit. Do not invent a schema migration unless a concrete state-format boundary exists.
 - When introducing a real schema migration, commit representative fixtures for the previous supported schema and test forward migration/future-schema rejection.
-- Keep backup-wrapper versioning independent from state-schema versioning. Do not reuse one version integer for both compatibility domains.
-- Backup integrity changes must retain clear boundaries: unkeyed SHA-256 is corruption/tamper detection, not encryption, authentication, or a signature.
-- A repair path must never rewrite unreadable/non-object/unsupported state and must preserve the original payload in a recoverable backup before a normalization write.
-- `guessnova-doctor --json` is a scripting contract: keep it as one valid JSON document on normal, attention, repair, and expected-error paths.
-- New user-facing presentation strings should use the offline message catalog where appropriate. Stable diagnostic JSON keys are machine identifiers and should remain untranslated.
+- Keep backup-wrapper versioning independent from state-schema versioning and Doctor-report versioning.
+- Backup integrity changes must retain clear boundaries: unkeyed SHA-256 is corruption/change detection, not encryption, authentication, signing, or origin proof.
+- Bound application-controlled/user-selected JSON file reads before decoding/parsing where practical.
+- Maintain `MAX_EXPORT_BYTES > MAX_STATE_BYTES` so every accepted repairable state can fit inside its mandatory pre-repair backup.
+- Backup preflight must validate current state normalization/importability before reporting a file as valid.
+- A repair path must never rewrite unreadable/non-object/oversized/future-schema/unsupported state and must preserve the original payload in a recoverable backup before a required normalization write.
+- Doctor `--json` is a scripting contract: keep it as one valid versioned JSON document on normal, attention, backup, repair, and expected-error paths.
+- `--json --repair` must remain noninteractive unless `--yes` is explicitly supplied.
+- Keep Doctor exit semantics stable unless an intentional compatibility change is documented, versioned, and tested.
+- New user-facing presentation strings should use the offline message catalog where appropriate. Stable Doctor JSON keys/report kinds are machine identifiers and should remain untranslated.
 - When adding/changing a catalog key, update every shipped locale and keep named placeholders compatible.
 - Do not translate stable command names, environment variables, schema keys, replay fields, backup markers, diagnostic JSON keys, mode/difficulty IDs, or achievement IDs without a compatibility design.
-- Never commit secrets, private production endpoints, real user data, local profile backups, repair backups, generated credentials, or release captures containing private terminal data.
+- Never commit secrets, private production endpoints, real user data, local profile backups, repair backups, private Doctor reports, generated credentials, or release captures containing private terminal data.
 - Update documentation, `CHANGELOG.md`, and `what_changed.md` for user-visible/release-relevant changes.
 - Prefer small Conventional Commits such as `feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `perf:`, `build:`, `ci:`, and `chore:`.
 
@@ -59,9 +68,44 @@ Migration fixtures live under `tests/fixtures/state/`. Keep them minimal but rea
 - the result reports the current schema;
 - future schemas remain rejected.
 
-## Backup and diagnostics changes
+Do not add schema-3 fixtures until schema 3 exists for a concrete compatibility reason.
 
-Changes to `import_export.py`, `diagnostics.py`, `doctor_cli.py`, or `storage.py` should consider the full boundary together. Add tests for integrity metadata, schema provenance, legacy compatibility, atomic writes, repair backup readability, and JSON-mode CLI behavior when relevant.
+## Backup changes
+
+Changes to `import_export.py` or `backup_inspection.py` should consider the full boundary together. Add tests for:
+
+- bounded single-read input;
+- integrity metadata;
+- schema provenance;
+- legacy compatibility;
+- future-version rejection;
+- current state normalization/importability;
+- checksum-valid but unimportable payload rejection;
+- atomic export output;
+- read-only backup preflight.
+
+## Doctor/diagnostics changes
+
+Changes to `diagnostics.py`, `doctor_cli.py`, `doctor_protocol.py`, `entrypoint.py`, or `storage.py` should cover relevant behavior across both:
+
+```bash
+guessnova doctor
+guessnova-doctor
+```
+
+Review:
+
+- explicit `--data-dir` isolation;
+- Doctor report version/kinds;
+- stable exit codes;
+- `--version` consistency;
+- JSON single-document behavior;
+- backup verification option conflicts;
+- bounded state reads/writes;
+- repair backup readability;
+- backup-before-write ordering;
+- safe refusal paths;
+- support-output privacy.
 
 ## Textual changes
 
@@ -75,7 +119,7 @@ Keep `docs/accessibility.md` current. Release-candidate changes affecting intera
 
 Use the pull-request template, explain the user/developer problem, list verification performed, and keep unrelated cleanup out of feature/fix PRs. Security vulnerabilities should follow `SECURITY.md` rather than a public issue.
 
-Before requesting review, verify that the PR's current head—not an earlier superseded commit—has the intended CI, CodeQL, and Security-check status.
+Before requesting review, verify that the PR's **current head**—not an earlier superseded commit—has the intended CI, CodeQL, and Security-check status. Queued/pending status is not a successful conclusion.
 
 ## Contact
 

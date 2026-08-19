@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
 from .constants import DEFAULT_PROFILE, SCHEMA_VERSION
 from .import_export import export_state
-from .storage import Storage, normalize_state
+from .storage import Storage, normalize_state, read_state_payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +52,26 @@ def _source_schema(payload: dict[str, object]) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) else None
 
 
+def _unreadable_report(
+    issue: str,
+    *,
+    source_schema_version: int | None = None,
+) -> DiagnosticReport:
+    return DiagnosticReport(
+        state_exists=True,
+        readable=False,
+        source_schema_version=source_schema_version,
+        current_schema_version=SCHEMA_VERSION,
+        active_profile=DEFAULT_PROFILE,
+        profile_count=0,
+        history_entries=0,
+        leaderboard_entries=0,
+        deleted_profile_count=0,
+        normalization_changed=False,
+        issues=(issue,),
+    )
+
+
 def diagnose(storage: Storage) -> DiagnosticReport:
     """Inspect the state file without mutating it or making network calls."""
     if not storage.path.exists():
@@ -71,55 +90,17 @@ def diagnose(storage: Storage) -> DiagnosticReport:
         )
 
     try:
-        decoded = json.loads(storage.path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, ValueError):
-        return DiagnosticReport(
-            state_exists=True,
-            readable=False,
-            source_schema_version=None,
-            current_schema_version=SCHEMA_VERSION,
-            active_profile=DEFAULT_PROFILE,
-            profile_count=0,
-            history_entries=0,
-            leaderboard_entries=0,
-            deleted_profile_count=0,
-            normalization_changed=False,
-            issues=("state file cannot be decoded as valid UTF-8 JSON",),
-        )
+        payload = read_state_payload(storage.path)
+    except OSError as exc:
+        return _unreadable_report(f"state file could not be read: {exc}")
+    except ValueError as exc:
+        return _unreadable_report(str(exc))
 
-    if not isinstance(decoded, dict):
-        return DiagnosticReport(
-            state_exists=True,
-            readable=False,
-            source_schema_version=None,
-            current_schema_version=SCHEMA_VERSION,
-            active_profile=DEFAULT_PROFILE,
-            profile_count=0,
-            history_entries=0,
-            leaderboard_entries=0,
-            deleted_profile_count=0,
-            normalization_changed=False,
-            issues=("state file root is not an object",),
-        )
-
-    payload: dict[str, object] = decoded
     source_schema = _source_schema(payload)
     try:
         normalized = normalize_state(payload)
     except ValueError as exc:
-        return DiagnosticReport(
-            state_exists=True,
-            readable=False,
-            source_schema_version=source_schema,
-            current_schema_version=SCHEMA_VERSION,
-            active_profile=DEFAULT_PROFILE,
-            profile_count=0,
-            history_entries=0,
-            leaderboard_entries=0,
-            deleted_profile_count=0,
-            normalization_changed=False,
-            issues=(str(exc),),
-        )
+        return _unreadable_report(str(exc), source_schema_version=source_schema)
 
     issues: list[str] = []
     if source_schema != SCHEMA_VERSION:
@@ -156,10 +137,7 @@ def repair(storage: Storage, *, backup_dir: Path | None = None) -> Path | None:
     if not report.readable:
         raise ValueError("state is not safely repairable; restore or replace the invalid state file")
 
-    decoded = json.loads(storage.path.read_text(encoding="utf-8"))
-    if not isinstance(decoded, dict):
-        raise ValueError("state file root must be an object")
-    payload: dict[str, object] = decoded
+    payload = read_state_payload(storage.path)
     normalized = normalize_state(payload)
     if normalized == payload:
         return None

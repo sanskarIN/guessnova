@@ -9,55 +9,124 @@ GuessNova is a local-first Python modular monolith. It deliberately avoids netwo
 - `rng.py`, `daily.py`, `hints.py` — deterministic randomness, daily challenge selection, and smart hint rules.
 - `achievements.py` — XP, streak, and milestone progression.
 - `profile.py`, `settings.py`, `themes.py` — local player identity/preferences and presentation choices.
-- `storage.py` — versioned local state, schema migration, normalization, and atomic file replacement.
+- `storage.py` — versioned local state, schema migration, normalization, bounded reads/writes, and atomic file replacement.
 - `leaderboard.py` — validated local winning-result ranking data.
-- `import_export.py` — independent backup-wrapper versioning, payload-schema provenance, SHA-256 integrity validation, atomic export, and legacy backup import compatibility.
-- `diagnostics.py` — read-only local state inspection plus backup-before-write normalization repair.
-- `replay.py` — portable replay-code encoding/validation with replay-version integrity rules separate from state/backup versioning.
+- `import_export.py` — independent backup-wrapper versioning, bounded single-read validation, payload-schema provenance, SHA-256 integrity validation, atomic export, and legacy backup compatibility.
+- `backup_inspection.py` — read-only backup preflight that proves current state normalization/importability and reports normalized structural metadata.
+- `diagnostics.py` — read-only local state inspection plus backup-before-write normalization repair using the same bounded state reader as normal storage.
+- `doctor_protocol.py` — stable Doctor machine report version and exit-code constants.
+- `replay.py` — portable replay-code encoding/validation with replay-version integrity rules separate from state/backup/Doctor versioning.
 - `service.py` — application orchestration connecting game summaries to profile and leaderboard persistence.
-- `cli.py`, `tui.py` — Rich CLI and Textual gameplay/presentation layers.
-- `doctor_cli.py` — dedicated local diagnostics/repair entry point with human-readable, compact, and JSON output.
+- `cli.py` — established Rich gameplay/profile/history/settings/data CLI.
+- `doctor_cli.py` — reusable local diagnostics, backup verification, and repair command implementation.
+- `entrypoint.py` — compatibility-preserving top-level dispatcher that routes `doctor` to Doctor and all existing game commands to `cli.py`.
+- `tui.py` — Textual gameplay/presentation layer.
 - `security.py` — bounded integer, profile-name sanitization, and permitted-path helpers.
 
 ## Dependency direction
 
-Core gameplay does not depend on Rich, Textual, filesystem storage, backup wrappers, or diagnostics. Presentation and diagnostic commands may import application/local-adapter modules. Persistence receives serializable domain/profile data. This keeps seeded gameplay deterministic and directly testable while allowing additional frontends and maintenance tools without duplicating game rules.
+Core gameplay does not depend on Rich, Textual, filesystem storage, backup wrappers, diagnostics, or the dispatcher. The dispatcher does not implement game or recovery business logic; it only selects the established command family.
 
 ```text
-Rich CLI   Textual TUI   Doctor CLI
-    \          |          /
-       application/local orchestration
-          /               \
-    game domain        local adapters
-                       /    |      \
-                  storage backup diagnostics
+              entrypoint.py
+             /             \
+         cli.py        doctor_cli.py
+           |             /       \
+           |      diagnostics   backup_inspection
+           |          |              |
+        service     storage      import_export
+           |          \             /
+           +------ game/domain -----+
+
+                    tui.py
+                      |
+                 game/service
 ```
+
+This keeps seeded gameplay deterministic and directly testable while allowing maintenance/recovery tooling without duplicating game rules or state semantics.
+
+## Command-dispatch boundary
+
+The installed `guessnova` script and `python -m guessnova` both call `entrypoint.main`.
+
+The dispatcher recognizes `doctor` after supported leading presentation flags and delegates the remaining arguments to the same Doctor implementation used by `guessnova-doctor`. Existing non-Doctor arguments are delegated unchanged to the established Rich game CLI.
+
+This design preserves the standalone Doctor compatibility surface while making recovery discoverable as:
+
+```bash
+guessnova doctor
+```
+
+Root help appends a Doctor discovery hint instead of maintaining a second duplicate copy of the large game parser tree.
 
 ## Persistence model
 
 `Storage` writes one normalized versioned `state.json` in the platform-specific application-data directory. Schema 2 makes `deleted_profiles` a canonical top-level container. Schema 0 and schema 1 migrate forward deterministically; future schemas are rejected rather than silently downgraded.
 
-Writes use a temporary file in the destination directory, flush and `fsync`, then atomic replacement where supported.
+State input is bounded by `MAX_STATE_BYTES`: the reader consumes at most the limit plus one byte before UTF-8/JSON decoding. State output is normalized/serialized and size checked before the temporary-file/`fsync`/atomic-replacement sequence.
 
 ## Backup boundary
 
-Backup format versioning is intentionally independent from state schema versioning. Backup wrapper v2 records the embedded payload schema and a canonical SHA-256 payload digest. Import validates wrapper version, payload schema, wrapper/payload schema agreement, integrity metadata, and payload type before current storage performs any migration/normalization.
+Backup format versioning is intentionally independent from state schema versioning. Backup wrapper v2 records the embedded payload schema and a canonical SHA-256 payload digest.
+
+`load_validated_export(...)` performs one bounded read and returns `ValidatedExport`, carrying the validated wrapper/payload metadata from that same read. Import and backup inspection share this boundary instead of re-reading the file independently.
 
 Legacy GuessNova backup wrapper v1 is retained as an explicit compatibility path. See `docs/adr/0004-separate-backup-and-state-versions.md`.
 
+`MAX_EXPORT_BYTES` is larger than `MAX_STATE_BYTES` so any state accepted for repair can fit within the mandatory backup envelope.
+
+## Backup-inspection boundary
+
+`backup_inspection.py` is read-only. It first validates the envelope and then runs the embedded state through current `normalize_state(...)` in memory.
+
+A wrapper can therefore pass its checksum but still fail preflight if the payload cannot be imported by current state rules. Valid reports use normalized structural counts and expose source/normalized schema metadata without printing the state payload.
+
 ## Diagnostics and repair boundary
 
-`diagnostics.py` inspects the on-disk JSON without mutating it. It reports migration/normalization requirements and aggregate local-state counts. Repair is intentionally conservative:
+`diagnostics.py` uses the same bounded `read_state_payload(...)` function as normal storage. It reports migration/normalization requirements and aggregate local-state counts.
 
-1. unreadable/non-object/unsupported state is refused;
-2. repairable state is normalized in memory;
-3. the original payload is exported to an integrity-protected backup;
-4. only then is normalized state written through `Storage`.
+Repair is intentionally conservative:
 
-The doctor command never uploads state or requires network access.
+1. missing state is a no-op;
+2. unreadable/non-object/oversized/future-schema/unnormalizable state is refused;
+3. repairable state is re-read through the bounded reader and normalized in memory;
+4. if no write is required, repair returns without creating a redundant backup;
+5. if a write is required, the original payload is exported to an integrity-protected backup;
+6. only after that backup succeeds is normalized state written through `Storage`.
+
+Doctor never uploads state or requires network access.
+
+## Doctor protocol boundary
+
+Doctor JSON output is a separately versioned machine contract. Current `DOCTOR_REPORT_VERSION` is `1`.
+
+Kinds:
+
+- `state`
+- `backup`
+- `error`
+
+Stable exit codes:
+
+- `0` — success/healthy state/valid backup/successful or no-op repair;
+- `1` — interactive repair cancelled;
+- `2` — attention/validation/handled error.
+
+A future incompatible JSON contract must increment this report version instead of silently changing existing field meaning.
+
+## Compatibility domains
+
+Current independent compatibility identifiers are:
+
+- state schema: `2`;
+- backup wrapper: `2` plus legacy `1` support;
+- replay format: `1`;
+- Doctor report: `1`.
+
+GuessNova 1.3 changes operator/recovery behavior without creating schema 3, backup wrapper 3, or replay 2.
 
 ## Security/privacy boundaries
 
-GuessNova has no runtime authentication, remote API, telemetry, payment, cloud sync, or required network permissions. Untrusted values are parsed/validated before use. Replay and backup integrity mechanisms detect corruption but are not encryption, authentication, or digital signatures.
+GuessNova has no runtime authentication, remote API, telemetry, payment, cloud sync, or required network permissions. Untrusted values are bounded, parsed, and normalized before use. Replay and backup integrity mechanisms detect corruption/change but are not encryption, authentication, origin proof, or digital signatures.
 
-See `docs/adr/0001-modular-monolith.md`, `docs/adr/0002-versioned-json-storage.md`, and `docs/adr/0004-separate-backup-and-state-versions.md` for recorded decisions.
+See `docs/doctor.md`, `docs/adr/0001-modular-monolith.md`, `docs/adr/0002-versioned-json-storage.md`, and `docs/adr/0004-separate-backup-and-state-versions.md` for the detailed decisions and operating contract.

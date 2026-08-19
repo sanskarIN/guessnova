@@ -1,3 +1,733 @@
+# GuessNova — Complete Work Continuity through v1.3 Operator Recovery
+
+## Current milestone
+
+**GuessNova `v1.3.0` operator recovery and backup-preflight implementation is complete on its release branch and is under pull request review.**
+
+Current v1.3 work:
+
+- Branch: `release/v1.3.0-cli-recovery-20260819`
+- Pull request: `#9` — `feat: ship GuessNova 1.3 operator recovery and backup preflight`
+- Base branch: `main`
+- Base commit: `86ac8754ad07daaa40706c20a8e61fb4024a95e0`
+- PR head immediately before this continuity-file commit: `441d139b1a623da1b42c006ac4f47d94a66ff626`
+- Granular v1.3 commits before this handoff commit: **56**
+- This `what_changed.md` update is intentionally the next focused commit and becomes the final PR verification head unless a concrete audit/CI defect requires another fix.
+- Package version: `1.3.0`
+- Runtime version: `1.3.0`
+- Citation version: `1.3.0`
+- Local state schema: `2`
+- Backup wrapper: `2`
+- Supported legacy backup wrapper: `1`
+- Replay format: `1`
+- Doctor machine report protocol: `1`
+- Python requirement: `>=3.13`
+- License: MIT
+- Requested Git commit email: `sanskarin@outlook.in`
+
+The v1.3 scope is intentionally operator/recovery hardening. It does **not** invent schema 3, replay version 2, backup wrapper 3, a third locale, package signing, or an additional testing dependency without a concrete prerequisite.
+
+The pull request must be merged with a **normal merge**, not squash, so the granular feature/fix/test/docs/build/CI history is retained unless a later explicit instruction changes that requirement.
+
+---
+
+# A. v1.3 implementation completed
+
+## A.1 Primary Doctor route with compatibility preservation
+
+GuessNova now has one top-level dispatcher:
+
+- `src/guessnova/entrypoint.py`
+
+Installed `guessnova` and `python -m guessnova` both route through that dispatcher.
+
+The dispatcher:
+
+- recognizes the `doctor` command family;
+- forwards supported leading `--plain` / `--compact` presentation flags;
+- sends Doctor arguments to the reusable Doctor implementation;
+- forwards every non-Doctor command unchanged to the established Rich game CLI;
+- keeps root help compatible with argparse;
+- adds a Doctor-discovery hint after root help;
+- does not duplicate gameplay, persistence, or recovery business logic.
+
+Recommended recovery route:
+
+```bash
+guessnova doctor --help
+```
+
+Compatibility route retained:
+
+```bash
+guessnova-doctor --help
+```
+
+The Textual entry point remains:
+
+```bash
+guessnova-tui
+```
+
+Package scripts now are:
+
+```text
+guessnova = guessnova.entrypoint:main
+guessnova-tui = guessnova.tui:run
+guessnova-doctor = guessnova.doctor_cli:main
+```
+
+`src/guessnova/__main__.py` also routes through the top-level dispatcher.
+
+## A.2 Doctor reusable command implementation
+
+`src/guessnova/doctor_cli.py` is reusable by both entry paths.
+
+Current options:
+
+```text
+--json
+--compact
+--plain
+--repair
+--yes
+--backup-dir PATH
+--data-dir PATH
+--verify-backup PATH
+--version
+```
+
+`--data-dir` allows support/recovery inspection of a specific local GuessNova data directory without changing `GUESSNOVA_HOME`.
+
+`--verify-backup` is a separate read-only mode and is rejected when combined with:
+
+- `--repair`;
+- `--yes`;
+- `--backup-dir`;
+- `--data-dir`.
+
+`--json --repair` requires `--yes` so an interactive confirmation prompt cannot corrupt machine-readable stdout.
+
+## A.3 Stable Doctor machine protocol
+
+Added:
+
+- `src/guessnova/doctor_protocol.py`
+
+Current constants:
+
+```text
+DOCTOR_REPORT_VERSION = 1
+EXIT_OK = 0
+EXIT_CANCELLED = 1
+EXIT_ATTENTION = 2
+```
+
+JSON documents now contain an explicit report version.
+
+Kinds:
+
+- `state` — local state diagnostics;
+- `backup` — validated read-only backup inspection;
+- `error` — handled command/validation failure.
+
+Stable exit semantics:
+
+- `0` — healthy state, valid backup, successful repair, or no-op repair;
+- `1` — interactive repair cancelled;
+- `2` — state needs attention, invalid backup, unsafe request, or handled validation/filesystem error.
+
+Doctor version output is tied to the package runtime version:
+
+```bash
+guessnova doctor --version
+guessnova-doctor --version
+```
+
+## A.4 Read-only backup preflight
+
+Added:
+
+- `src/guessnova/backup_inspection.py`
+
+`inspect_backup(path)` validates a selected backup without importing or rewriting state.
+
+A `BackupInspection` report includes:
+
+- path;
+- validated file size;
+- backup-wrapper version;
+- source state schema;
+- normalized/current state schema;
+- legacy-wrapper status;
+- integrity-protection status;
+- integrity algorithm;
+- whether current normalization would change the payload;
+- normalized live-profile count;
+- normalized leaderboard count;
+- normalized deleted-profile count.
+
+Primary command:
+
+```bash
+guessnova doctor --verify-backup ./guessnova-backup.json
+```
+
+Machine output:
+
+```bash
+guessnova doctor --json --verify-backup ./guessnova-backup.json
+```
+
+Backup verification is read-only.
+
+## A.5 Backup preflight proves importability
+
+A real audit gap was identified and fixed during v1.3: checksum-valid backup data could still contain a state payload that current storage normalization would reject.
+
+Final preflight behavior:
+
+1. validate the backup envelope;
+2. validate wrapper version/schema/integrity rules;
+3. obtain the embedded payload;
+4. run that payload through current `normalize_state(...)` in memory;
+5. reject the backup if normalization cannot succeed;
+6. report normalized metadata only after that importability check passes.
+
+A checksum-valid envelope is therefore **not** called a valid restorable backup merely because its SHA-256 matches.
+
+Dedicated tests cover a checksum-valid backup containing an invalid `profiles` container and require Doctor/preflight rejection.
+
+## A.6 Single-read bounded backup validation
+
+`src/guessnova/import_export.py` now defines:
+
+- `ValidatedExport`;
+- `load_validated_export(...)`;
+- a bounded binary JSON read path.
+
+The validator reads at most:
+
+```text
+MAX_EXPORT_BYTES + 1
+```
+
+before deciding whether input is oversized.
+
+The validated wrapper/payload metadata and payload originate from the same bounded read. Backup inspection no longer validates one copy of a file and then re-reads the path for metadata, removing that time-of-check/time-of-use inconsistency.
+
+`import_state(...)` now delegates to the same validated-export boundary.
+
+## A.7 Backup capacity invariant
+
+Current bounds:
+
+```text
+MAX_STATE_BYTES = 5_000_000
+MAX_EXPORT_BYTES = 6_000_000
+```
+
+The backup capacity is deliberately larger than accepted local-state capacity.
+
+Invariant:
+
+```text
+MAX_EXPORT_BYTES > MAX_STATE_BYTES
+```
+
+Reason: any state accepted as repairable must fit inside its mandatory pre-repair backup envelope, including backup metadata/formatting overhead.
+
+A dedicated regression test enforces this invariant.
+
+## A.8 Bounded local state input/output
+
+`src/guessnova/storage.py` now defines:
+
+- `MAX_STATE_BYTES`;
+- `read_state_payload(path)`.
+
+State reads:
+
+1. open in binary mode;
+2. read at most `MAX_STATE_BYTES + 1`;
+3. reject an oversized file before complete UTF-8/JSON processing;
+4. decode UTF-8;
+5. parse JSON;
+6. require an object root;
+7. continue through normal schema migration/normalization.
+
+State writes:
+
+1. normalize state;
+2. serialize normalized JSON;
+3. encode UTF-8;
+4. reject output larger than `MAX_STATE_BYTES`;
+5. write to a temporary file in the target directory;
+6. flush;
+7. `fsync`;
+8. replace `state.json` atomically where supported;
+9. remove leftover temp files on failure.
+
+Oversized input/output paths have focused tests using monkeypatched small limits instead of committing huge fixtures.
+
+## A.9 Diagnostics reuse normal bounded state semantics
+
+`src/guessnova/diagnostics.py` now uses the same `read_state_payload(...)` boundary as normal storage.
+
+Doctor diagnosis therefore does not maintain a separate, potentially weaker state-file reader.
+
+Diagnosis covers:
+
+- missing state;
+- valid current state;
+- schema migration/normalization attention;
+- invalid UTF-8/JSON;
+- non-object state;
+- oversized state;
+- future schema;
+- active profile;
+- profile/history/leaderboard/trash counts.
+
+Repair continues to:
+
+1. diagnose;
+2. refuse state not safely normalizable;
+3. re-read through the bounded reader;
+4. normalize in memory;
+5. return without writing when no rewrite is required;
+6. create a timestamped, non-colliding integrity-protected backup of the original payload when a rewrite is required;
+7. write normalized state only after successful backup creation.
+
+Unreadable, non-object, oversized, future-schema, or otherwise unsupported state is not silently overwritten.
+
+## A.10 Root help compatibility fix
+
+A static review identified an argparse control-flow issue in the first dispatcher implementation: `--help` raises `SystemExit(0)`, so code placed only after `game_main(["--help"])` would never run.
+
+The dispatcher now prints the Doctor discovery hint from a `finally` path for root help, preserving argparse's normal exit behavior while keeping recovery discoverable.
+
+A dedicated test requires `SystemExit(0)` and checks the Doctor hint appears.
+
+## A.11 JSON repair non-interactivity retained
+
+The v1.2 JSON repair safety contract remains:
+
+```text
+--json --repair requires --yes
+```
+
+v1.3 preserves this across the shared Doctor implementation and primary route.
+
+Normal JSON, backup JSON, and handled JSON error outputs remain single JSON documents rather than prose plus JSON mixtures.
+
+---
+
+# B. v1.3 automated coverage
+
+## B.1 Backup inspection tests
+
+Added/expanded `tests/test_backup_inspection.py` for:
+
+- current wrapper metadata;
+- source and normalized schema reporting;
+- integrity status;
+- normalized counts;
+- normalization-change detection;
+- legacy wrapper-v1 reporting;
+- schema-1 migration preview;
+- tamper rejection;
+- checksum-valid but unimportable state rejection.
+
+## B.2 Validated export tests
+
+Expanded `tests/test_import_export.py` for:
+
+- `ValidatedExport` metadata;
+- validated path/byte size;
+- wrapper version;
+- source schema;
+- integrity status/algorithm;
+- current wrapper-v2 round trip;
+- schema-1 payload provenance;
+- legacy wrapper-v1 metadata;
+- tamper rejection;
+- schema mismatch rejection;
+- malformed integrity metadata;
+- future schema rejection;
+- oversized input.
+
+## B.3 State size tests
+
+Added `tests/test_storage_limits.py` for:
+
+- backup capacity exceeding state capacity;
+- bounded state input;
+- `Storage.load_raw()` using the bounded reader;
+- normalized state output exceeding the configured bound being rejected before final persistence.
+
+## B.4 Diagnostics tests
+
+Expanded `tests/test_diagnostics.py` for oversized-state reporting/refusal in addition to retained migration, invalid JSON, future-schema, non-object, repair-backup, and no-op-repair coverage.
+
+## B.5 Doctor CLI tests
+
+Expanded `tests/test_doctor_cli.py` for:
+
+- report version `1`;
+- state report kind;
+- backup report kind;
+- error report kind;
+- stable exit code constants;
+- fresh state;
+- schema-1 attention;
+- cancellation;
+- confirmed repair;
+- JSON repair;
+- JSON repair without `--yes` remaining noninteractive;
+- explicit `--data-dir`;
+- backup verification;
+- backup-verification/repair conflict;
+- checksum-valid but unimportable backup rejection;
+- Doctor version matching package version.
+
+## B.6 Entrypoint tests
+
+Added `tests/test_entrypoint.py` for:
+
+- `guessnova doctor` JSON routing;
+- explicit data-dir routing;
+- leading global `--compact` forwarding;
+- leading global `--plain` forwarding;
+- backup-verification routing;
+- Doctor version through the primary route;
+- root argparse help exit plus Doctor-discovery hint.
+
+## B.7 End-to-end smoke extension
+
+`scripts/smoke_test.py` now exercises the previous gameplay/profile/localization/replay/backup/reverse flow plus:
+
+- primary `guessnova doctor`-equivalent routing via `entrypoint.main`;
+- current-state diagnostics;
+- backup inspection;
+- normalized schema reporting;
+- backup preflight through Doctor;
+- schema-1 isolated state;
+- repair backup creation;
+- inspection of the schema-1 pre-repair payload inside a wrapper-v2 backup;
+- repaired schema-2 state;
+- healthy post-repair diagnosis.
+
+---
+
+# C. v1.3 CI/build/release changes
+
+## C.1 Installed entry points
+
+`pyproject.toml` now routes installed `guessnova` through `guessnova.entrypoint:main`.
+
+Compatibility entry points remain present.
+
+## C.2 Makefile
+
+Added `entrypoints` target:
+
+```bash
+python -m guessnova --help
+python -m guessnova doctor --help
+python -m guessnova.doctor_cli --help
+```
+
+`make check` now includes the entry-point target in addition to lint, format, strict typing, tests, compile, metadata, and smoke.
+
+## C.3 Normal CI package matrix
+
+Ubuntu, Windows, and macOS built-wheel jobs now verify:
+
+```bash
+python -m guessnova --help
+guessnova doctor --help
+guessnova-doctor --help
+guessnova-doctor --version
+python scripts/smoke_test.py
+```
+
+## C.4 Tagged-release matrix
+
+The tagged-release package matrix verifies the same game/Doctor routes before final release publication is eligible to proceed.
+
+The strict release job still includes:
+
+- tag/version match;
+- Ruff lint;
+- Ruff format;
+- strict mypy;
+- pytest coverage;
+- compileall;
+- release metadata verification;
+- smoke test;
+- dependency audit.
+
+---
+
+# D. v1.3 documentation/governance work
+
+Created:
+
+- `docs/doctor.md` — canonical Doctor/recovery guide;
+- `docs/DOCTOR.md` — concise Doctor reference.
+
+Updated:
+
+- `README.md`;
+- `CHANGELOG.md`;
+- `ROADMAP.md`;
+- `CITATION.cff`;
+- `PRIVACY.md`;
+- `SECURITY.md`;
+- `SUPPORT.md`;
+- `CONTRIBUTING.md`;
+- `.github/pull_request_template.md`;
+- `docs/data_format.md`;
+- `docs/DATA_FORMAT.md`;
+- `docs/testing.md`;
+- `docs/TESTING.md`;
+- `docs/release.md`;
+- `docs/RELEASING.md`;
+- `docs/setup.md`;
+- `docs/troubleshooting.md`;
+- `docs/architecture.md`;
+- `docs/development.md`;
+- `docs/performance.md`;
+- `docs/github_repository.md`;
+- `what_changed.md`.
+
+Documentation now consistently distinguishes:
+
+- state schema version;
+- backup wrapper version;
+- replay version;
+- Doctor report version;
+- integrity from authentication;
+- automated checks from manual accessibility/media evidence;
+- documented recommended branch protection from actual repository settings.
+
+---
+
+# E. v1.3 compatibility decisions
+
+Current independent values:
+
+```text
+project/runtime/citation = 1.3.0
+state schema = 2
+backup wrapper = 2
+legacy backup wrapper = 1
+replay version = 1
+Doctor report version = 1
+```
+
+v1.3 intentionally does not introduce:
+
+- schema 3;
+- backup wrapper 3;
+- replay version 2;
+- Doctor report version 2;
+- third locale;
+- a property-testing dependency;
+- package-registry signing/trusted publishing claims.
+
+Those are gated by real prerequisites in `ROADMAP.md`.
+
+---
+
+# F. Property-testing decision
+
+The v1.2 roadmap required evaluation rather than automatic dependency addition.
+
+The evaluation remains: **do not add a property-testing library now**.
+
+Current failure classes are covered by focused deterministic suites for:
+
+- replay malformed input;
+- schema migration fixtures;
+- state normalization;
+- state byte bounds;
+- backup wrapper/version/schema checks;
+- digest tampering;
+- backup importability preflight;
+- Doctor JSON/exit behavior;
+- repair refusal/backups;
+- deterministic gameplay/TUI behavior.
+
+A future property-testing dependency should be introduced only when a reproducible defect demonstrates materially better coverage than these existing deterministic suites.
+
+---
+
+# G. v1.3 commit map before this handoff commit
+
+The branch contains **56 focused commits** before this `what_changed.md` update.
+
+## G.1 Backup inspection / Doctor routing / bounded I/O
+
+- `ded193ca` — `feat: add read-only backup inspection metadata`
+- `e4a10706` — `test: cover backup inspection metadata and validation`
+- `8b02b419` — `refactor: make doctor command reusable by main cli`
+- `85768e09` — `test: cover doctor data directory and backup verification modes`
+- `67feaad5` — `feat: expose doctor through primary guessnova command`
+- `08f52025` — `refactor: route module execution through top-level dispatcher`
+- `777ba85c` — `build: route installed guessnova command through dispatcher`
+- `ad97c00d` — `test: cover primary doctor command routing`
+- `8a8e765e` — `refactor: validate backup envelopes from one bounded read`
+- `625d342d` — `fix: derive backup inspection from validated single read`
+- `ad965066` — `test: cover single-read validated export metadata`
+- `662b5259` — `feat: bound local state reads and writes`
+- `34d3dbd1` — `refactor: reuse bounded state reader in diagnostics and repair`
+- `5d2e09c4` — `test: cover bounded local state io`
+- `e1f99af4` — `test: cover oversized state diagnostics and repair refusal`
+- `479f9b7d` — `feat: define stable doctor report and exit code protocol`
+- `db7abca3` — `feat: version doctor machine reports and exit semantics`
+- `f0282228` — `fix: keep doctor discovery visible on argparse help exits`
+- `9805bc9f` — `test: align entrypoint help and doctor protocol assertions`
+- `8948d29b` — `test: cover doctor report protocol and version output`
+- `49bfff56` — `fix: verify backup payload importability before reporting valid`
+- `aa4dfec2` — `test: prove backup inspection validates import normalization`
+- `e15744e0` — `test: extend smoke flow through doctor and backup inspection`
+- `0fc7e01e` — `ci: verify primary and standalone doctor routes`
+- `7311cbe2` — `ci: verify doctor routes in release package matrix`
+
+## G.2 Canonical Doctor docs / capacity / metadata / roadmap
+
+- `10a811ef` — `docs: add canonical doctor diagnostics and recovery guide`
+- `941119c2` — `docs: add concise doctor command reference`
+- `7dff31de` — `fix: keep backup capacity above accepted state capacity`
+- `cba18907` — `test: enforce repair backup capacity invariant`
+- `1c364c8f` — `build: verify doctor entrypoints in make checks`
+- `fb42de44` — `docs: add GuessNova 1.3.0 changelog`
+- `c12b746a` — `build: bump package metadata to 1.3.0`
+- `8c37fc83` — `build: expose GuessNova 1.3.0 runtime version`
+- `7a298080` — `docs: update citation metadata for 1.3.0`
+- `8764dbca` — `docs: complete v1.3 operator reliability roadmap`
+- `c2c0a5b4` — `docs: update README for GuessNova 1.3.0`
+- `dcf7a520` — `docs: document v1.3 bounded state and backup preflight format`
+
+## G.3 Repository-wide v1.3 documentation synchronization
+
+- `0f4c8d0a` — `docs: align concise data format with v1.3 recovery boundaries`
+- `c7042fa9` — `docs: expand testing guide for v1.3 recovery workflows`
+- `afee3095` — `docs: align concise testing reference with v1.3`
+- `01d0c6f6` — `docs: update release process for v1.3 doctor preflight`
+- `a952d64e` — `docs: align concise releasing reference with v1.3`
+- `dce03993` — `docs: update setup for primary doctor command`
+- `d0e1af02` — `docs: update troubleshooting for v1.3 doctor preflight`
+- `fa5c711e` — `docs: document v1.3 dispatcher and bounded recovery architecture`
+- `d4d22ff9` — `docs: align development workflow with v1.3 recovery contracts`
+- `4d99d28b` — `docs: clarify v1.3 doctor and backup preflight privacy`
+- `69dc55e8` — `docs: harden v1.3 security guidance for bounded recovery`
+- `c20fd3d0` — `docs: update support workflow for doctor and backup preflight`
+- `45b29a0c` — `docs: align contribution rules with v1.3 doctor contracts`
+- `5719ba15` — `docs: strengthen v1.3 recovery pull request checklist`
+- `c659c24f` — `docs: document bounded persistence performance budgets`
+
+## G.4 Final static-audit cleanup/regressions/repository operations
+
+- `76fbb699` — `style: simplify bounded backup read path`
+- `4bc618b8` — `test: cover doctor rejection of unimportable backup`
+- `5014195c` — `test: cover doctor version through primary command route`
+- `441d139b` — `docs: align repository operations with v1.3 reliability gates`
+
+This continuity-file commit is intentionally a separate final handoff commit after those 56 commits.
+
+---
+
+# H. Verification status before final PR-head workflow observation
+
+## H.1 Static audit completed
+
+The v1.3 changed reliability path was reviewed for:
+
+- top-level dispatch compatibility;
+- argparse help `SystemExit` behavior;
+- primary/standalone Doctor parity;
+- JSON repair non-interactivity;
+- Doctor report version/kinds/exit codes;
+- explicit data-dir targeting;
+- backup verification option conflicts;
+- backup envelope version validation;
+- wrapper/payload schema agreement;
+- legacy wrapper support;
+- one bounded backup read;
+- current state importability preflight;
+- checksum-valid but unnormalizable payload rejection;
+- bounded state reads;
+- bounded state writes;
+- atomic write behavior;
+- repair refusal;
+- backup-before-write ordering;
+- state/backup capacity invariant;
+- release metadata consistency;
+- cross-platform built-wheel entry-point verification;
+- integrity/authenticity wording;
+- privacy-safe support guidance.
+
+Concrete defects found during this audit and fixed before the final handoff include:
+
+1. backup inspection originally validated a backup and then re-read it for metadata; it now derives inspection from one `ValidatedExport` read;
+2. backup preflight originally proved envelope integrity but not current state normalizability; it now rejects checksum-valid but unimportable state;
+3. root help Doctor discovery originally sat after an argparse path that exits with `SystemExit`; it now executes through `finally`;
+4. accepted state capacity was larger than the original backup capacity, which could make mandatory repair backup impossible for some accepted states; backup capacity is now greater and the invariant is tested;
+5. a redundant `except OSError: raise` around the bounded backup reader was removed during the final style audit.
+
+## H.2 Local execution limitation
+
+The earlier execution/container environment could not resolve GitHub for a full repository clone, so no local full-suite pass is invented.
+
+Repository code includes the tests/workflows needed for exact-head verification. GitHub Actions remains the authoritative hosted verification source.
+
+## H.3 Exact final-head rule
+
+After this `what_changed.md` commit creates the new PR head, only workflow status for that exact head counts as final-head verification.
+
+Queued or pending is **not** success. A cancelled run caused by a newer superseding commit is not automatically a test failure. An older successful run is not a pass for the newest head.
+
+If a current-head workflow produces a concrete failure, inspect its exact failed job/step/log, fix the smallest reproducible issue, add/adjust regression coverage, and create another focused commit.
+
+---
+
+# I. Remaining manual release-candidate gates
+
+These are not missing source code and must not be fabricated by automation:
+
+- manual accessibility evidence on the exact release candidate;
+- real terminal screenshots/demo capture from the exact signed-off release build;
+- release-media provenance;
+- final human review of English/Hindi visible rendering where required.
+
+Do not tag `v1.3.0` solely because the implementation merges. Tag only a selected exact release commit after required automated checks and manual release gates are satisfied.
+
+Published tags should not be rewritten. A post-release defect should become a new patch version.
+
+---
+
+# J. Project identity
+
+- Project: **GuessNova**
+- Repository: `https://github.com/sanskarIN/guessnova`
+- GitHub profile: `https://github.com/sanskarIN`
+- License: MIT
+- Credit: **Made by the Sanskar**
+- Business: `sanskarin@outlook.in`
+- Business: `sanskarin.business@gmail.com`
+- Support: `supportramsandesh@gmail.com`
+- Buy Me a Coffee: `https://buymeacoffee.com/sanskarIN`
+
+GuessNova remains usable without donation, account creation, telemetry, analytics, cloud sync, or required runtime network access.
+
+---
+
+# Preserved complete v1.2 merged checkpoint
+
+The full previous continuity record is retained below without removing its implementation history.
+
 # GuessNova — Complete Work Continuity and v1.2 Merged Reliability Checkpoint
 
 ## Current milestone
@@ -34,7 +764,7 @@ Previous milestones retained in repository history:
 - v1.1 post-merge checkpoint: `9a511102efc3b11bdf68a8ce7f7ca1692874df40`
 - v1.2 planning commit on main: `b3026ee1d964ad40a305179ca8ebef299c5de506`
 
-This file is the current continuation source of truth after the v1.2 merge.
+This file was the continuation source of truth after the v1.2 merge.
 
 ---
 
@@ -481,7 +1211,7 @@ Unreadable JSON, non-object state, and future schemas are not force-overwritten.
 
 ## 7.1 Entry points
 
-Current package scripts:
+Current v1.2 package scripts:
 
 ```text
 guessnova
@@ -489,7 +1219,7 @@ guessnova-tui
 guessnova-doctor
 ```
 
-`guessnova-doctor` maps to `guessnova.doctor_cli:main`.
+`guessnova-doctor` maps to `guessnova.doctor_cli:main` in v1.2.
 
 ## 7.2 Diagnostic modes
 
@@ -515,7 +1245,7 @@ Interactive repair requires typing `REPAIR` unless `--yes` is supplied.
 
 A static audit found and fixed a real pre-merge defect: `--json --repair` without `--yes` could have printed an interactive prompt before JSON.
 
-Final behavior:
+Final v1.2 behavior:
 
 - normal JSON output is one parseable JSON document;
 - JSON repair with `--yes` is one parseable JSON document;
@@ -615,7 +1345,7 @@ Existing tests continue covering engine outcomes, timed behavior, hints, achieve
 
 # 9. End-to-end smoke coverage
 
-`scripts/smoke_test.py` now checks the previous application flow plus v1.2 reliability behavior:
+`scripts/smoke_test.py` checks the application flow plus v1.2 reliability behavior:
 
 1. deterministic winning game;
 2. progression;
@@ -674,7 +1404,7 @@ Runs on:
 - Windows latest;
 - macOS latest.
 
-Each platform:
+Each v1.2 platform job:
 
 1. builds source/wheel distributions;
 2. validates with Twine;
@@ -703,7 +1433,7 @@ Retained:
 
 # 11. Package and source-distribution details
 
-Release metadata is synchronized at:
+v1.2 release metadata is synchronized at:
 
 ```text
 1.2.0
@@ -718,7 +1448,7 @@ Files checked by `scripts/verify_release_metadata.py` include:
 
 `src/guessnova/py.typed` remains present.
 
-`MANIFEST.in` now includes migration fixtures:
+`MANIFEST.in` includes migration fixtures:
 
 ```text
 recursive-include tests/fixtures *.json
@@ -838,7 +1568,9 @@ PR merge commit:
 
 - `f17594b16426513850c9a1c118d8fcec225702cd` — `feat: ship GuessNova 1.2 reliability and recovery`
 
-This current file update is a **post-merge main-branch checkpoint** and is intentionally separate from the 47 preserved PR commits.
+The v1.2 post-merge main checkpoint is:
+
+- `86ac8754ad07daaa40706c20a8e61fb4024a95e0` — `docs: close GuessNova 1.2 merged reliability checkpoint`
 
 ---
 
@@ -983,7 +1715,7 @@ This file **does not claim queued/pending workflows passed**.
 
 The GitHub-hosted runner queue continued the same saturation pattern observed during the v1.0/v1.1 continuation work. Superseded runs can be cancelled by concurrency and must not be interpreted as test failures.
 
-If these exact-head runs later execute and expose a reproducible failure, the next continuation should inspect the exact failed job/step/log and apply the smallest focused regression fix with a new commit.
+If these exact-head runs later execute and expose a reproducible failure, a continuation should inspect the exact failed job/step/log and apply the smallest focused regression fix with a new commit.
 
 ---
 
@@ -1004,7 +1736,7 @@ Repository-side verification added for v1.2 remains:
 - expanded smoke test;
 - static file-by-file audit.
 
-Static audit before merge specifically reviewed:
+Static audit before the v1.2 merge specifically reviewed:
 
 - migration ordering;
 - v1.1 trash preservation;
@@ -1028,23 +1760,18 @@ The audit found the JSON-repair prompt defect and fixed it with dedicated regres
 
 # 18. Release-candidate gates that remain intentionally manual
 
-Do not create/move a `v1.2.0` release tag solely because the implementation is merged.
+The v1.2 record stated that a `v1.2.0` release tag should not be created solely because implementation merged.
 
-Before a release tag:
+Before any selected release tag:
 
 1. observe successful required automated checks for the selected exact release commit;
-2. verify package/runtime/citation/changelog values remain `1.2.0`;
-3. verify schema-1 fixtures migrate to schema 2;
-4. verify backup-v2 round trip;
-5. deliberately modify a backup and confirm integrity rejection;
-6. verify legacy wrapper-v1 import;
-7. verify `guessnova-doctor --json`;
-8. verify backup-before-write repair in isolated state;
-9. complete manual accessibility evidence;
-10. verify English and Hindi visible paths;
-11. capture desired real screenshots/demo only from the exact signed-off build;
-12. record media provenance;
-13. tag the immutable selected commit as `v1.2.0` only after release gates are satisfied.
+2. verify package/runtime/citation/changelog values for that release;
+3. verify required migrations/backups;
+4. complete manual accessibility evidence;
+5. verify English and Hindi visible paths;
+6. capture desired real screenshots/demo only from the exact signed-off build;
+7. record media provenance;
+8. create an immutable tag only after release gates are satisfied.
 
 Published tags should not be rewritten. A post-release defect should become a new patch release.
 
@@ -1052,17 +1779,19 @@ Published tags should not be rewritten. A post-release defect should become a ne
 
 # 19. Future work deliberately outside v1.2
 
-Not v1.2 source blockers:
+The v1.2 record deliberately deferred:
 
 - real signed-off screenshot/demo capture;
 - manual release-candidate accessibility observations;
-- optional `guessnova doctor` subcommand in addition to the packaged `guessnova-doctor` entry point if future CLI consolidation justifies it;
+- `guessnova doctor` primary subcommand consolidation;
 - schema-3 migration/fixtures only when schema 3 is real;
 - third reviewed locale only with complete/native-quality review;
 - artifact signing/provenance enhancements if a real registry publishing workflow is introduced;
 - property-testing library only after a reproducible coverage gap demonstrates value;
 - richer multi-screen Textual profile/history/settings UI;
 - optional TypeScript/Web/PWA edition only if privacy, offline behavior, deterministic rules, replay compatibility, and keyboard accessibility remain intact.
+
+v1.3 completes the primary `guessnova doctor` consolidation and retains the remaining items as prerequisite-gated/manual future work rather than fabricating them.
 
 ---
 

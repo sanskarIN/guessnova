@@ -6,9 +6,11 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from guessnova.backup_inspection import inspect_backup
 from guessnova.constants import SCHEMA_VERSION
 from guessnova.diagnostics import diagnose, repair
 from guessnova.engine import GuessGame, ReverseGuesser
+from guessnova.entrypoint import main as app_main
 from guessnova.history import filter_history
 from guessnova.i18n import catalog_missing_keys, text
 from guessnova.import_export import EXPORT_VERSION, export_state, import_state
@@ -35,6 +37,7 @@ def main() -> int:
         assert len(filter_history(profile.history, result="win")) == 1
         assert storage.load_raw()["schema_version"] == SCHEMA_VERSION == 2
         assert diagnose(storage).healthy
+        assert app_main(["doctor", "--compact", "--data-dir", str(storage.data_dir)]) == 0
 
         replay = encode_replay(summary)
         assert decode_replay(replay) == summary
@@ -58,6 +61,11 @@ def main() -> int:
         assert wrapped["version"] == EXPORT_VERSION == 2
         assert wrapped["schema_version"] == SCHEMA_VERSION
         assert len(wrapped["integrity"]["payload_sha256"]) == 64
+        inspection = inspect_backup(backup)
+        assert inspection.integrity_protected
+        assert inspection.normalized_schema_version == SCHEMA_VERSION
+        assert inspection.profile_count == 1
+        assert app_main(["doctor", "--compact", "--verify-backup", str(backup)]) == 0
         imported = import_state(backup)
         assert imported["active_profile"] == "Smoke Nova"
 
@@ -80,6 +88,9 @@ def main() -> int:
         assert not before.healthy and before.source_schema_version == 1
         repair_backup = repair(legacy, backup_dir=root / "repair-backups")
         assert repair_backup is not None and repair_backup.exists()
+        repair_inspection = inspect_backup(repair_backup)
+        assert repair_inspection.schema_version == 1
+        assert repair_inspection.normalized_schema_version == SCHEMA_VERSION
         assert import_state(repair_backup)["schema_version"] == 1
         assert legacy.load_raw()["schema_version"] == SCHEMA_VERSION
         assert diagnose(legacy).healthy

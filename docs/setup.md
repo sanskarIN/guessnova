@@ -17,6 +17,7 @@ py -3.13 -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -e .
 guessnova play
+guessnova doctor --help
 guessnova-doctor --help
 ```
 
@@ -30,6 +31,7 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e .
 guessnova play
+guessnova doctor --help
 guessnova-doctor --help
 ```
 
@@ -38,28 +40,48 @@ guessnova-doctor --help
 A normal installation provides:
 
 ```text
-guessnova          Rich command-line game and local data commands
+guessnova          primary CLI dispatcher for gameplay/data commands and `doctor`
 guessnova-tui      Textual app-like terminal interface
-guessnova-doctor   local state diagnostics and safe normalization repair
+guessnova-doctor   standalone Doctor compatibility entry point
 ```
 
-## Local doctor
+`python -m guessnova` uses the same top-level dispatcher as the installed `guessnova` script.
 
-Inspect state without modifying it:
+## Local Doctor
+
+Recommended state inspection:
 
 ```bash
-guessnova-doctor
+guessnova doctor
+guessnova doctor --json
+guessnova doctor --data-dir ./alternate-data
+```
+
+Compatibility route:
+
+```bash
 guessnova-doctor --json
 ```
 
-Repairable migration/normalization changes can be applied only after confirmation. GuessNova creates a pre-repair backup first:
+Verify a backup before import without writing state:
 
 ```bash
-guessnova-doctor --repair
-guessnova-doctor --repair --yes --backup-dir ./repair-backups
+guessnova doctor --verify-backup ./guessnova-backup.json
+guessnova doctor --json --verify-backup ./guessnova-backup.json
 ```
 
-Do not run `--repair` merely because a state file is old; a normal GuessNova load/save also performs supported forward migration. The doctor is mainly for visibility, scripting, and explicit normalization/repair workflows.
+Repairable migration/normalization changes can be applied only after confirmation. GuessNova creates a pre-repair backup before a required rewrite:
+
+```bash
+guessnova doctor --repair
+guessnova doctor --repair --yes --backup-dir ./repair-backups
+```
+
+Do not run `--repair` merely because a state file is old; a normal GuessNova load/save also performs supported forward migration. Doctor is mainly for visibility, scripting, backup preflight, support diagnosis, and explicit normalization/repair workflows.
+
+Doctor refuses oversized, undecodable, non-object, future-schema, or otherwise unnormalizable state. `--json --repair` requires `--yes` so machine output cannot be mixed with an interactive prompt.
+
+See [`doctor.md`](doctor.md) for the full recovery contract.
 
 ## Textual interface
 
@@ -75,13 +97,19 @@ ruff check .
 ruff format --check .
 mypy src/guessnova
 pytest
+python -m compileall -q src tests scripts
 python scripts/verify_release_metadata.py
 python scripts/smoke_test.py
+python -m guessnova --help
+python -m guessnova doctor --help
+python -m guessnova.doctor_cli --help
 ```
 
 ## Optional environment variables
 
-- `GUESSNOVA_HOME` — override the local application-data directory.
+- `GUESSNOVA_HOME` — override the default local application-data directory for normal commands.
 - `GUESSNOVA_SEED` — default deterministic seed for CLI challenges.
+
+Doctor `--data-dir PATH` can inspect a specific GuessNova data directory without modifying `GUESSNOVA_HOME`.
 
 GuessNova does not require API keys, accounts, telemetry credentials, or runtime network access.

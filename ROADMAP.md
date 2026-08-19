@@ -41,12 +41,31 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 - [x] Add Hindi as a complete second shipped locale and enforce catalog-key completeness in tests.
 - [x] Reassess property-testing dependency need: no new dependency is added because current defects are covered by deterministic migration, malformed-input, replay, backup-integrity, and state-normalization regression suites; revisit only when a reproducible gap demonstrates material benefit.
 
-## v1.3 — Future maintainability candidates
+## v1.3 — Operator UX and recovery hardening
 
-- [ ] Consider exposing doctor diagnostics as a `guessnova doctor` subcommand in addition to the packaged `guessnova-doctor` entry point if CLI surface consolidation is worth the compatibility cost.
-- [ ] Add additional state-migration fixtures only when schema 3 has a concrete design.
-- [ ] Consider a third reviewed locale only with native-quality review and the same catalog-completeness requirements.
-- [ ] Consider artifact signing/provenance enhancements if a real package registry publishing workflow is introduced.
+- [x] Expose Doctor as `guessnova doctor` while retaining `guessnova-doctor` for compatibility.
+- [x] Route `python -m guessnova` and the installed `guessnova` script through the same top-level dispatcher.
+- [x] Keep Doctor discoverable from root help without duplicating the established game CLI parser.
+- [x] Add explicit `--data-dir` diagnostics for support/recovery workflows.
+- [x] Add read-only `--verify-backup` inspection without importing or rewriting state.
+- [x] Prove a backup payload can pass current state normalization before reporting it as valid.
+- [x] Report legacy wrapper status, integrity protection, source schema, normalized schema, normalization changes, and normalized state counts.
+- [x] Add Doctor machine report protocol version `1` and stable exit code semantics.
+- [x] Add Doctor version reporting tied to the package runtime version.
+- [x] Bound local state reads and writes before JSON processing/persistence.
+- [x] Validate backup envelopes from one bounded read rather than validating and reporting from separate reads.
+- [x] Keep backup capacity larger than accepted state capacity so mandatory pre-repair backup can represent any accepted state.
+- [x] Extend smoke, Makefile, normal CI, and tagged-release package matrices through both Doctor entry paths.
+- [x] Add canonical and concise Doctor/recovery documentation.
+
+## Gated future candidates
+
+These are intentionally not release checkboxes until their prerequisite exists:
+
+- Schema 3 migration fixtures — only after a concrete schema-3 design introduces a real compatibility boundary.
+- A third shipped locale — only after native-quality review and the same catalog-completeness guarantees as English/Hindi.
+- Artifact signing/provenance beyond current GitHub release traceability — only if a real package-registry publishing workflow is introduced.
+- Property-based testing dependency — only if a reproducible defect demonstrates a material coverage gap not addressed by deterministic regression suites.
 
 ## Release-media gate
 

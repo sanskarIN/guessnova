@@ -6,16 +6,30 @@ import hashlib
 import hmac
 import json
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from .constants import SCHEMA_VERSION
 
-MAX_EXPORT_BYTES = 2_000_000
+MAX_EXPORT_BYTES = 6_000_000
 EXPORT_FORMAT = "guessnova-export"
 EXPORT_VERSION = 2
 LEGACY_EXPORT_VERSION = 1
 INTEGRITY_ALGORITHM = "sha256"
+
+
+@dataclass(frozen=True, slots=True)
+class ValidatedExport:
+    """A validated backup envelope and its single-read payload."""
+
+    path: Path
+    size_bytes: int
+    version: int
+    schema_version: int
+    integrity_protected: bool
+    integrity_algorithm: str | None
+    payload: dict[str, object]
 
 
 def _payload_digest(payload: dict[str, object]) -> str:
@@ -103,17 +117,25 @@ def _validate_integrity(wrapped: dict[str, object], payload: dict[str, object]) 
         raise ValueError("export integrity check failed")
 
 
-def import_state(source: Path) -> dict[str, object]:
-    source = source.expanduser()
-    if source.stat().st_size > MAX_EXPORT_BYTES:
+def _read_bounded_json(source: Path) -> tuple[dict[str, object], int]:
+    with source.open("rb") as handle:
+        raw = handle.read(MAX_EXPORT_BYTES + 1)
+    if len(raw) > MAX_EXPORT_BYTES:
         raise ValueError("export file is too large")
     try:
-        wrapped = json.loads(source.read_text(encoding="utf-8"))
+        text = raw.decode("utf-8")
+        wrapped = json.loads(text)
     except (UnicodeDecodeError, ValueError) as exc:
         raise ValueError("export contains invalid JSON") from exc
     if not isinstance(wrapped, dict) or wrapped.get("format") != EXPORT_FORMAT:
         raise ValueError("not a GuessNova export")
+    return wrapped, len(raw)
 
+
+def load_validated_export(source: Path) -> ValidatedExport:
+    """Read and validate one backup envelope without importing or rewriting state."""
+    source = source.expanduser()
+    wrapped, size_bytes = _read_bounded_json(source)
     version = _validate_version(wrapped.get("version"))
     payload = wrapped.get("payload")
     if not isinstance(payload, dict):
@@ -121,13 +143,33 @@ def import_state(source: Path) -> dict[str, object]:
 
     if version == LEGACY_EXPORT_VERSION:
         # GuessNova <=1.1 coupled wrapper version to schema version. Keep those
-        # backups readable; Storage.save_raw performs the forward migration.
-        _payload_schema_version(payload)
-        return payload
+        # backups readable; Storage.save_raw performs any required migration.
+        schema_version = _payload_schema_version(payload)
+        return ValidatedExport(
+            path=source,
+            size_bytes=size_bytes,
+            version=version,
+            schema_version=schema_version,
+            integrity_protected=False,
+            integrity_algorithm=None,
+            payload=payload,
+        )
 
     wrapper_schema = _validate_schema_version(wrapped.get("schema_version"))
     payload_schema = _payload_schema_version(payload)
     if wrapper_schema != payload_schema:
         raise ValueError("export schema metadata does not match payload")
     _validate_integrity(wrapped, payload)
-    return payload
+    return ValidatedExport(
+        path=source,
+        size_bytes=size_bytes,
+        version=version,
+        schema_version=payload_schema,
+        integrity_protected=True,
+        integrity_algorithm=INTEGRITY_ALGORITHM,
+        payload=payload,
+    )
+
+
+def import_state(source: Path) -> dict[str, object]:
+    return load_validated_export(source).payload

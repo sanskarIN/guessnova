@@ -2,6 +2,47 @@
 
 All notable GuessNova changes are recorded here. The project follows Semantic Versioning where practical.
 
+## [1.3.0] - 2026-08-19
+
+### Added
+
+- `guessnova doctor` as the primary diagnostics/recovery route while preserving the standalone `guessnova-doctor` entry point.
+- Read-only backup verification with structural metadata, legacy-wrapper visibility, current normalization preview, and proof that the payload can actually be imported by current state normalization.
+- Explicit `--data-dir` targeting for diagnostics without modifying `GUESSNOVA_HOME`.
+- Stable Doctor JSON protocol version `1` with `state`, `backup`, and `error` document kinds.
+- Stable Doctor exit semantics: `0` success/healthy/valid, `1` cancelled repair, and `2` attention/validation failure.
+- Doctor `--version` output aligned to the package runtime version.
+- Bounded local-state reads and writes via `MAX_STATE_BYTES`.
+- Single-read, bounded backup validation metadata via `ValidatedExport`.
+- Canonical and concise Doctor documentation.
+- End-to-end smoke coverage for the primary doctor route, backup verification, legacy repair backup inspection, and current-schema normalization.
+
+### Changed
+
+- Package/runtime/citation version advanced to `1.3.0`.
+- Installed `guessnova` now routes through a compatibility-preserving top-level dispatcher while existing gameplay commands remain handled by the established Rich CLI.
+- `python -m guessnova` uses the same dispatcher as the installed `guessnova` executable.
+- Backup verification now validates both the envelope and the embedded state payload's ability to pass current normalization before reporting it as valid.
+- Backup/state file readers consume only the configured maximum plus one byte before oversized input is rejected.
+- Backup maximum size increased above the accepted state maximum so every accepted repairable state can fit inside its mandatory pre-repair backup envelope.
+- `make check`, normal CI, and tagged-release package matrices verify both Doctor entry paths.
+
+### Security, privacy, and reliability
+
+- Backup inspection no longer validates one read and reports metadata from a second read, removing that time-of-check/time-of-use inconsistency.
+- State diagnostics and repair now reuse the same bounded state reader as normal storage.
+- Checksum-valid but structurally unimportable backups are rejected by Doctor before an import is attempted.
+- Repair continues to create a successful backup before any required normalization write.
+- Doctor remains local-only and does not upload reports, state, or backup content.
+- Backup SHA-256 continues to be described as integrity detection, not authentication, signing, encryption, or proof of origin.
+
+### Compatibility
+
+- Local state schema remains `2`; v1.3 does not invent schema 3.
+- Backup wrapper remains version `2` and legacy wrapper-v1 import/inspection support is retained.
+- Replay version remains `1`; gameplay and replay semantics are unchanged.
+- The standalone `guessnova-doctor` command remains supported alongside `guessnova doctor`.
+
 ## [1.2.0] - 2026-08-19
 
 ### Added
