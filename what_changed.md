@@ -2,75 +2,295 @@
 
 ## Current milestone
 
-GuessNova `v1.5.0` is in active development on:
+GuessNova `v1.5.0` implementation is prepared on:
 
 - Repository: `https://github.com/sanskarIN/guessnova`
 - Branch: `release/v1.5.0-challenge-workspace-20260819`
 - Base `main`: `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`
-- Previous shipped source milestone: `v1.4.0`
+- Previous source milestone: `v1.4.0`
+- Prepared package/runtime/citation version: `1.5.0`
 - Python requirement: `>=3.13`
 - License: MIT
 - Required Git commit email: `sanskarin@outlook.in`
 
-The complete v1.4 implementation record remains preserved in Git history and in:
+The v1.4 implementation record remains preserved in Git history and continuity documentation. This file records the active v1.5 work rather than duplicating the previous milestone in full.
 
-- `docs/continuity/v1_4_pr_checkpoint.md`
-- `docs/continuity/v1_3_merged_checkpoint.md`
+## Milestone purpose
 
-## Why v1.5 exists
+The v1.4 workspace already had deterministic challenge construction helpers, but the mounted Play pane could not configure those challenges. v1.5 closes that concrete gap without changing the local state schema, backup wrapper, replay format, Doctor protocol, account model, or network behavior.
 
-The v1.4 workspace already has a tested `build_workspace_game(...)` helper that can construct deterministic configured challenges, but the mounted Play pane still starts only from the preconfigured in-memory game. The next concrete product gap is exposing that proven capability safely inside the Textual workspace.
+## Product implementation completed on this branch
 
-This milestone must not create a new persistence schema, backup wrapper, replay format, remote service, cloud account, or third locale merely to create activity.
+### Challenge configuration model
 
-## v1.5 planned product work
+`src/guessnova/tui_workspace.py` now provides an immutable `ChallengeConfiguration` and `parse_workspace_challenge(...)` boundary.
 
-1. Add a challenge configuration model suitable for presentation without Textual dependencies.
-2. Expose Classic, Timed, Streak, and Daily challenge selection in the mounted Play pane.
-3. Expose difficulty selection using the existing difficulty registry.
-4. Expose optional deterministic seed input for non-Daily challenges.
-5. Expose optional ISO date input for Daily challenges.
-6. Keep Reverse mode on its dedicated interaction path rather than pretending it is ordinary numeric guessing.
-7. Start a configured round only after validation succeeds.
-8. Preserve the current round when configuration validation fails.
-9. Make reset repeat the active configured challenge deterministically.
-10. Surface the active challenge identity/status without exposing hidden target values.
-11. Keep single-letter R/Q ownership restricted to the numeric GuessInput.
-12. Preserve profile ownership isolation, local-only storage, read-only Recovery safety, and launch-locale consistency.
-13. Add English and Hindi catalog coverage for every new user-facing string.
-14. Add helper, pilot/UI, localization, regression, and smoke coverage.
-15. Update TUI/workspace/accessibility/testing/release documentation.
-16. Bump package/runtime/citation/changelog metadata only after the feature is complete and audited.
+The configuration layer:
 
-## Verification reality at milestone start
+- accepts stable mode/difficulty identifiers;
+- rejects Reverse from ordinary numeric challenge setup;
+- validates difficulty through the shared `DIFFICULTIES` registry;
+- parses optional whole-number seeds for Classic/Timed/Streak;
+- parses Daily dates as ISO `YYYY-MM-DD`;
+- resolves a blank Daily date to the local current date;
+- prevents a Daily configuration from carrying a manual seed;
+- prevents non-Daily configurations from carrying a Daily date;
+- reconstructs deterministic seeded/Daily games without storing a hidden target.
 
-The exact v1.4 pull-request head `149fa6ff3dcfbb523386f732feb188a7503991d3` still reports these hosted runs as queued with no conclusion:
+`build_workspace_game(...)` delegates through this validated model instead of duplicating construction rules.
 
-- CI `32224689793`
-- Security checks `32224689794`
-- CodeQL `32224689833`
+### Challenge presentation
 
-No pass or failure is claimed for those runs.
+New `src/guessnova/tui_challenge.py` provides localized target-free challenge identity helpers.
 
-The local execution environment still cannot resolve GitHub/package-index hosts, so local dependency-backed execution is not available from this environment. Static review and GitHub-hosted workflows remain the available verification paths unless that limitation changes.
+Identity can report:
+
+- mode;
+- difficulty;
+- deterministic seed;
+- resolved Daily date;
+- unseeded/random state.
+
+The hidden target is deliberately excluded from the challenge identity contract.
+
+### Challenge form
+
+New `src/guessnova/tui_challenge_widgets.py` provides the mounted Challenge Setup widget with:
+
+- Classic/Timed/Streak/Daily mode selection;
+- shared difficulty selection;
+- optional seed input;
+- Daily date input;
+- Start Challenge action;
+- localized help/status;
+- visible mode/difficulty context;
+- mode-aware field state.
+
+Daily disables seed and enables date. Classic/Timed/Streak enable seed and disable date. Reverse is not shown in this numeric setup.
+
+### Challenge-enabled Textual application
+
+New `src/guessnova/tui_challenge_app.py` subclasses the stable v1.4 workspace rather than rewriting it.
+
+The installed `guessnova-tui` entry point now routes to this challenge-enabled layer.
+
+A configured challenge start follows parse/build-before-mutate ordering:
+
+1. read form values;
+2. parse/validate configuration;
+3. construct the replacement game;
+4. only then replace the active round;
+5. normalize accepted seed/date fields;
+6. update range/attempt display;
+7. clear stale guess/feedback state;
+8. show target-free identity;
+9. return focus to Guess.
+
+Invalid configuration leaves the current `GuessGame`, target, attempts, and result-save state intact and focuses the relevant field.
+
+### Deterministic configured reset
+
+For a challenge created through the form:
+
+- seeded Classic/Timed/Streak reset from mode/difficulty/seed;
+- Daily resets from mode/difficulty/resolved date;
+- deterministic configuration therefore reproduces the same seeded target;
+- unseeded challenges retain normal random reset semantics.
+
+The validated configuration is the reset source rather than mutable widget text.
+
+### Keyboard/accessibility behavior
+
+The v1.4 fast-play interaction remains intact:
+
+- initial focus is Guess;
+- forward Tab remains Guess → Submit → Range Hint;
+- Challenge Setup is reachable backward from Guess;
+- successful challenge start returns focus to Guess;
+- invalid seed focuses Seed;
+- invalid Daily date focuses Date;
+- plain `Q/R` remain scoped to the numeric `GuessInput`;
+- challenge/profile/search/path fields receive ordinary characters;
+- global `Ctrl+Q`/`Ctrl+R` remain available.
+
+### Localization
+
+`src/guessnova/i18n.py` contains complete English and Hindi Challenge Setup strings for:
+
+- title;
+- mode/difficulty context;
+- seed/date placeholders;
+- Start action;
+- help;
+- active identity;
+- seed/date/random details;
+- localized validation wrapper.
+
+Hindi catalog completeness remains enforced against the English key set.
+
+### Persistence/privacy compatibility
+
+v1.5 Challenge Setup is in-memory application/presentation state.
+
+It does **not** add:
+
+- state schema 3;
+- backup wrapper 3;
+- replay format 2;
+- Doctor report 2;
+- cloud account state;
+- telemetry;
+- remote leaderboard;
+- application network calls.
+
+Completed rounds still persist through `GameService` and existing `Storage` behavior.
+
+## Automated coverage added
+
+New focused test files:
+
+- `tests/test_tui_challenge_configuration.py`
+- `tests/test_tui_challenge_i18n.py`
+- `tests/test_tui_challenge_presenter.py`
+- `tests/test_tui_challenge_widgets.py`
+- `tests/test_tui_challenge_mode_fields.py`
+- `tests/test_tui_challenge_app.py`
+- `tests/test_tui_challenge_safety.py`
+- `tests/test_tui_challenge_reset.py`
+- `tests/test_tui_challenge_game_status.py`
+- `tests/test_tui_challenge_initial_status.py`
+- `tests/test_tui_challenge_accessibility.py`
+
+Coverage includes:
+
+- configuration invariants;
+- seeded/Daily reconstruction;
+- malformed mode/difficulty/seed/date input;
+- Reverse separation;
+- English/Hindi challenge formatting/completeness;
+- target-free status;
+- widget defaults;
+- mode-aware field state;
+- seeded Timed startup;
+- Daily startup/normalization;
+- invalid-seed current-round preservation;
+- invalid-date current-round preservation;
+- deterministic configured reset;
+- initial challenge identity;
+- guess-first focus;
+- backward keyboard reachability;
+- ordinary `q`/`r` challenge-field input.
+
+`scripts/smoke_test.py` also exercises challenge parsing, deterministic reconstruction, and localized challenge presentation.
+
+## Build/CI/release updates
+
+- `pyproject.toml` routes `guessnova-tui` through `guessnova.tui_challenge_app:run`.
+- `Makefile` verifies both the stable workspace and shipped challenge app imports.
+- Normal CI built-wheel package checks import both Textual application layers on Linux/Windows/macOS.
+- Tagged-release package checks import both Textual application layers on Linux/Windows/macOS.
+- Package/runtime/citation metadata is prepared at `1.5.0`.
+- `CHANGELOG.md` includes the `1.5.0` release section.
+
+The release workflow has not been tagged or published from this branch. A tag must not be created until exact-head automated and manual release gates pass.
+
+## Documentation completed/updated
+
+Added:
+
+- `docs/tui_challenges.md`
+- `docs/completion_audit.md`
+- `docs/adr/0005-additive-textual-challenge-layer.md`
+
+Updated:
+
+- `README.md`
+- `CHANGELOG.md`
+- `ROADMAP.md`
+- `docs/TUI_WORKSPACE.md`
+- `docs/tui_workspace.md`
+- `docs/ARCHITECTURE.md`
+- `docs/architecture.md`
+- `docs/TESTING.md`
+- `docs/testing.md`
+- `docs/RELEASING.md`
+- `docs/release.md`
+- `docs/setup.md`
+- `docs/development.md`
+- `docs/troubleshooting.md`
+- `docs/localization.md`
+- `docs/accessibility.md`
+- `docs/accessibility_evidence_template.md`
+
+The documentation explicitly separates implementation completion from release evidence.
+
+## Branch change size at this checkpoint
+
+Immediately before this handoff update, GitHub compare reported:
+
+- branch status: ahead of `main`;
+- commits ahead: `52`;
+- commits behind: `0`;
+- changed files: `44`;
+
+This handoff update is one additional focused commit.
+
+The history intentionally uses many small Conventional Commits instead of one monolithic commit.
 
 ## Compatibility boundaries
 
-Retain unless a real requirement changes them:
+Current prepared v1.5 values:
 
-- package/runtime/citation version before v1.5 completion: `1.4.0`
+- package/runtime/citation version: `1.5.0`
 - state schema: `2`
 - backup wrapper: `2`
 - supported legacy backup wrapper: `1`
 - replay format: `1`
 - Doctor report protocol: `1`
 
-## Next exact tasks
+No compatibility identifier above should change merely to create activity.
 
-1. Add immutable challenge configuration/presentation helpers and focused tests.
-2. Add localized challenge configuration strings in both shipped locales.
-3. Wire challenge controls into the Textual Play pane.
-4. Add configured-round pilot tests, validation-preservation tests, shortcut tests, and daily/seed determinism tests.
-5. Extend smoke coverage.
-6. Audit docs, metadata, and workflows.
-7. Update this file with exact changed files, verification results, limitations, and recent commits.
+## Verification reality
+
+### Local execution environment
+
+The available continuation environment cannot resolve GitHub/package-index hosts for a normal local clone/dependency installation. Therefore this continuation does **not** claim a local Ruff, format, mypy, pytest, build, Twine, pip-audit, or dependency-backed smoke pass.
+
+Static review and committed deterministic regression coverage have been performed through the GitHub repository interface.
+
+### Hosted verification required next
+
+The branch must be opened as a pull request so current-head workflows run.
+
+Required evidence before release verification can be claimed:
+
+- current-head CI success;
+- current-head Security checks success;
+- current-head CodeQL success;
+- Linux built-wheel package success;
+- Windows built-wheel package success;
+- macOS built-wheel package success;
+- manual accessibility evidence on the exact release candidate using `docs/accessibility_evidence_template.md`;
+- real screenshots/demo only from the exact signed-off build if release media is published.
+
+A queued/configured workflow is not a pass.
+
+## Definition-of-done status
+
+See `docs/completion_audit.md` for the requirement-by-requirement audit.
+
+Implementation/repository capability is prepared. Remaining release blockers are evidence gates rather than invented feature work:
+
+1. run/fix exact-head PR workflows;
+2. complete manual v1.5 accessibility evidence;
+3. capture real release media only after sign-off if desired;
+4. tag/release only after all required gates are satisfied.
+
+## Next exact actions
+
+1. Open the v1.5 pull request against `main` without squashing the granular history.
+2. Inspect exact-head CI/Security/CodeQL conclusions.
+3. Fix every concrete failure with a focused commit plus regression where practical.
+4. Update this file with workflow run IDs/conclusions and any fixes.
+5. Merge only after required automated gates pass and no release-blocking code defect remains.
+6. Do not tag `v1.5.0` until manual accessibility evidence is also complete.
