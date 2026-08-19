@@ -9,7 +9,7 @@ from .engine import GuessGame
 from .i18n import text
 from .storage import Storage
 from .tui import GuessNovaApp as WorkspaceApp
-from .tui_challenge import challenge_status
+from .tui_challenge import challenge_status, game_status
 from .tui_challenge_widgets import ChallengeSetup
 from .tui_workspace import ChallengeConfiguration, parse_workspace_challenge
 
@@ -36,6 +36,7 @@ class GuessNovaApp(WorkspaceApp):
                 difficulty=self.game.difficulty_name,
                 seed=self.game.seed,
                 locale=self.locale,
+                status=game_status(self.game, locale=self.locale),
             ),
             before="#title",
         )
