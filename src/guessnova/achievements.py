@@ -21,7 +21,7 @@ def apply_summary(stats: PlayerStats, summary: GameSummary) -> set[str]:
         stats.current_streak += 1
         stats.best_streak = max(stats.best_streak, stats.current_streak)
         stats.total_guesses += summary.attempts
-        stats.xp += max(10, 120 - summary.attempts * 8)
+        stats.xp += max(10, 120 - summary.attempts * 8 - summary.hint_penalty)
     else:
         stats.current_streak = 0
         stats.xp += 2
