@@ -13,6 +13,30 @@ def test_messages_format_named_values() -> None:
     assert text("reverse.solved", locale="hi", attempts=7) == "7 अनुमानों में हल हो गया।"
 
 
+def test_tui_workspace_messages_format_in_both_locales() -> None:
+    values = {
+        "profile": "Nova",
+        "games": 10,
+        "wins": 6,
+        "win_rate": 0.6,
+        "xp": 250,
+        "streak": 2,
+        "best": 4,
+        "achievements": 3,
+    }
+    assert "Nova" in text("tui.profile.summary", **values)
+    assert "Nova" in text("tui.profile.summary", locale="hi", **values)
+
+    backup_values = {
+        "version": 2,
+        "source": 1,
+        "normalized": 2,
+        "integrity": "sha256",
+    }
+    assert "sha256" in text("tui.recovery.backup_valid", **backup_values)
+    assert "sha256" in text("tui.recovery.backup_valid", locale="hi", **backup_values)
+
+
 def test_hindi_catalog_has_every_english_key() -> None:
     assert catalog_missing_keys("hi") == set()
 
