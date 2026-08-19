@@ -2,8 +2,19 @@ from guessnova.achievements import apply_summary
 from guessnova.domain import GameMode, GameSummary, PlayerStats
 
 
-def summary(*, won: bool = True, attempts: int = 1, difficulty: str = "normal") -> GameSummary:
-    return GameSummary(GameMode.CLASSIC, difficulty, 42, won, attempts, 1.0, (42,))
+def summary(
+    *, won: bool = True, attempts: int = 1, difficulty: str = "normal", hint_penalty: int = 0
+) -> GameSummary:
+    return GameSummary(
+        GameMode.CLASSIC,
+        difficulty,
+        42,
+        won,
+        attempts,
+        1.0,
+        (42,),
+        hint_penalty=hint_penalty,
+    )
 
 
 def test_first_win_and_one_shot_unlock() -> None:
@@ -24,3 +35,15 @@ def test_expert_win_unlocks() -> None:
     stats = PlayerStats()
     apply_summary(stats, summary(difficulty="expert"))
     assert "expert_win" in stats.achievements
+
+
+def test_hint_penalty_reduces_winning_xp_without_dropping_below_floor() -> None:
+    without_hint = PlayerStats()
+    with_hint = PlayerStats()
+    apply_summary(without_hint, summary(attempts=2))
+    apply_summary(with_hint, summary(attempts=2, hint_penalty=20))
+    assert with_hint.xp == without_hint.xp - 20
+
+    floor = PlayerStats()
+    apply_summary(floor, summary(attempts=20, hint_penalty=999))
+    assert floor.xp == 10
