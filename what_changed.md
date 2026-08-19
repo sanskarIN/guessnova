@@ -25,7 +25,7 @@ The v1.4 workspace already had deterministic challenge construction helpers, but
 
 ### Challenge configuration model
 
-`src/guessnova/tui_workspace.py` now provides an immutable `ChallengeConfiguration` and `parse_workspace_challenge(...)` boundary.
+`src/guessnova/tui_workspace.py` provides an immutable `ChallengeConfiguration` and `parse_workspace_challenge(...)` boundary.
 
 The configuration layer:
 
@@ -43,7 +43,7 @@ The configuration layer:
 
 ### Challenge presentation
 
-New `src/guessnova/tui_challenge.py` provides localized target-free challenge identity helpers.
+`src/guessnova/tui_challenge.py` provides localized target-free challenge identity helpers.
 
 Identity can report:
 
@@ -57,7 +57,7 @@ The hidden target is deliberately excluded from the challenge identity contract.
 
 ### Challenge form
 
-New `src/guessnova/tui_challenge_widgets.py` provides the mounted Challenge Setup widget with:
+`src/guessnova/tui_challenge_widgets.py` provides the mounted Challenge Setup widget with:
 
 - Classic/Timed/Streak/Daily mode selection;
 - shared difficulty selection;
@@ -72,9 +72,9 @@ Daily disables seed and enables date. Classic/Timed/Streak enable seed and disab
 
 ### Challenge-enabled Textual application
 
-New `src/guessnova/tui_challenge_app.py` subclasses the stable v1.4 workspace rather than rewriting it.
+`src/guessnova/tui_challenge_app.py` subclasses the stable v1.4 workspace rather than rewriting it.
 
-The installed `guessnova-tui` entry point now routes to this challenge-enabled layer.
+The installed `guessnova-tui` entry point routes to this challenge-enabled layer.
 
 A configured challenge start follows parse/build-before-mutate ordering:
 
@@ -149,7 +149,7 @@ Completed rounds still persist through `GameService` and existing `Storage` beha
 
 ## Automated coverage added
 
-New focused challenge test files:
+Focused v1.5 challenge test files:
 
 - `tests/test_tui_challenge_configuration.py`
 - `tests/test_tui_challenge_i18n.py`
@@ -254,7 +254,7 @@ Integrated the checker into:
 - normal CI quality verification;
 - tagged-release verification.
 
-Documentation was updated in both concise and canonical testing references and in the definition-of-done audit.
+Documentation was updated in concise/canonical testing references, concise/canonical release references, and the definition-of-done audit.
 
 Focused documentation-integrity commits:
 
@@ -266,6 +266,29 @@ Focused documentation-integrity commits:
 - `8c61cf0` — `docs: document offline link verification`
 - `ce4c28f` — `docs: add canonical documentation link testing guide`
 - `a60b2f1` — `docs: mark documentation link gate implemented`
+
+### Documentation-checker hardening found during final continuation
+
+A final static audit of the new documentation checker found two concrete false-positive classes before release verification:
+
+1. Markdown footnote definitions such as `[^note]: explanatory text` matched the reference-link-definition expression and could incorrectly treat the first footnote word as a local target.
+2. Multi-backtick inline code spans and fence-like lines such as `````python`` inside an already-open fenced example could expose example links to the scanner even though Markdown still treats them as code.
+
+Both were fixed:
+
+- reference definitions now explicitly exclude footnote labels;
+- inline-code stripping supports one-or-more matching backtick delimiters;
+- fenced code closes only on a same-character fence of sufficient length with no info string/content after it;
+- a new regression verifies footnotes, double-backtick code spans, misleading fence-like lines inside code, and a real post-fence local link together.
+
+Focused hardening commits:
+
+- `ffaedb6` — `fix(tooling): avoid false documentation link matches`
+- `91ea2ad` — `test(tooling): cover Markdown false-positive regressions`
+- `e8278c7` — `docs: add documentation link gate to release checklist`
+- `9955a0a` — `docs: document release documentation integrity gate`
+
+The corrected parser behavior was also exercised in isolation against synthetic Markdown containing a footnote, double-backtick example, misleading fence-like line, and one real local link; only the real target remained. This is a targeted parser check, not a claim that the complete repository quality suite has run locally.
 
 The release workflow has not been tagged or published from this branch. A tag must not be created until exact-head automated and manual release gates pass.
 
@@ -309,18 +332,18 @@ The documentation explicitly separates implementation completion from release ev
 
 ## Pull request checkpoint
 
-PR #11 is open and mergeable at the GitHub repository level.
+PR #11 is open and mergeable at the GitHub repository level. It has no review comments or submitted reviews, and its base remains `main` at `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`.
 
 Immediately before this final handoff commit, PR #11 reported:
 
-- head: `a60b2f170aa11b00c10dee6ec639a5674fba2642`
-- commits: `79`
+- head: `9955a0af964fd035dcf225ad085b9782cb218931`
+- commits: `84`
 - changed files: `54`
-- additions: `3474`
-- deletions: `643`
+- additions: `3581`
+- deletions: `661`
 - base: `main` at `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`
 
-This handoff update becomes the 80th focused branch commit after the v1.4 base and is intended to be the **final branch mutation before hosted verification**. Do not edit documentation merely to record later workflow status because doing so would create a new unverified head.
+This handoff update becomes the 85th focused branch commit after the v1.4 base and is intended to be the **final branch mutation before hosted verification**. Treat the resulting handoff SHA as the exact release-candidate head. Do not edit documentation merely to record later workflow status because doing so would create a new unverified head.
 
 The history intentionally uses many small Conventional Commits instead of one monolithic or squashed feature commit.
 
@@ -341,9 +364,9 @@ No compatibility identifier above should change merely to create activity.
 
 ### Local execution environment
 
-The available continuation environment cannot resolve GitHub/package-index hosts for a normal local clone/dependency installation. Therefore this continuation does **not** claim a local Ruff, format, mypy, pytest, build, Twine, pip-audit, dependency-backed smoke, or full-repository documentation-link pass.
+The available continuation environment cannot resolve GitHub/package-index hosts for a normal local clone/dependency installation. Therefore this continuation does **not** claim a local Ruff, format, mypy, full pytest, build, Twine, pip-audit, dependency-backed smoke, or full-repository documentation-link pass.
 
-Static review and committed deterministic regression coverage have been performed through the GitHub repository interface. Dependency/toolchain edits were checked against the repository's current Dependabot-generated patches before being applied. The documentation-link checker is itself dependency-free, but the complete repository checkout required to execute it is not locally available in this continuation environment.
+Static review and committed deterministic regression coverage have been performed through the GitHub repository interface. Dependency/toolchain edits were checked against the repository's current Dependabot-generated patches before being applied. The documentation checker received targeted isolated parser execution against synthetic Markdown after its final false-positive fixes, but the complete repository checkout required for full execution is not locally available in this continuation environment.
 
 ### Hosted verification
 
@@ -353,9 +376,9 @@ PR #11 triggers three exact-head workflow families:
 - Security checks;
 - CodeQL.
 
-The intermediate head `985e5e80ef9f75dffa5250a46f7e20ef9dc0023d` successfully triggered new CI/Security/CodeQL runs, all queued when inspected. That evidence is now superseded because the documentation integrity gate required additional source/workflow/documentation commits.
+Earlier candidate heads, including `985e5e80ef9f75dffa5250a46f7e20ef9dc0023d` and `5be82d4b2b38f084c22f7972bcda9fd6909bc25c`, successfully triggered CI/Security/CodeQL workflow families but remained queued/pending when inspected. Those runs are now superseded evidence because final documentation-integrity hardening required additional commits.
 
-Only workflow conclusions attached to the final handoff SHA count as automated release-candidate evidence. A queued, pending, absent, cancelled, or superseded run is not a pass.
+Only workflow conclusions attached to the resulting handoff SHA count as automated release-candidate evidence. A queued, pending, absent, cancelled, or superseded run is not a pass.
 
 Required evidence before release verification can be claimed:
 
@@ -372,7 +395,7 @@ Required evidence before release verification can be claimed:
 
 See `docs/completion_audit.md` for the requirement-by-requirement audit.
 
-The final repository audit now includes the previously missing documentation-link gate. No open ordinary GitHub issues were found, and repository code search found no matches for `TODO`, `FIXME`, `XXX`, `NotImplemented`, or placeholder `pass` in the searchable repository state. No additional concrete product defect was identified through the available repository interface after closing the dependency/toolchain and documentation-integrity gaps.
+The final repository audit now includes the previously missing documentation-link gate and its Markdown false-positive hardening. No open ordinary GitHub issues were found, PR #11 has no review comments/reviews, and repository code search previously found no matches for `TODO`, `FIXME`, `XXX`, `NotImplemented`, or placeholder `pass` in the searchable repository state. No additional concrete product defect was identified through the available repository interface after closing the dependency/toolchain, documentation-integrity, and checker-correctness gaps.
 
 Remaining release blockers are evidence gates rather than invented feature work:
 
@@ -385,8 +408,8 @@ Optional candidates listed in `docs/completion_audit.md` remain optional and are
 
 ## Next exact actions
 
-1. Freeze this branch head.
-2. Inspect final-head CI/Security/CodeQL conclusions.
+1. Freeze the resulting branch head from this handoff commit.
+2. Inspect exact-head CI/Security/CodeQL conclusions.
 3. If the documentation-link gate finds an existing broken local target, fix the affected documentation with a focused commit and rerun exact-head verification.
 4. If any other concrete workflow failure occurs, inspect the failed step, fix it with a focused commit plus regression where practical, then repeat exact-head verification.
 5. Merge PR #11 with the normal merge method only after required automated gates pass and no release-blocking code defect remains. Preserve granular history; do not squash.
