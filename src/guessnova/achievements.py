@@ -3,14 +3,26 @@
 from __future__ import annotations
 
 from .domain import GameSummary, PlayerStats
+from .i18n import DEFAULT_LOCALE, text
 
-ACHIEVEMENT_LABELS = {
-    "first_win": "First Light",
-    "one_shot": "Nova Instinct",
-    "streak_5": "On Fire",
-    "veteran_25": "Seasoned Explorer",
-    "expert_win": "Event Horizon",
+ACHIEVEMENT_MESSAGE_KEYS = {
+    "first_win": "achievement.first_win",
+    "one_shot": "achievement.one_shot",
+    "streak_5": "achievement.streak_5",
+    "veteran_25": "achievement.veteran_25",
+    "expert_win": "achievement.expert_win",
 }
+
+# English compatibility mapping retained for callers that consume the original constant.
+ACHIEVEMENT_LABELS = {
+    key: text(message_key, locale=DEFAULT_LOCALE)
+    for key, message_key in ACHIEVEMENT_MESSAGE_KEYS.items()
+}
+
+
+def achievement_label(key: str, *, locale: str = DEFAULT_LOCALE) -> str:
+    message_key = ACHIEVEMENT_MESSAGE_KEYS.get(key)
+    return text(message_key, locale=locale) if message_key is not None else key
 
 
 def apply_summary(stats: PlayerStats, summary: GameSummary) -> set[str]:
