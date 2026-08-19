@@ -1,20 +1,23 @@
 # Accessibility
 
+This is the concise accessibility reference. The canonical detailed guidance is [`accessibility.md`](accessibility.md).
+
 GuessNova is designed to remain usable without relying on color, animation, sound, or pointer input.
 
-## Principles
+## Current guarantees and practices
 
-- Every essential status has text, not color alone.
-- CLI commands and TUI flows are keyboard-first.
-- No sound is required; the default sound setting is off.
-- Settings include reduced-motion and high-contrast preferences for interface evolution.
-- Numeric range, attempts remaining, outcomes, and hints are written in plain language.
-- Error messages explain the valid action rather than only reporting failure.
+- Essential status is expressed with text, not color alone.
+- CLI and Textual flows are keyboard-first.
+- `--plain` disables color and `--compact` provides reduced presentation where supported.
+- Saved high-contrast and reduced-motion preferences are available.
+- The TUI initially focuses the guess input and keeps a predictable input → submit → hint focus path.
+- Priority `R` reset and `Q` quit bindings remain available while the numeric input has focus.
+- Timed interaction is opt-in through timed mode.
+- Profile deletion normally requires typed-name confirmation and remains recoverable through bounded local trash.
+- English and Hindi are offline presentation locales; stable machine identifiers remain unchanged.
 
-## Terminal recommendations
+## Release evidence
 
-Use a terminal with a readable monospace font and sufficient contrast. The CLI remains understandable if ANSI colors are disabled by the environment.
+Automated Textual pilot tests cover focus, submission, hint, reset, and persistence behavior. Every release candidate must also complete [`accessibility_evidence_template.md`](accessibility_evidence_template.md) manually for terminal scaling, contrast, keyboard use, plain/compact output, and locale rendering.
 
-## Contributions
-
-Accessibility regressions are treated as defects. Changes to UI copy or interaction should be tested without depending solely on visual styling.
+Real screenshots/demo recordings must be captured from the exact signed-off build according to [`media/README.md`](media/README.md); mock media is not acceptable release evidence.
