@@ -1,18 +1,21 @@
-# GuessNova — Complete Work Continuity through v1.3 Operator Recovery
+# GuessNova — Complete Work Continuity and v1.3 Merged Operator Recovery Checkpoint
 
 ## Current milestone
 
-**GuessNova `v1.3.0` operator recovery and backup-preflight implementation is complete on its release branch and is under pull request review.**
+**GuessNova `v1.3.0` operator recovery and backup-preflight implementation is merged into `main`.**
 
-Current v1.3 work:
+The v1.3 work was developed and merged through:
 
 - Branch: `release/v1.3.0-cli-recovery-20260819`
 - Pull request: `#9` — `feat: ship GuessNova 1.3 operator recovery and backup preflight`
 - Base branch: `main`
 - Base commit: `86ac8754ad07daaa40706c20a8e61fb4024a95e0`
-- PR head immediately before this continuity-file commit: `441d139b1a623da1b42c006ac4f47d94a66ff626`
-- Granular v1.3 commits before this handoff commit: **56**
-- This `what_changed.md` update is intentionally the next focused commit and becomes the final PR verification head unless a concrete audit/CI defect requires another fix.
+- Final PR head: `5c4992d1c6aee1d4d07bad1e23a9e17eca64993e`
+- Merge commit: `e57cac65b20e6351200ac3ab25a3cf2a07ed9308`
+- Merge method: **normal merge**, not squash
+- v1.3 PR commits preserved: **57 granular commits**
+- Merge author identity: `Sanskar <sanskarin@outlook.in>`
+- GitHub merge verification: valid signed merge commit
 - Package version: `1.3.0`
 - Runtime version: `1.3.0`
 - Citation version: `1.3.0`
@@ -23,11 +26,12 @@ Current v1.3 work:
 - Doctor machine report protocol: `1`
 - Python requirement: `>=3.13`
 - License: MIT
-- Requested Git commit email: `sanskarin@outlook.in`
+
+The v1.3 merge intentionally preserved the complete feature/fix/test/docs/build/CI history instead of collapsing it into one squash commit.
+
+At merge time, the exact final PR head still had hosted workflows queued/pending rather than completed; the exact run IDs and job states are recorded in section H. No queued or pending check is described as passed.
 
 The v1.3 scope is intentionally operator/recovery hardening. It does **not** invent schema 3, replay version 2, backup wrapper 3, a third locale, package signing, or an additional testing dependency without a concrete prerequisite.
-
-The pull request must be merged with a **normal merge**, not squash, so the granular feature/fix/test/docs/build/CI history is retained unless a later explicit instruction changes that requirement.
 
 ---
 
@@ -563,9 +567,9 @@ A future property-testing dependency should be introduced only when a reproducib
 
 ---
 
-# G. v1.3 commit map before this handoff commit
+# G. v1.3 commit map
 
-The branch contains **56 focused commits** before this `what_changed.md` update.
+PR #9 preserved **57 granular commits** before its normal merge.
 
 ## G.1 Backup inspection / Doctor routing / bounded I/O
 
@@ -634,12 +638,17 @@ The branch contains **56 focused commits** before this `what_changed.md` update.
 - `4bc618b8` — `test: cover doctor rejection of unimportable backup`
 - `5014195c` — `test: cover doctor version through primary command route`
 - `441d139b` — `docs: align repository operations with v1.3 reliability gates`
+- `5c4992d1` — `docs: record complete GuessNova 1.3 operator recovery checkpoint`
 
-This continuity-file commit is intentionally a separate final handoff commit after those 56 commits.
+PR merge commit:
+
+- `e57cac65b20e6351200ac3ab25a3cf2a07ed9308` — `feat: ship GuessNova 1.3 operator recovery and backup preflight`
+
+This post-merge `what_changed.md` commit is intentionally separate from the 57 preserved PR commits.
 
 ---
 
-# H. Verification status before final PR-head workflow observation
+# H. v1.3 verification state at merge
 
 ## H.1 Static audit completed
 
@@ -669,7 +678,7 @@ The v1.3 changed reliability path was reviewed for:
 - integrity/authenticity wording;
 - privacy-safe support guidance.
 
-Concrete defects found during this audit and fixed before the final handoff include:
+Concrete defects found during this audit and fixed before merge include:
 
 1. backup inspection originally validated a backup and then re-read it for metadata; it now derives inspection from one `ValidatedExport` read;
 2. backup preflight originally proved envelope integrity but not current state normalizability; it now rejects checksum-valid but unimportable state;
@@ -683,13 +692,32 @@ The earlier execution/container environment could not resolve GitHub for a full 
 
 Repository code includes the tests/workflows needed for exact-head verification. GitHub Actions remains the authoritative hosted verification source.
 
-## H.3 Exact final-head rule
+## H.3 Exact final-head workflow state at merge
 
-After this `what_changed.md` commit creates the new PR head, only workflow status for that exact head counts as final-head verification.
+Final PR head:
 
-Queued or pending is **not** success. A cancelled run caused by a newer superseding commit is not automatically a test failure. An older successful run is not a pass for the newest head.
+```text
+5c4992d1c6aee1d4d07bad1e23a9e17eca64993e
+```
 
-If a current-head workflow produces a concrete failure, inspect its exact failed job/step/log, fix the smallest reproducible issue, add/adjust regression coverage, and create another focused commit.
+Immediately before the normal merge, GitHub reported:
+
+- CI run `32220190660`: `pending`, no conclusion.
+- Security checks run `32220190659`: `queued`, no conclusion.
+- CodeQL run `32220190666`: `queued`, no conclusion.
+
+CI job-level state for run `32220190660`:
+
+- `test (3.13)`: queued, no conclusion;
+- `package (ubuntu-latest)`: queued, no conclusion;
+- `package (windows-latest)`: queued, no conclusion;
+- `package (macos-latest)`: queued, no conclusion.
+
+No exact-final-head workflow had produced a failure conclusion at merge time. This file **does not claim that queued or pending workflows passed**.
+
+The normal merge was completed because the user explicitly requested complete repository work in the current interaction, GitHub reported the PR mergeable, the v1.3 changed paths had focused regression coverage and static audit, and no actionable final-head failure existed to repair while hosted runners remained queued.
+
+If any exact-head workflow later executes and exposes a reproducible failure, the next continuation should inspect the exact failed job/step/log, apply the smallest focused fix with regression coverage, and preserve the same granular commit discipline.
 
 ---
 
@@ -702,7 +730,7 @@ These are not missing source code and must not be fabricated by automation:
 - release-media provenance;
 - final human review of English/Hindi visible rendering where required.
 
-Do not tag `v1.3.0` solely because the implementation merges. Tag only a selected exact release commit after required automated checks and manual release gates are satisfied.
+Do not tag `v1.3.0` solely because the implementation is merged. Tag only a selected exact release commit after required automated checks and manual release gates are satisfied.
 
 Published tags should not be rewritten. A post-release defect should become a new patch version.
 
