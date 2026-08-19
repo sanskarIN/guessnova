@@ -33,7 +33,7 @@ dev = [
 ]
 
 [project.scripts]
-guessnova = "guessnova.cli:main"
+guessnova = "guessnova.entrypoint:main"
 guessnova-tui = "guessnova.tui:run"
 guessnova-doctor = "guessnova.doctor_cli:main"
 
