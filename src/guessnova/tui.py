@@ -32,6 +32,7 @@ from .profile import Profile
 from .service import GameService
 from .storage import Storage
 from .themes import THEMES
+from .tui_widgets import GuessInput
 from .tui_workspace import (
     profile_summary,
     save_workspace_settings,
@@ -75,8 +76,6 @@ class GuessNovaApp(App[None]):
     Screen.high-contrast Switch:focus { outline: solid yellow; }
     """
     BINDINGS = [
-        Binding("q", "quit", text("tui.binding.quit")),
-        Binding("r", "reset", text("tui.binding.new_game")),
         Binding("ctrl+q", "quit", text("tui.binding.quit"), show=False, priority=True),
         Binding("ctrl+r", "reset", text("tui.binding.new_game"), show=False, priority=True),
         Binding("ctrl+1", "show_tab('play')", text("tui.tab.play"), show=False),
@@ -132,7 +131,7 @@ class GuessNovaApp(App[None]):
                         id="title",
                     )
                     yield Label(self._range_text(), id="range")
-                    yield Input(
+                    yield GuessInput(
                         placeholder=text("tui.input_placeholder", locale=self.locale),
                         type="integer",
                         id="guess",
@@ -946,6 +945,11 @@ class GuessNovaApp(App[None]):
             self._populate_leaderboard_table()
         elif event.input.id == "recovery-backup-path":
             self._verify_backup()
+
+    def on_guess_input_new_round_requested(
+        self, _event: GuessInput.NewRoundRequested
+    ) -> None:
+        self.action_reset()
 
     def _focus_tab(self, tab_id: str) -> None:
         if tab_id == "play":
