@@ -1,5 +1,5 @@
 from guessnova.domain import GameMode, GuessOutcome
-from guessnova.engine import GuessGame
+from guessnova.engine import HINT_PENALTY_XP, GuessGame
 
 
 def test_correct_guess_wins() -> None:
@@ -58,3 +58,22 @@ def test_timed_timeout() -> None:
     feedback = game.guess(42)
     assert feedback.outcome == GuessOutcome.TIMEOUT
     assert not game.won
+
+
+def test_explicit_range_hint_tracks_penalty_without_consuming_attempt() -> None:
+    game = GuessGame(difficulty_name="easy", target=42)
+    hint = game.request_hint()
+    assert "between" in hint
+    assert game.attempts_used == 0
+    assert game.hints_used == 1
+    assert game.hint_penalty == HINT_PENALTY_XP
+    summary = game.summary()
+    assert summary.hints_used == 1
+    assert summary.hint_penalty == HINT_PENALTY_XP
+
+
+def test_explicit_hint_penalty_can_be_disabled() -> None:
+    game = GuessGame(difficulty_name="easy", target=42)
+    game.request_hint(penalize=False)
+    assert game.hints_used == 1
+    assert game.hint_penalty == 0
