@@ -67,8 +67,10 @@ jobs:
         run: python -m pip install dist/*.whl
       - name: Verify game CLI entry point
         run: python -m guessnova --help
-      - name: Verify Textual workspace import
+      - name: Verify stable Textual workspace import
         run: python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+      - name: Verify shipped challenge Textual app import
+        run: python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
       - name: Verify primary doctor route
         run: guessnova doctor --help
       - name: Verify standalone doctor entry point
