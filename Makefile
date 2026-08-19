@@ -1,4 +1,4 @@
-.PHONY: install test lint format type compile metadata smoke check build
+.PHONY: install test lint format type compile metadata smoke entrypoints check build
 
 install:
 	python -m pip install -e '.[dev]'
@@ -24,7 +24,12 @@ metadata:
 smoke:
 	python scripts/smoke_test.py
 
-check: lint format type test compile metadata smoke
+entrypoints:
+	python -m guessnova --help
+	python -m guessnova doctor --help
+	python -m guessnova.doctor_cli --help
+
+check: lint format type test compile metadata smoke entrypoints
 
 build:
 	python -m build
