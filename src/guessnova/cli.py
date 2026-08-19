@@ -11,6 +11,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from rich.theme import Theme as RichTheme
 
 from . import __version__
 from .achievements import ACHIEVEMENT_LABELS
@@ -29,15 +30,42 @@ from .import_export import export_state, import_state
 from .leaderboard import LeaderboardEntry
 from .replay import decode_replay, encode_replay
 from .service import GameService
+from .settings import Settings
 from .storage import Storage
-from .themes import THEMES
+from .themes import THEMES, get_theme
 
 console = Console()
 
 
-def _configure_console(*, plain: bool) -> None:
+def _configure_console(*, plain: bool, settings: Settings | None = None) -> None:
     global console
-    console = Console(no_color=plain, color_system=None if plain else "auto")
+    active = settings or Settings()
+    palette = get_theme("high-contrast" if active.high_contrast else active.theme)
+    rich_theme = RichTheme(
+        {
+            "accent": palette["accent"],
+            "success": f"bold {palette['success']}",
+            "warning": palette["warning"],
+            "error": f"bold {palette['error']}",
+            "info": palette["info"],
+            "hint": f"dim {palette['hint']}",
+        }
+    )
+    console = Console(
+        no_color=plain,
+        color_system=None if plain else "auto",
+        theme=rich_theme,
+    )
+
+
+def _presentation_settings(args: argparse.Namespace) -> Settings:
+    command = getattr(args, "command", None)
+    if command not in {"play", "stats", "history", "leaderboard", "settings", "about"}:
+        return Settings()
+    try:
+        return Storage().load_profile(getattr(args, "profile", None)).settings
+    except (OSError, ValueError):
+        return Settings()
 
 
 def _deterministic_seed(value: int | None) -> int | None:
@@ -49,19 +77,19 @@ def _deterministic_seed(value: int | None) -> int | None:
 
 def _render_feedback(game: GuessGame, outcome: GuessOutcome, hint: str | None) -> None:
     if outcome == GuessOutcome.CORRECT:
-        console.print("[bold green]Correct! A new star is born.[/bold green]")
+        console.print("[success]Correct! A new star is born.[/success]")
     elif outcome == GuessOutcome.TOO_LOW:
-        console.print("[cyan]Too low.[/cyan]")
+        console.print("[info]Too low.[/info]")
     elif outcome == GuessOutcome.TOO_HIGH:
-        console.print("[magenta]Too high.[/magenta]")
+        console.print("[accent]Too high.[/accent]")
     elif outcome == GuessOutcome.OUT_OF_RANGE:
-        console.print("[yellow]That number is outside this challenge range.[/yellow]")
+        console.print("[warning]That number is outside this challenge range.[/warning]")
     elif outcome == GuessOutcome.TIMEOUT:
-        console.print("[bold red]Time expired.[/bold red]")
+        console.print("[error]Time expired.[/error]")
     elif outcome == GuessOutcome.EXHAUSTED:
-        console.print("[bold red]No attempts remain.[/bold red]")
+        console.print("[error]No attempts remain.[/error]")
     if hint and not game.is_finished:
-        console.print(f"[dim]Hint: {hint}[/dim]")
+        console.print(f"[hint]Hint: {hint}[/hint]")
 
 
 def play(args: argparse.Namespace) -> int:
@@ -76,7 +104,10 @@ def play(args: argparse.Namespace) -> int:
         else GuessGame(args.difficulty, GameMode(args.mode), _deterministic_seed(args.seed))
     )
     diff = game.difficulty
-    heading = f"GuessNova · {args.mode.title()} · {args.difficulty.title()} · {diff.minimum}–{diff.maximum}"
+    heading = (
+        f"GuessNova · {args.mode.title()} · {args.difficulty.title()} · "
+        f"{diff.minimum}–{diff.maximum}"
+    )
     if args.compact:
         console.print(heading)
     else:
@@ -96,14 +127,14 @@ def play(args: argparse.Namespace) -> int:
             if command in {"h", "hint"}:
                 try:
                     console.print(
-                        f"[dim]{game.request_hint(penalize=args.hint_penalty)}[/dim]"
+                        f"[hint]{game.request_hint(penalize=args.hint_penalty)}[/hint]"
                     )
                 except RuntimeError as exc:
-                    console.print(f"[yellow]{exc}[/yellow]")
+                    console.print(f"[warning]{exc}[/warning]")
                 continue
             feedback = game.guess(int(raw))
         except ValueError:
-            console.print("[yellow]Enter a whole number, 'hint', or q to quit.[/yellow]")
+            console.print("[warning]Enter a whole number, 'hint', or q to quit.[/warning]")
             continue
         _render_feedback(game, feedback.outcome, feedback.hint if show_hints else None)
 
@@ -118,7 +149,7 @@ def play(args: argparse.Namespace) -> int:
     console.print(f"XP: {profile.stats.xp} · Win rate: {profile.stats.win_rate:.0%}")
     for achievement in sorted(unlocked):
         console.print(
-            f"[bold yellow]Achievement unlocked:[/bold yellow] "
+            f"[warning]Achievement unlocked:[/warning] "
             f"{ACHIEVEMENT_LABELS.get(achievement, achievement)}"
         )
     console.print(f"Replay: {encode_replay(summary)}")
@@ -135,9 +166,9 @@ def reverse(args: argparse.Namespace) -> int:
         try:
             engine.respond(response)
         except ValueError as exc:
-            console.print(f"[yellow]{exc}[/yellow]")
+            console.print(f"[warning]{exc}[/warning]")
             return 2
-    console.print(f"[bold green]Solved in {engine.attempts} guesses.[/bold green]")
+    console.print(f"[success]Solved in {engine.attempts} guesses.[/success]")
     return 0
 
 
@@ -264,6 +295,7 @@ def settings_cmd(args: argparse.Namespace) -> int:
             changed = True
     if changed:
         storage.save_profile(profile)
+    _configure_console(plain=args.plain, settings=profile.settings)
     values = profile.settings.to_dict()
     if args.compact:
         console.print(" · ".join(f"{key}={value}" for key, value in values.items()))
@@ -411,7 +443,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    _configure_console(plain=args.plain)
+    _configure_console(plain=args.plain, settings=_presentation_settings(args))
     if not hasattr(args, "func"):
         parser.print_help()
         console.print(f"\n{WATERMARK} · Support: {BMC_URL}")
