@@ -14,11 +14,11 @@
 
 > **Made by the Sanskar**
 
-**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, profiles, bounded session history, achievements, XP, statistics, a leaderboard, backup/restore, first-run onboarding, semantic themes, and both Rich CLI and Textual TUI interfaces.
+**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, recoverable profiles, rich session history, achievements, XP, statistics, a leaderboard, backup/restore, bilingual presentation, first-run onboarding, semantic themes, and both Rich CLI and Textual TUI interfaces.
 
 ## Demo
 
-Real release captures belong in `docs/media/`. Until then, the CLI flow looks like:
+Real release captures belong in `docs/media/` and must come from a signed-off build. Until then, the CLI flow looks like:
 
 ```text
 GuessNova · Classic · Normal · 1–100
@@ -39,14 +39,17 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - **Smart hints** — temperature, direction, and parity feedback after guesses.
 - **Explicit range hints** — type `hint` for a narrowed range clue, with optional XP penalty via `--hint-penalty` / `--no-hint-penalty`.
 - **Profiles** — local stats, average guesses, streaks, XP, settings, achievements, and bounded session history.
+- **Safe profile lifecycle** — list, create, activate, rename, delete, inspect recoverable trash, and restore profiles without permanent one-command deletion.
+- **Advanced history** — filter by mode, difficulty, result, date range, free-text search, and group by day/mode/difficulty/result.
 - **First-run onboarding** — concise keyboard/privacy/settings guidance with no sign-in or network requirement.
 - **Replay codes** — checksum-protected, strictly validated portable summaries for completed challenges.
-- **Local leaderboard** — ranked winning results stored on your device.
+- **Local leaderboard** — ranked winning results stored on your device; profile rename/delete/restore keeps related local data coherent.
 - **Import/export** — human-readable JSON backups with format/schema validation and state normalization.
 - **Deterministic test mode** — use `--seed` or `GUESSNOVA_SEED` for reproducibility.
 - **Accessible terminal modes** — `--plain` disables color and `--compact` prefers concise text over panels/tables.
+- **Keyboard-first TUI** — predictable focus order, Enter submission, range-hint control, reliable reset/quit bindings, and persisted completed rounds.
 - **Themes and contrast** — saved semantic Rich themes plus a dedicated high-contrast palette.
-- **Localization-ready** — English ships first through an externalized offline message catalog and persisted locale preference.
+- **English + Hindi** — complete offline `en` and `hi` message catalogs with English fallback and per-profile locale settings.
 - **Privacy-first** — no accounts, ads, analytics, telemetry, or application network calls.
 
 ## Supported platforms
@@ -55,13 +58,13 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - Current macOS releases with Python 3.13+
 - Modern Linux distributions with Python 3.13+
 
-A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain` remains available for reduced formatting.
+A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain` remains available for reduced formatting. CI builds, validates, installs, launches, and smoke-tests the package on Windows, macOS, and Linux runners.
 
 ## Tech stack
 
 - **Python 3.13+** for domain/application code.
 - **Rich** for accessible terminal presentation.
-- **Textual** for the app-like TUI.
+- **Textual** for the app-like TUI and deterministic pilot testing.
 - **JSON** for versioned local persistence, exports, and replay payloads.
 - **pytest / pytest-cov** for automated tests.
 - **Ruff**, **mypy**, **pip-audit**, **CodeQL**, and **GitHub Actions** for repository quality and security automation.
@@ -105,12 +108,47 @@ guessnova play --mode daily --day 2026-08-19
 guessnova play --seed 20260819 --no-save
 guessnova reverse
 guessnova stats
-guessnova history --limit 20
 guessnova leaderboard
+```
+
+### History
+
+```bash
+guessnova history --limit 20
+guessnova history --result win --difficulty hard
+guessnova history --since 2026-08-01 --until 2026-08-31
+guessnova history --search daily --group-by mode
+guessnova --plain --compact history --group-by result
+```
+
+### Profiles and undoable deletion
+
+```bash
+guessnova profiles list
+guessnova profiles create Nova
+guessnova profiles use Nova
+guessnova profiles rename Nova Explorer
+guessnova profiles delete Explorer
+guessnova profiles trash
+guessnova profiles restore Explorer
+```
+
+Profile deletion normally asks you to type the profile name before moving it to recoverable local trash. `--yes` is available for intentional scripted deletion. Recoverable trash is bounded to the most recent 20 deleted profiles.
+
+### Settings and localization
+
+```bash
 guessnova settings
-guessnova settings --theme mono --locale en --reduced-motion --no-smart-hints
+guessnova settings --theme mono --reduced-motion --no-smart-hints
 guessnova settings --high-contrast
+guessnova settings --locale en
+guessnova settings --locale hi
 guessnova --plain --compact about
+```
+
+### Backup and TUI
+
+```bash
 guessnova export ./guessnova-backup.json
 guessnova import ./guessnova-backup.json
 guessnova-tui
@@ -124,7 +162,7 @@ GUESSNOVA_SEED=20260819 guessnova play --no-save
 
 ## Data, privacy, and security
 
-GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use versioned JSON and atomic replacement. Export/import state is normalized before persistence, while replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use. The runtime needs no account, API key, telemetry endpoint, or network connection.
+GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use versioned JSON and atomic replacement. Export/import state is normalized before persistence, recoverable profile trash is bounded, and replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use. The runtime needs no account, API key, telemetry endpoint, or network connection.
 
 Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), and [`docs/data_format.md`](docs/data_format.md).
 
@@ -141,7 +179,7 @@ python scripts/smoke_test.py
 python -m build
 ```
 
-The repository CI runs linting, formatting, strict typing, tests, coverage reporting, bytecode compilation, smoke testing, package build/Twine validation, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries also have deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
+The repository CI runs linting, formatting, strict typing, tests, Textual pilot coverage, coverage reporting, bytecode compilation, smoke testing, cross-platform package build/install/Twine validation, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries also have deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
 
 ## Architecture
 
@@ -156,7 +194,7 @@ Rich CLI / Textual TUI
 (engine)   (storage/replay/export)
 ```
 
-The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. Presentation messages are resolved through an English-first catalog while serialized identifiers remain stable. See [`docs/architecture.md`](docs/architecture.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
+The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. Presentation messages resolve through offline English/Hindi catalogs while serialized identifiers remain stable. See [`docs/architecture.md`](docs/architecture.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
 
 ## Build and release
 
@@ -166,7 +204,9 @@ python -m build
 python -m twine check dist/*
 ```
 
-Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until the full verification suite succeeds. See [`docs/release.md`](docs/release.md) and [`CHANGELOG.md`](CHANGELOG.md).
+Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until the full verification suite succeeds. Release candidates additionally require documented manual accessibility evidence. Real screenshot/demo media must be captured from the exact signed-off build rather than fabricated by automation.
+
+See [`docs/release.md`](docs/release.md), [`docs/accessibility_evidence_template.md`](docs/accessibility_evidence_template.md), [`docs/media/README.md`](docs/media/README.md), and [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Documentation
 
@@ -177,10 +217,12 @@ Semantic tags are handled by a quality-gated GitHub release workflow. The tag mu
 - [Data format](docs/data_format.md)
 - [Localization](docs/localization.md)
 - [Accessibility](docs/accessibility.md)
+- [Accessibility evidence template](docs/accessibility_evidence_template.md)
 - [Testing](docs/testing.md)
 - [Performance](docs/performance.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Release process](docs/release.md)
+- [Release media](docs/media/README.md)
 - [GitHub repository operations](docs/github_repository.md)
 - [Architecture decisions](docs/adr/)
 - [Branding](docs/BRANDING.md)
