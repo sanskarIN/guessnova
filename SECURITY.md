@@ -31,6 +31,7 @@ Please do not publish a sensitive vulnerability in a public issue. Send a concis
 - TUI profile deletion requires exact selected-name confirmation and moves data to bounded recoverable trash rather than immediate permanent deletion.
 - TUI active-profile changes reset unfinished gameplay so a partially played result cannot be silently persisted under another profile identity.
 - TUI workspace helpers reuse validated `Storage`, `Settings`, `HistoryEntry`, `LeaderboardEntry`, diagnostics, and backup-inspection boundaries instead of creating parallel parsing/persistence rules.
+- Play-only single-letter reset/quit commands are scoped to the numeric guess widget; other workspace text inputs keep ordinary character semantics.
 - Path boundary helpers for future file operations.
 - Bounded numeric and sanitized profile input.
 - Integrity checks for replay codes.
@@ -49,11 +50,11 @@ Keeping repair in Doctor prevents the interactive dashboard from bypassing confi
 
 A future TUI repair feature would require a separate security/design review proving that those guarantees remain explicit and testable.
 
-## Text input and global shortcuts
+## Text input and shortcut scope
 
-The expanded workspace includes profile names, searches, dates, player filters, and backup paths. Plain `Q`/`R` are therefore non-priority application bindings so focused text widgets can consume normal characters. Global `Ctrl+Q`/`Ctrl+R` remain available.
+The expanded workspace includes profile names, searches, dates, player filters, and backup paths. Plain `Q`/`R` therefore belong only to the focused numeric `GuessInput` in Play. They are not application-global bindings, so ordinary workspace text fields can consume normal `q`/`r` characters.
 
-This prevents a normal typed character from unexpectedly triggering a global data/session action in a text field.
+Global `Ctrl+Q`/`Ctrl+R` remain available from every pane. This separation prevents a normal typed character in a text field from unexpectedly triggering a session action while preserving the original Play reset/quit shortcuts.
 
 ## Integrity is not authentication
 
