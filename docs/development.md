@@ -21,6 +21,7 @@ python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
 python -m guessnova.doctor_cli --help
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
 `make check` runs the core quality sequence plus entry-point checks on systems with Make available.
@@ -38,6 +39,7 @@ After installing a built wheel, verify:
 
 ```bash
 guessnova --help
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 guessnova doctor --help
 guessnova-doctor --help
 guessnova-doctor --version
@@ -47,6 +49,9 @@ guessnova-doctor --version
 
 - Keep `engine.py` and domain rules independent of terminal rendering, diagnostics, backup envelopes, command dispatch, and filesystem I/O.
 - Keep `entrypoint.py` as routing only; do not duplicate gameplay or recovery business logic there.
+- Keep reusable Textual-independent workspace data/configuration logic in `tui_workspace.py` when widget/focus knowledge is unnecessary.
+- Keep small reusable widget-specific keyboard responsibilities in focused widgets such as `GuessInput` instead of making single-letter commands global across unrelated text fields.
+- Keep `tui.py` responsible for composition, focus, events, and orchestration over existing application/local-adapter APIs rather than introducing parallel persistence rules.
 - Use deterministic seeds, explicit targets, dates, committed migration fixtures, or injected clocks in automated tests.
 - Keep state-schema, backup-wrapper, replay, and Doctor-report versions as separate compatibility domains.
 - Introduce a new state schema only for a real canonical format boundary and add representative fixtures from the prior supported schema.
@@ -64,8 +69,46 @@ guessnova-doctor --version
 - Add regression tests for confirmed bugs.
 - Do not commit credentials, private endpoints, real player data, local state, exports, repair backups, Doctor reports containing private profile names, caches, virtual environments, or build outputs.
 - Keep changes accessible in keyboard-only flows and avoid relying only on color for status.
-- Preserve `--plain` and `--compact` output paths when adding presentation features.
+- Preserve `--plain` and `--compact` output paths when adding Rich presentation features.
 - Add new UI colors through semantic theme roles rather than hard-coded meaning-bearing colors.
+
+## Textual workspace workflow
+
+The v1.4 workspace deliberately separates responsibilities:
+
+```text
+tui.py            widget composition, focus, events, pane refresh/orchestration
+tui_widgets.py    focused reusable widget behavior (for example Play-only R/Q)
+tui_workspace.py  Textual-independent queries/configuration/persistence helpers
+```
+
+When changing the workspace:
+
+1. decide whether the change requires Textual widget knowledge;
+2. if not, prefer a helper in `tui_workspace.py` and cover it with ordinary pytest tests;
+3. if the change is a reusable widget-level interaction, keep it in a focused widget class rather than broad app-global handlers;
+4. keep app/pane orchestration in `tui.py`;
+5. add or update a focused Textual pilot suite for focus/keyboard/mounted-widget behavior;
+6. use `Storage(tmp_path)` and deterministic/injected `GuessGame` objects in tests;
+7. preserve the six-pane direct shortcuts and useful first focus in each pane;
+8. preserve Play-local plain `R`/`Q` plus global `Ctrl+R`/`Ctrl+Q` without stealing ordinary characters from other text fields;
+9. preserve exactly-once completed-round persistence through `GameService`;
+10. reset unfinished gameplay before active-profile ownership changes;
+11. keep profile deletion exact-name-confirmed and recoverable;
+12. keep History/Leaderboard based on existing validated local data;
+13. keep Settings based on the existing settings/profile model;
+14. keep one mounted TUI linguistically consistent unless full atomic relocalization is implemented;
+15. keep Recovery diagnostics/backup verification read-only unless a separately reviewed design preserves Doctor safety guarantees;
+16. update both English and Hindi catalogs for normal presentation copy;
+17. update accessibility/release evidence when focus/interaction changes.
+
+Current focused pilot suites intentionally split concerns rather than one giant test:
+
+- `tests/test_tui.py` — Play focus, submission, hint, persistence, Play-local reset/quit;
+- `tests/test_tui_workspace_app.py` — pane navigation, text-input shortcut isolation, profile lifecycle;
+- `tests/test_tui_workspace_data.py` — History, Settings, Recovery;
+- `tests/test_tui_workspace_leaderboard.py` — Leaderboard filtering;
+- `tests/test_tui_workspace_accessibility.py` — profile-round isolation, launch-locale stability, high contrast.
 
 ## State migration workflow
 
@@ -104,7 +147,7 @@ Changes in `import_export.py` or `backup_inspection.py` must be reviewed for:
 - atomic export output;
 - clear integrity-vs-authenticity wording.
 
-A checksum-valid envelope is not sufficient for Doctor to call a backup valid if the embedded state cannot pass current normalization.
+A checksum-valid envelope is not sufficient for Doctor or TUI Recovery to call a backup valid if the embedded state cannot pass current normalization.
 
 ## Doctor and repair workflow
 
@@ -124,7 +167,7 @@ Changes in `diagnostics.py`, `doctor_cli.py`, `doctor_protocol.py`, `entrypoint.
 
 ## Repository workflow
 
-CI, CodeQL, and Security checks run for pull requests. Superseded runs are cancelled so the newest commit is the verification target. The package matrix builds/installs on Ubuntu, Windows, and macOS and verifies the game CLI, primary Doctor route, standalone Doctor entry point, Doctor version output, and smoke flow.
+CI, CodeQL, and Security checks run for pull requests. Superseded runs are cancelled so the newest commit is the verification target. The package matrix builds/installs on Ubuntu, Windows, and macOS and verifies the game CLI, Textual workspace import, primary Doctor route, standalone Doctor entry point, Doctor version output, and smoke flow.
 
 Repository-level branch protection, labels, Discussions, milestones, and release guidance are documented in [`github_repository.md`](github_repository.md). Documentation does not imply branch protection is enabled unless repository metadata confirms it.
 
