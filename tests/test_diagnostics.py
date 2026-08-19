@@ -54,6 +54,33 @@ def test_diagnose_invalid_json_is_not_repairable(tmp_path: Path) -> None:
         repair(storage)
 
 
+def test_diagnose_future_schema_is_not_repairable(tmp_path: Path) -> None:
+    storage = Storage(tmp_path)
+    storage.data_dir.mkdir(parents=True, exist_ok=True)
+    storage.path.write_text(
+        json.dumps({"schema_version": SCHEMA_VERSION + 1, "profiles": {}}),
+        encoding="utf-8",
+    )
+    report = diagnose(storage)
+    assert report.readable is False
+    assert report.healthy is False
+    assert report.source_schema_version == SCHEMA_VERSION + 1
+    assert any("newer" in issue for issue in report.issues)
+    with pytest.raises(ValueError, match="not safely repairable"):
+        repair(storage)
+
+
+def test_diagnose_non_object_state_is_not_repairable(tmp_path: Path) -> None:
+    storage = Storage(tmp_path)
+    storage.data_dir.mkdir(parents=True, exist_ok=True)
+    storage.path.write_text("[]", encoding="utf-8")
+    report = diagnose(storage)
+    assert report.readable is False
+    assert any("root" in issue for issue in report.issues)
+    with pytest.raises(ValueError, match="not safely repairable"):
+        repair(storage)
+
+
 def test_repair_creates_integrity_protected_backup_before_rewrite(tmp_path: Path) -> None:
     storage = Storage(tmp_path / "data")
     storage.data_dir.mkdir(parents=True, exist_ok=True)
