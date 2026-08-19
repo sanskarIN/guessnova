@@ -8,6 +8,7 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 
 - Full six-pane Textual workspace: Play, Profiles, History, Leaderboard, Settings, and read-only Recovery.
 - Direct keyboard pane navigation with `Ctrl+1` through `Ctrl+6`, plus global `Ctrl+R` reset and `Ctrl+Q` quit.
+- Dedicated Play `GuessInput` bindings that retain plain `R` reset and `Q` quit without making those letters global to workspace text fields.
 - TUI profile summary and unlocked-achievement visibility.
 - TUI profile use/create/rename/recoverable-delete/restore flows using the existing `Storage` lifecycle APIs.
 - Exact selected-name confirmation before a profile can be moved to recoverable trash from the TUI.
@@ -25,7 +26,7 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 
 - Package/runtime/citation version advanced to `1.4.0`.
 - `guessnova-tui` now opens a full local workspace while preserving Play as the initial pane and the numeric guess field as initial focus.
-- Plain `Q` and `R` application bindings are non-priority so normal letters remain typable in profile/search/path fields; global Ctrl variants remain available.
+- Plain `Q` and `R` are owned only by the focused numeric Play input; profile/search/player/path fields receive those characters normally, while global `Ctrl+Q`/`Ctrl+R` remain available everywhere.
 - Active-profile changes reset any unfinished TUI round so a partially played game cannot later be persisted under another profile.
 - TUI profile activation loads the selected profile's settings without partially changing the mounted UI language.
 - Locale changes are persisted immediately but full mounted Textual presentation changes take effect on the next launch for language consistency.
@@ -36,7 +37,7 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 ### Accessibility, privacy, and reliability
 
 - High-contrast TUI mode strengthens structural borders and focus visibility without making color the only status signal.
-- Workspace text inputs retain ordinary character entry rather than losing `q`/`r` to global application shortcuts.
+- Workspace text inputs retain ordinary character entry because single-letter reset/quit bindings are scoped to the Play guess widget instead of the application.
 - TUI profile deletion remains recoverable and requires explicit typed-name confirmation.
 - TUI Recovery intentionally exposes no repair/write button; repair remains centralized in Doctor with confirmation and backup-before-write guarantees.
 - Backup verification in the TUI is read-only and does not import or rewrite selected state.
@@ -174,7 +175,7 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 - Adaptive Textual card layout and an explicit range-hint action.
 - Local leaderboard plus validated JSON export/import.
 - Atomic local state persistence and schema migration baseline.
-- Defensive state/profile/settings/history normalization for untrusted or corrupted imported data.
+- Defensive state/profile/settings/history/leaderboard normalization for untrusted or corrupted imported data.
 - Privacy/security helpers and local-only defaults.
 - Automated tests, smoke checks, replay fuzz-style coverage, strict formatting/type/lint gates, repository quality automation, documentation, and release engineering baseline.
 - Dependency/secret auditing, CodeQL, Dependabot, quality-gated tagged release automation, and repository operations guidance.
