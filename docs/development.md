@@ -22,9 +22,10 @@ python -m guessnova --help
 python -m guessnova doctor --help
 python -m guessnova.doctor_cli --help
 python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
-`make check` runs the core quality sequence plus entry-point checks on systems with Make available.
+`make check` runs the core quality sequence plus entry-point and both Textual app import checks on systems with Make available.
 
 Before a release also build and validate the package:
 
@@ -40,6 +41,7 @@ After installing a built wheel, verify:
 ```bash
 guessnova --help
 python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 guessnova doctor --help
 guessnova-doctor --help
 guessnova-doctor --version
@@ -50,11 +52,19 @@ guessnova-doctor --version
 - Keep `engine.py` and domain rules independent of terminal rendering, diagnostics, backup envelopes, command dispatch, and filesystem I/O.
 - Keep `entrypoint.py` as routing only; do not duplicate gameplay or recovery business logic there.
 - Keep reusable Textual-independent workspace data/configuration logic in `tui_workspace.py` when widget/focus knowledge is unnecessary.
+- Keep v1.5 challenge parsing/configuration free of Textual dependencies so validation/determinism can be tested with ordinary pytest.
+- Keep target-free challenge presentation in `tui_challenge.py`; do not reveal the hidden target in identity/status text.
+- Keep challenge form composition/mode-aware field state in `tui_challenge_widgets.py`; widgets must not implement persistence or target-selection rules.
+- Keep v1.5 integration in `tui_challenge_app.py` additive over the stable v1.4 `tui.GuessNovaApp` unless a future architecture decision explicitly replaces that boundary.
+- Parse and construct a replacement challenge before mutating the active round. Validation failures must leave current target/attempt/result-save state intact.
+- Keep Reverse out of ordinary numeric challenge setup until a dedicated interaction is implemented.
 - Keep small reusable widget-specific keyboard responsibilities in focused widgets such as `GuessInput` instead of making single-letter commands global across unrelated text fields.
-- Keep `tui.py` responsible for composition, focus, events, and orchestration over existing application/local-adapter APIs rather than introducing parallel persistence rules.
+- Keep `tui.py` responsible for the stable six-pane composition, focus, events, and orchestration over existing application/local-adapter APIs rather than introducing parallel persistence rules.
 - Use deterministic seeds, explicit targets, dates, committed migration fixtures, or injected clocks in automated tests.
+- For blank-Daily-date parser tests, inject `today`; do not depend on the runner's real date.
 - Keep state-schema, backup-wrapper, replay, and Doctor-report versions as separate compatibility domains.
 - Introduce a new state schema only for a real canonical format boundary and add representative fixtures from the prior supported schema.
+- Do not persist transient challenge-form state merely to justify a schema increment.
 - Preserve older supported backup wrappers explicitly rather than guessing unknown versions.
 - Treat imported/local JSON as untrusted and normalize it through storage/profile boundaries.
 - Bound file reads before UTF-8/JSON parsing when the file is under application control or is user-selected input.
@@ -74,41 +84,77 @@ guessnova-doctor --version
 
 ## Textual workspace workflow
 
-The v1.4 workspace deliberately separates responsibilities:
+The v1.5 workspace separates stable workspace behavior from challenge-specific behavior:
 
 ```text
-tui.py            widget composition, focus, events, pane refresh/orchestration
-tui_widgets.py    focused reusable widget behavior (for example Play-only R/Q)
-tui_workspace.py  Textual-independent queries/configuration/persistence helpers
+tui.py                    stable six-pane workspace, core Play events/focus
+tui_widgets.py            focused reusable widget behavior (for example GuessInput R/Q)
+tui_workspace.py          Textual-independent workspace queries/configuration helpers
+tui_challenge.py          localized target-free challenge presentation
+tui_challenge_widgets.py  challenge form and mode-aware field state
+tui_challenge_app.py      additive challenge integration; shipped guessnova-tui app
 ```
+
+See [`adr/0005-additive-textual-challenge-layer.md`](adr/0005-additive-textual-challenge-layer.md).
 
 When changing the workspace:
 
 1. decide whether the change requires Textual widget knowledge;
 2. if not, prefer a helper in `tui_workspace.py` and cover it with ordinary pytest tests;
-3. if the change is a reusable widget-level interaction, keep it in a focused widget class rather than broad app-global handlers;
-4. keep app/pane orchestration in `tui.py`;
-5. add or update a focused Textual pilot suite for focus/keyboard/mounted-widget behavior;
-6. use `Storage(tmp_path)` and deterministic/injected `GuessGame` objects in tests;
-7. preserve the six-pane direct shortcuts and useful first focus in each pane;
-8. preserve Play-local plain `R`/`Q` plus global `Ctrl+R`/`Ctrl+Q` without stealing ordinary characters from other text fields;
-9. preserve exactly-once completed-round persistence through `GameService`;
-10. reset unfinished gameplay before active-profile ownership changes;
-11. keep profile deletion exact-name-confirmed and recoverable;
-12. keep History/Leaderboard based on existing validated local data;
-13. keep Settings based on the existing settings/profile model;
-14. keep one mounted TUI linguistically consistent unless full atomic relocalization is implemented;
-15. keep Recovery diagnostics/backup verification read-only unless a separately reviewed design preserves Doctor safety guarantees;
-16. update both English and Hindi catalogs for normal presentation copy;
-17. update accessibility/release evidence when focus/interaction changes.
+3. if it is challenge identity/status formatting, keep it in `tui_challenge.py` and keep target data out of the presenter contract;
+4. if it is challenge form composition/state, keep it in `tui_challenge_widgets.py`;
+5. if it is v1.5 challenge-to-stable-workspace orchestration, keep it in `tui_challenge_app.py`;
+6. keep unrelated pane/core workspace orchestration in `tui.py`;
+7. if the change is a reusable widget-level interaction, keep it in a focused widget class rather than broad app-global handlers;
+8. add or update a focused Textual pilot suite for focus/keyboard/mounted-widget behavior;
+9. use `Storage(tmp_path)` and deterministic/injected `GuessGame` objects in tests;
+10. preserve the six-pane direct shortcuts and useful first focus in each pane;
+11. preserve Guess as initial focus and Guess → Submit → Range Hint forward-Tab gameplay flow;
+12. preserve Play-local plain `R`/`Q` plus global `Ctrl+R`/`Ctrl+Q` without stealing ordinary characters from challenge/other text fields;
+13. preserve exactly-once completed-round persistence through `GameService`;
+14. reset unfinished gameplay before active-profile ownership changes;
+15. keep profile deletion exact-name-confirmed and recoverable;
+16. keep History/Leaderboard based on existing validated local data;
+17. keep Settings based on the existing settings/profile model;
+18. keep one mounted TUI linguistically consistent unless full atomic relocalization is implemented;
+19. keep Recovery diagnostics/backup verification read-only unless a separately reviewed design preserves Doctor safety guarantees;
+20. update both English and Hindi catalogs for normal presentation copy;
+21. update accessibility/release evidence when focus/interaction changes.
 
-Current focused pilot suites intentionally split concerns rather than one giant test:
+Challenge-specific review additionally requires:
+
+1. Reverse remains excluded from numeric setup;
+2. difficulty values come from `DIFFICULTIES` rather than a second rule table;
+3. non-Daily seed parses as a whole number;
+4. Daily resolves an ISO date and does not accept a manual seed;
+5. invalid configuration does not replace the current game;
+6. deterministic configured reset reconstructs from validated metadata, not widget text;
+7. challenge status does not expose the hidden target;
+8. successful start returns focus to Guess;
+9. irrelevant seed/date controls remain disabled;
+10. new presentation strings are added to all shipped catalogs.
+
+Current focused pilot suites intentionally split concerns rather than one giant test.
+
+Stable workspace suites:
 
 - `tests/test_tui.py` — Play focus, submission, hint, persistence, Play-local reset/quit;
 - `tests/test_tui_workspace_app.py` — pane navigation, text-input shortcut isolation, profile lifecycle;
 - `tests/test_tui_workspace_data.py` — History, Settings, Recovery;
 - `tests/test_tui_workspace_leaderboard.py` — Leaderboard filtering;
 - `tests/test_tui_workspace_accessibility.py` — profile-round isolation, launch-locale stability, high contrast.
+
+v1.5 challenge suites:
+
+- `tests/test_tui_challenge_configuration.py` — parser/model invariants and determinism;
+- `tests/test_tui_challenge_i18n.py` — localized challenge catalog coverage;
+- `tests/test_tui_challenge_presenter.py` and `tests/test_tui_challenge_game_status.py` — target-free status;
+- `tests/test_tui_challenge_widgets.py` and `tests/test_tui_challenge_mode_fields.py` — form defaults/state;
+- `tests/test_tui_challenge_app.py` — configured journeys;
+- `tests/test_tui_challenge_safety.py` — invalid-config preservation;
+- `tests/test_tui_challenge_reset.py` — configured deterministic reset;
+- `tests/test_tui_challenge_initial_status.py` — mounted active identity;
+- `tests/test_tui_challenge_accessibility.py` — focus and shortcut isolation.
 
 ## State migration workflow
 
@@ -167,7 +213,7 @@ Changes in `diagnostics.py`, `doctor_cli.py`, `doctor_protocol.py`, `entrypoint.
 
 ## Repository workflow
 
-CI, CodeQL, and Security checks run for pull requests. Superseded runs are cancelled so the newest commit is the verification target. The package matrix builds/installs on Ubuntu, Windows, and macOS and verifies the game CLI, Textual workspace import, primary Doctor route, standalone Doctor entry point, Doctor version output, and smoke flow.
+CI, CodeQL, and Security checks run for pull requests. Superseded runs are cancelled so the newest commit is the verification target. The package matrix builds/installs on Ubuntu, Windows, and macOS and verifies the game CLI, stable Textual workspace import, shipped challenge-app import, primary Doctor route, standalone Doctor entry point, Doctor version output, and smoke flow.
 
 Repository-level branch protection, labels, Discussions, milestones, and release guidance are documented in [`github_repository.md`](github_repository.md). Documentation does not imply branch protection is enabled unless repository metadata confirms it.
 

@@ -8,15 +8,17 @@ The application may save profile names, settings, gameplay statistics, achieveme
 
 The Rich CLI, Textual workspace, and Doctor all operate on the same local state model. The Textual workspace does not create a second database or hidden cache of profile/history/leaderboard information.
 
+v1.5 Challenge Setup does not add a new durable persistence record. Mode/difficulty/seed/resolved Daily date configuration is active in-memory application state while the TUI is running. Completed rounds continue to persist only through the existing profile/history/leaderboard boundaries.
+
 ## Network behavior
 
-The installed Python application does not require network access for gameplay, the Textual workspace, diagnostics, backup verification, repair, backup import/export, or local profile management. It contains no telemetry, analytics, advertising, cloud-sync, remote leaderboard, or remote-account code.
+The installed Python application does not require network access for gameplay, Challenge Setup, the Textual workspace, diagnostics, backup verification, repair, backup import/export, or local profile management. It contains no telemetry, analytics, advertising, cloud-sync, remote leaderboard, or remote-account code.
 
 GitHub Actions, repository pages, package registries, or other development/distribution services are separate from the installed GuessNova runtime and have their own policies when a developer chooses to use them.
 
 ## Textual workspace
 
-`guessnova-tui` presents local data in six panes: Play, Profiles, History, Leaderboard, Settings, and Recovery.
+`guessnova-tui` presents local data in six panes: Play, Profiles, History, Leaderboard, Settings, and Recovery. Play also contains v1.5 Challenge Setup.
 
 The workspace may visibly display:
 
@@ -25,14 +27,27 @@ The workspace may visibly display:
 - bounded session-history timestamps/results;
 - local leaderboard player names/results;
 - saved settings;
+- challenge mode and difficulty;
+- a configured deterministic seed;
+- a resolved Daily date;
 - local data-directory path;
 - schema/count information;
 - a user-selected backup path;
 - backup structural metadata.
 
+Challenge identity/status deliberately does not expose the hidden target merely to describe the active configuration.
+
 This information remains on the local terminal unless the user or another local tool captures/shares it. Screenshots, screen recordings, terminal transcripts, copied diagnostics, and support reports can therefore contain personally meaningful local information even though GuessNova itself does not transmit it.
 
-Review captures before sharing them publicly.
+Review captures before sharing them publicly, including challenge seeds/dates if those values are meaningful to you.
+
+## Challenge Setup
+
+Challenge Setup validates local form values and constructs an in-memory `GuessGame`. It does not send the selected mode, difficulty, seed, Daily date, or generated target anywhere.
+
+Invalid seed/date input is rejected before the current round is replaced. This is a local application-safety rule and does not create a diagnostic upload or hidden log.
+
+A configured seed or Daily date may later be represented indirectly in normal completed-game/replay metadata according to the existing game/replay/history contracts. Those existing local/exportable structures should be treated as user data when shared.
 
 ## TUI Recovery
 
@@ -127,5 +142,7 @@ No setting is synchronized to a server.
 ## Complete local deletion
 
 Users can delete their local GuessNova data directory at any time to remove saved application data, including profile trash. User-created export files and pre-repair backups are separate files and must also be deleted wherever the user chose to save or copy them.
+
+In-memory Challenge Setup state disappears when that running application process ends; no extra challenge-form cache needs separate deletion.
 
 If Doctor reports, terminal logs, screenshots, or screen recordings were deliberately saved elsewhere, those copies are separate files and should also be removed if the user wants to delete them.

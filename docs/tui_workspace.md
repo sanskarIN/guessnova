@@ -1,6 +1,8 @@
 # Textual Workspace
 
-GuessNova 1.4 expands `guessnova-tui` from a single gameplay card into a keyboard-first local workspace. The workspace reuses the same profile, history, leaderboard, settings, backup-inspection, diagnostics, and game-service boundaries as the CLI. It does not introduce a second persistence format or a network-backed account model.
+GuessNova 1.5 extends the v1.4 keyboard-first local workspace with validated challenge setup inside Play. The workspace continues to reuse the same profile, history, leaderboard, settings, backup-inspection, diagnostics, game-service, and game-engine boundaries as the CLI. It does not introduce a second persistence format or a network-backed account model.
+
+For the focused challenge-configuration reference, see [`tui_challenges.md`](tui_challenges.md).
 
 ## Launch
 
@@ -8,13 +10,13 @@ GuessNova 1.4 expands `guessnova-tui` from a single gameplay card into a keyboar
 guessnova-tui
 ```
 
-The application starts on **Play** and focuses the numeric guess field so the existing gameplay flow remains immediate.
+The application starts on **Play** and focuses the numeric guess field so the established gameplay flow remains immediate.
 
 ## Workspace panes
 
 ### Play
 
-The Play pane retains the original Textual gameplay loop:
+The Play pane retains the Textual gameplay loop:
 
 - whole-number input;
 - Submit button;
@@ -22,9 +24,37 @@ The Play pane retains the original Textual gameplay loop:
 - current difficulty range and attempts remaining;
 - automatic smart hints when enabled in the active profile;
 - result persistence through `GameService`;
-- deterministic reset when a seed is present.
+- deterministic reset when a seed/date-backed configuration is present.
 
-The numeric Play input is a dedicated `GuessInput` widget. While that field is focused, `R` requests a new round and `Q` quits, preserving the original single-card keyboard behavior. `Ctrl+R` and `Ctrl+Q` are the global equivalents available from every pane.
+GuessNova 1.5 also mounts a **Challenge Setup** block in Play with:
+
+- mode selection;
+- difficulty selection;
+- optional deterministic seed for Classic/Timed/Streak;
+- Daily `YYYY-MM-DD` date selection;
+- mode-aware enablement so only the relevant seed/date input is active;
+- a Start Challenge action;
+- localized help, validation errors, and active challenge identity.
+
+The numeric setup supports Classic, Timed, Streak, and Daily. Reverse remains separate because its interaction model is GuessNova guessing a number the player has chosen:
+
+```bash
+guessnova reverse
+```
+
+Challenge setup validates and builds the replacement game before changing the current in-memory round. Invalid seed/date configuration therefore preserves the current game, target, attempts, and result-save state.
+
+After successful configuration, GuessNova normalizes the accepted fields, updates the range/attempt display, clears old feedback/guess input, shows a target-free active identity, and returns focus to the numeric guess field.
+
+Configured reset behavior:
+
+- seeded Classic/Timed/Streak reconstruct the same deterministic challenge;
+- Daily reconstructs from the resolved date;
+- unseeded challenges retain normal random-reset semantics.
+
+The numeric Play input remains a dedicated `GuessInput` widget. While that field is focused, `R` requests a new round and `Q` quits. `Ctrl+R` and `Ctrl+Q` are the global equivalents available from every pane.
+
+Plain `Q/R` are not application-global, so the new challenge seed/date inputs can receive ordinary text for validation without triggering reset/quit.
 
 ### Profiles
 
@@ -41,7 +71,7 @@ The Profiles pane exposes local profile lifecycle operations without duplicating
 
 Deletion requires the selected profile name to be typed exactly into the name field before the Delete action is accepted. This mirrors the project's recoverability-first behavior instead of turning the TUI into a one-click permanent-delete surface.
 
-Changing the active profile resets any unfinished round. A partially played round is therefore never silently reassigned to another local profile.
+Changing the active profile resets any unfinished round. A partially played round is therefore never silently reassigned to another local profile. If the round came from v1.5 challenge setup, the validated challenge configuration can remain active while attempt state is reset.
 
 The display language stays fixed for the current TUI process. If a newly selected profile uses another locale, its saved locale appears in Settings, but full presentation-language changes take effect on the next TUI launch. This prevents a half-retranslated interface.
 
@@ -108,7 +138,7 @@ The Recovery pane is deliberately **read-only**. It displays:
 - leaderboard count;
 - deleted-profile count.
 
-It can also verify a selected GuessNova backup without importing it. Verification reuses the v1.3 `inspect_backup(...)` boundary, including bounded input, wrapper/schema/integrity checks, and proof that the payload can normalize under the current state model.
+It can also verify a selected GuessNova backup without importing it. Verification reuses the `inspect_backup(...)` boundary, including bounded input, wrapper/schema/integrity checks, and proof that the payload can normalize under the current state model.
 
 The TUI does **not** perform repair. Repair remains an explicit operator workflow:
 
@@ -133,7 +163,14 @@ Ctrl+R  New round
 Ctrl+Q  Quit
 ```
 
-Plain `Q` and `R` are **Play-local bindings owned by the numeric guess input**, not global application bindings. Profiles, History, Leaderboard, and Recovery therefore receive ordinary `q`/`r` characters normally in their text fields. The Ctrl variants remain available everywhere.
+Plain `Q` and `R` are **Play-local bindings owned by the numeric guess input**, not global application bindings. Challenge, Profiles, History, Leaderboard, and Recovery text fields therefore receive ordinary `q`/`r` characters normally. The Ctrl variants remain available everywhere.
+
+The v1.5 challenge block is inserted before the original title/guess controls in focus order, while the app still explicitly focuses Guess on launch. Consequently:
+
+- initial focus remains Guess;
+- forward Tab remains Guess → Submit → Range Hint;
+- Shift+Tab from Guess reaches Start Challenge, then the challenge inputs/selectors backward;
+- no mouse interaction is required for configuration.
 
 Each Ctrl+number pane shortcut also moves focus to a useful first control for that pane.
 
@@ -145,6 +182,10 @@ The workspace preserves these principles:
 - visible text status, not color-only meaning;
 - deterministic initial focus on the guess field;
 - Play-local `Q`/`R` without stealing letters from other text inputs;
+- visible challenge mode/difficulty labeling;
+- mode-aware disabling of irrelevant seed/date fields;
+- text validation errors that preserve the existing round;
+- target-free active challenge identity;
 - non-destructive/read-only Recovery pane;
 - recoverable profile deletion;
 - no required mouse interaction;
@@ -157,25 +198,44 @@ Automated Textual pilot tests supplement, but do not replace, manual release-can
 
 ## Privacy
 
-Every workspace pane operates on local GuessNova state. The workspace contains no account sign-in, analytics, telemetry, cloud sync, remote leaderboard, or runtime API call.
+Every workspace pane and challenge control operates on local GuessNova state. The workspace contains no account sign-in, analytics, telemetry, cloud sync, remote leaderboard, or runtime API call.
 
-Backup verification reads only the path the user selects. The Recovery pane never uploads state or backups. Profile names, history, settings, leaderboard entries, and backup metadata may still be personally meaningful local data, so screenshots and support reports should be reviewed before sharing.
+Challenge configuration is in-memory presentation/application state. Mode, difficulty, seed, and resolved Daily date are not added to the state schema merely because they appear in the form. Completed games continue to persist only through existing history/profile/leaderboard boundaries.
+
+Backup verification reads only the path the user selects. The Recovery pane never uploads state or backups. Profile names, history, settings, leaderboard entries, seeds/dates visible on screen, and backup metadata may still be personally meaningful local data, so screenshots and support reports should be reviewed before sharing.
 
 ## Testing boundaries
 
-Reusable logic lives in `src/guessnova/tui_workspace.py` so it can be tested without rendering a terminal. Textual pilot tests then cover the interactive layer.
+Reusable logic lives in `src/guessnova/tui_workspace.py` so challenge parsing/configuration, history selection, leaderboard filtering, profile summaries, and settings persistence can be tested without rendering a terminal.
 
-Current v1.4 coverage includes:
+Additional v1.5 source boundaries are:
+
+- `src/guessnova/tui_challenge.py` — localized target-free challenge presentation;
+- `src/guessnova/tui_challenge_widgets.py` — challenge form widgets and mode-aware field state;
+- `src/guessnova/tui_challenge_app.py` — additive integration over the stable v1.4 workspace.
+
+Current coverage includes:
 
 - workspace snapshots;
 - derived profile statistics;
 - deterministic challenge construction helpers;
+- immutable challenge configuration invariants;
+- seeded and Daily parser normalization;
+- invalid seed/date validation;
+- target-free active challenge status;
+- mode-aware challenge fields;
+- seeded configured-round startup;
+- Daily configured-round startup;
+- invalid-config current-round preservation;
+- configured deterministic reset;
+- initial active challenge identity;
+- challenge setup keyboard reachability;
 - history filtering/order;
 - leaderboard filtering/order;
 - settings persistence;
 - tab shortcuts;
 - Play-local `R` reset and `Q` quit;
-- text-field handling of ordinary `q`/`r` letters outside Play;
+- text-field handling of ordinary `q`/`r` letters outside the numeric GuessInput;
 - profile create/rename/delete/restore;
 - exact delete confirmation;
 - history filters and invalid dates;
@@ -184,11 +244,14 @@ Current v1.4 coverage includes:
 - read-only backup verification;
 - active-profile round isolation;
 - launch-locale stability;
-- high-contrast launch/save behavior.
+- high-contrast launch/save behavior;
+- smoke coverage through challenge parser/configuration/presentation helpers.
+
+Normal CI and tagged-release package matrices build and install wheels on Linux, Windows, and macOS and import both the stable workspace and the shipped challenge-enabled application layer.
 
 ## Compatibility
 
-The v1.4 TUI workspace does not require a state-schema change. It continues using:
+The v1.5 challenge workspace does not require a serialized-format change. It continues using:
 
 - state schema `2`;
 - backup wrapper `2`;
@@ -196,4 +259,4 @@ The v1.4 TUI workspace does not require a state-schema change. It continues usin
 - replay format `1`;
 - Doctor report protocol `1`.
 
-The workspace is a presentation/application-layer expansion over the existing local formats.
+v1.5 is a presentation/application-layer expansion over the existing local formats.

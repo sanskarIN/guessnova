@@ -81,6 +81,33 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 - [x] Add canonical/concise TUI workspace documentation and expand the manual accessibility evidence gate through all six panes.
 - [x] Keep state schema `2`, backup wrapper `2`, replay `1`, and Doctor report `1` because v1.4 does not change those compatibility domains.
 
+## v1.5 — In-Play challenge workspace
+
+- [x] Add validated challenge setup inside the shipped Textual Play experience without replacing the v1.4 workspace.
+- [x] Expose Classic, Timed, Streak, and Daily numeric challenge selection.
+- [x] Keep Reverse on its dedicated interaction path rather than presenting it as ordinary target guessing.
+- [x] Reuse the shared difficulty registry for TUI challenge choices.
+- [x] Add optional deterministic integer seed configuration for Classic/Timed/Streak.
+- [x] Add Daily ISO-date configuration with blank date resolving to the local current date.
+- [x] Add immutable `ChallengeConfiguration` and reusable parser/reconstruction helpers outside Textual.
+- [x] Validate configuration and construct the replacement game before mutating the active round.
+- [x] Preserve the current round, attempts, and result-save state after invalid seed/date input.
+- [x] Disable irrelevant seed/date fields when the selected mode changes.
+- [x] Normalize accepted seed/date values after a successful challenge start.
+- [x] Show target-free active challenge identity for configured and pre-existing numeric games.
+- [x] Make seeded and Daily configured resets reconstruct from validated configuration.
+- [x] Preserve guess-first startup and Guess → Submit → Hint forward-Tab navigation.
+- [x] Keep plain `Q/R` ownership scoped to numeric `GuessInput`; challenge text fields remain ordinary inputs.
+- [x] Add English/Hindi challenge strings with catalog completeness retained.
+- [x] Add focused configuration/presentation/widget/integration/safety/reset/keyboard/localization tests.
+- [x] Extend smoke coverage through challenge parser/configuration/presentation helpers.
+- [x] Route the installed `guessnova-tui` script to the challenge-enabled application layer.
+- [x] Verify both the stable workspace and shipped challenge app are imported from built wheels in Linux/Windows/macOS CI and release package matrices.
+- [x] Add dedicated challenge documentation and a definition-of-done audit.
+- [x] Keep state schema `2`, backup wrapper `2`, replay `1`, and Doctor report `1` because challenge configuration is in-memory UI/application state.
+- [ ] Complete final-head v1.5 CI, Security checks, and CodeQL evidence.
+- [ ] Complete the manual v1.5 accessibility evidence checklist on the exact release candidate.
+
 ## Gated future candidates
 
 These are intentionally not release checkboxes until their prerequisite exists:

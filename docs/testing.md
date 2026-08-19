@@ -12,15 +12,20 @@ mypy src/guessnova
 pytest --cov=guessnova --cov-report=term-missing
 python -m compileall -q src tests scripts
 python scripts/verify_release_metadata.py
+python scripts/check_docs_links.py
 python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
 python -m guessnova.doctor_cli --help
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
-`make check` runs the core lint/format/type/test/compile/metadata/smoke sequence plus entry-point verification on systems with Make available.
+`make check` runs the core lint/format/type/test/compile/metadata/documentation-link/smoke sequence plus entry-point and both Textual application import checks on systems with Make available.
 
-CI also builds, validates, installs, imports the Textual workspace, launches the game CLI, primary Doctor route, standalone Doctor compatibility entry point, Doctor version output, and smoke-tests distributions on Ubuntu, Windows, and macOS. Separate workflows perform CodeQL and dependency/secret checks.
+CI also validates local Markdown link/image targets, builds, validates, installs, imports both the stable v1.4 Textual workspace and the shipped v1.5 challenge-enabled application, launches the game CLI, primary Doctor route, standalone Doctor compatibility entry point, Doctor version output, and smoke-tests distributions on Ubuntu, Windows, and macOS. Separate workflows perform CodeQL and dependency/secret checks.
+
+A configured workflow is not a passed workflow. Final release evidence requires successful conclusions for the exact release-candidate head.
 
 ## Coverage areas
 
@@ -60,7 +65,36 @@ CI also builds, validates, installs, imports the Textual workspace, launches the
 - Textual settings persistence, immediate smart-hint behavior, launch-locale stability, and high-contrast class behavior.
 - Textual read-only diagnostics and backup verification.
 - UI-independent workspace snapshots, profile summaries, challenge construction, history selection, leaderboard selection, and settings persistence.
-- End-to-end smoke coverage for gameplay, persistence, schema 2, replay, backup integrity/importability, Doctor state/backup routes, diagnostics/repair, achievements, leaderboard, localization, workspace helpers, and reverse mode.
+- v1.5 immutable challenge configuration invariants and parsing.
+- v1.5 seed/date normalization and validation.
+- v1.5 target-free localized challenge identity presentation.
+- v1.5 challenge widget defaults and Reverse exclusion.
+- v1.5 mode-aware seed/date enablement.
+- v1.5 seeded and Daily configured-round startup.
+- v1.5 invalid seed/date preservation of the active round and attempt state.
+- v1.5 deterministic seeded/Daily reset from validated configuration.
+- v1.5 initial challenge identity without target disclosure.
+- v1.5 guess-first focus, backward challenge reachability, and ordinary `q`/`r` challenge-field input.
+- Offline documentation-link validation for local Markdown links/images, reference targets, HTML href/src targets, code-example exclusion, missing-target detection, and repository-root escape rejection.
+- End-to-end smoke coverage for gameplay, persistence, schema 2, replay, backup integrity/importability, Doctor state/backup routes, diagnostics/repair, achievements, leaderboard, localization, workspace/challenge helpers, and reverse mode.
+
+## Documentation-link verification
+
+`scripts/check_docs_links.py` is a dependency-free release tool for repository-local documentation integrity. It recursively scans Markdown files while excluding generated/tool directories. Fenced code blocks and inline-code examples are removed from the scan so example syntax cannot masquerade as a real navigation target.
+
+The checker validates:
+
+- inline Markdown links and images;
+- reference-style definitions;
+- HTML `href` and `src` values embedded in Markdown;
+- URL-decoded local paths;
+- repository-root-relative local paths;
+- existence of local files/directories;
+- rejection of local paths that escape the repository root.
+
+External schemes and fragment-only links are deliberately not fetched. This keeps the gate deterministic, offline, fast, and free from third-party availability/rate-limit failures. It is a local-link integrity check, not an internet crawler or anchor-slug validator.
+
+`tests/test_docs_links.py` exercises valid local/external/fragment links, missing targets, reference/HTML targets, code-example exclusion, and root-escape rejection. The checker runs in `make check`, normal CI, and tagged-release verification.
 
 ## Migration fixtures
 
@@ -136,11 +170,22 @@ Doctor protocol regression tests cover:
 - leaderboard filters while preserving rank order;
 - settings validation/persistence while retaining onboarding state.
 
+v1.5 adds `tests/test_tui_challenge_configuration.py` for the presentation-friendly challenge model and parser. It verifies:
+
+- valid seeded configuration;
+- blank Daily date resolution through an injected date;
+- deterministic seeded/Daily reconstruction;
+- Reverse separation;
+- malformed mode/difficulty/seed/date rejection;
+- impossible manual configuration invariants.
+
 Keeping these helpers outside widget code allows domain/application behavior to be verified independently from rendering/focus behavior.
 
 ## Textual pilot suites
 
-The Textual workspace is covered by several focused pilot suites rather than one oversized scenario:
+The Textual workspace is covered by focused pilot suites rather than one oversized scenario.
+
+Retained v1.4 suites:
 
 - `tests/test_tui.py` — original gameplay/focus/persistence regressions;
 - `tests/test_tui_workspace_app.py` — pane shortcuts and profile lifecycle;
@@ -148,9 +193,22 @@ The Textual workspace is covered by several focused pilot suites rather than one
 - `tests/test_tui_workspace_leaderboard.py` — leaderboard filters;
 - `tests/test_tui_workspace_accessibility.py` — round isolation, launch-locale stability, and high contrast.
 
-All use `Storage(tmp_path)` and deterministic/injected games so tests cannot modify a user's actual data.
+v1.5 challenge suites:
 
-Pilot tests supplement rather than replace manual terminal review. Before release, complete `docs/accessibility_evidence_template.md` on the signed-off release candidate.
+- `tests/test_tui_challenge_i18n.py` — new catalog formatting/completeness;
+- `tests/test_tui_challenge_presenter.py` — target-free localized identity;
+- `tests/test_tui_challenge_widgets.py` — form defaults and Reverse fallback;
+- `tests/test_tui_challenge_mode_fields.py` — mode-aware field state;
+- `tests/test_tui_challenge_app.py` — seeded/Daily configured journeys;
+- `tests/test_tui_challenge_safety.py` — invalid-config round preservation;
+- `tests/test_tui_challenge_reset.py` — deterministic configured resets;
+- `tests/test_tui_challenge_game_status.py` — existing-game target-free status;
+- `tests/test_tui_challenge_initial_status.py` — mounted initial identity;
+- `tests/test_tui_challenge_accessibility.py` — focus/keyboard regression coverage.
+
+All use isolated temporary state and deterministic/injected games where applicable so tests cannot modify a user's actual data.
+
+Pilot tests supplement rather than replace manual terminal review. Before release, complete `docs/accessibility_evidence_template.md` on the exact signed-off release candidate.
 
 ## Regression policy
 
@@ -158,11 +216,13 @@ Every reproducible bug should receive a focused regression test where practical.
 
 ## Property-testing dependency decision
 
-No property-testing dependency is added merely for v1.4. Current workspace failure classes are directly covered by deterministic helpers and Textual pilot tests, while persistence/replay/backup boundaries retain their existing malformed-input suites. Revisit Hypothesis or another property-testing tool only when a reproducible defect demonstrates materially better coverage than these deterministic suites.
+No property-testing dependency is added merely for v1.5. Current challenge/workspace failure classes are directly covered by deterministic parser/invariant tests and Textual pilot tests, while persistence/replay/backup boundaries retain their existing malformed-input suites. Revisit Hypothesis or another property-testing tool only when a reproducible defect demonstrates materially better coverage than these deterministic suites.
 
 ## Determinism
 
 Use explicit game targets, fixed seeds, fixed ISO dates, injected clocks, committed fixtures, or temporary directories in tests. Never depend on today's challenge target, wall-clock timing, production state, or network services.
+
+Blank-Daily-date parser behavior should be tested with the parser's injected `today` argument rather than relying on the test runner's current calendar date.
 
 ## Cross-platform package verification
 
@@ -177,6 +237,7 @@ Each runner builds source/wheel distributions, runs Twine metadata validation, i
 ```bash
 python -m guessnova --help
 python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 guessnova doctor --help
 guessnova-doctor --help
 guessnova-doctor --version
@@ -184,8 +245,12 @@ guessnova-doctor --version
 
 and then executes the smoke test. A failure on one platform is a release blocker until reproduced or documented as an infrastructure-only failure.
 
+The tagged-release package matrix performs the same two Textual import checks before release artifacts can be built by the dependent release job.
+
 ## Local execution limitation in the current continuation environment
 
-The available execution environment for the v1.4 continuation cannot resolve `github.com` or package-index hosts. A branch clone and a Ruff installation attempt therefore fail before local execution is possible. This limitation must not be converted into a claimed local test pass.
+The available execution environment for this v1.5 continuation cannot resolve GitHub or package-index hosts. Local dependency-backed execution is therefore not claimed. Static review and committed regression coverage continue, while GitHub-hosted workflows provide exact-head execution when runners are available.
 
-Hosted GitHub Actions remains the exact-head execution source for this continuation. Static review and deterministic regression additions continue while runners are queued; any concrete current-head failure must be inspected and fixed before it can be called successful.
+The documentation-link checker itself is intentionally dependency-free, but this continuation still relies on exact-head GitHub CI to execute it against the complete repository checkout because no local clone is available in this environment.
+
+Do not convert this limitation into a local Ruff/mypy/pytest/build/link-check pass. Any concrete final-head workflow failure must be inspected at the failed job/step and fixed with a focused regression before release verification can be called successful.

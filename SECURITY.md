@@ -31,11 +31,37 @@ Please do not publish a sensitive vulnerability in a public issue. Send a concis
 - TUI profile deletion requires exact selected-name confirmation and moves data to bounded recoverable trash rather than immediate permanent deletion.
 - TUI active-profile changes reset unfinished gameplay so a partially played result cannot be silently persisted under another profile identity.
 - TUI workspace helpers reuse validated `Storage`, `Settings`, `HistoryEntry`, `LeaderboardEntry`, diagnostics, and backup-inspection boundaries instead of creating parallel parsing/persistence rules.
-- Play-only single-letter reset/quit commands are scoped to the numeric guess widget; other workspace text inputs keep ordinary character semantics.
+- v1.5 Challenge Setup validates mode/difficulty/seed/date before replacing the active round.
+- Challenge setup only accepts known numeric modes; Reverse remains on its dedicated interaction path.
+- Challenge difficulty values come from the shared `DIFFICULTIES` registry rather than a separate unvalidated rule table.
+- Daily challenge configuration derives its seed from a validated ISO date instead of accepting a second conflicting manual seed.
+- Invalid challenge setup preserves the current game/attempt/result-save state rather than partially mutating application state.
+- Active challenge identity deliberately excludes the hidden target.
+- Challenge form state remains in-memory and does not create an unnecessary persistence/schema attack surface.
+- Play-only single-letter reset/quit commands are scoped to the numeric guess widget; challenge and other workspace text inputs keep ordinary character semantics.
 - Path boundary helpers for future file operations.
 - Bounded numeric and sanitized profile input.
 - Integrity checks for replay codes.
 - Dependency updates reviewed through automated tooling.
+
+## Challenge Setup validation boundary
+
+`parse_workspace_challenge(...)` is the validation boundary for presentation-friendly Challenge Setup values.
+
+Before a configured round can replace the active game it must establish:
+
+- a known non-Reverse `GameMode`;
+- a difficulty present in `DIFFICULTIES`;
+- either no seed or an integer seed for Classic/Timed/Streak;
+- a valid ISO date for Daily, with blank date resolved locally;
+- no manual Daily seed;
+- no Daily date attached to a non-Daily configuration.
+
+`tui_challenge_app.py` constructs the replacement game before assigning it to the app. A validation/construction failure therefore cannot leave a partially replaced round.
+
+The challenge presenter has no reason to display the target. Target non-disclosure is covered by focused regression tests for configured and already-created games.
+
+This validation is application robustness, not a cryptographic boundary. Deterministic seeds are not secrets and should not be treated as authentication credentials.
 
 ## TUI Recovery is inspection, not repair
 
@@ -52,7 +78,7 @@ A future TUI repair feature would require a separate security/design review prov
 
 ## Text input and shortcut scope
 
-The expanded workspace includes profile names, searches, dates, player filters, and backup paths. Plain `Q`/`R` therefore belong only to the focused numeric `GuessInput` in Play. They are not application-global bindings, so ordinary workspace text fields can consume normal `q`/`r` characters.
+The expanded workspace includes challenge seed/date fields, profile names, searches, dates, player filters, and backup paths. Plain `Q`/`R` therefore belong only to the focused numeric `GuessInput` in Play. They are not application-global bindings, so ordinary workspace text fields can consume normal `q`/`r` characters.
 
 Global `Ctrl+Q`/`Ctrl+R` remain available from every pane. This separation prevents a normal typed character in a text field from unexpectedly triggering a session action while preserving the original Play reset/quit shortcuts.
 
@@ -62,13 +88,15 @@ Replay and backup SHA-256 integrity checks are designed to detect accidental mod
 
 A backup that passes SHA-256 and current normalization is structurally acceptable to GuessNova; this still does not prove who created it.
 
+Likewise, a deterministic challenge seed is reproducibility metadata, not a secret/token/security credential.
+
 ## Doctor/TUI support-output safety
 
-Doctor and the Textual workspace perform no runtime network request, but visible output can contain local path information, active/profile names, history/leaderboard information, schema versions, and aggregate counts.
+Doctor and the Textual workspace perform no runtime network request, but visible output can contain local path information, active/profile names, history/leaderboard information, challenge seeds/dates, schema versions, and aggregate counts.
 
 Treat saved JSON reports, screenshots, screen recordings, terminal logs, and TUI captures as diagnostic/user data and review them before sharing publicly.
 
-Do not put secrets into GuessNova replay codes, state files, backup files, repair backups, Doctor reports, fixtures, issue reports, or terminal captures.
+Do not put secrets into GuessNova challenge fields, replay codes, state files, backup files, repair backups, Doctor reports, fixtures, issue reports, or terminal captures.
 
 ## Future artifact signing
 

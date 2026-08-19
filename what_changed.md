@@ -1,485 +1,416 @@
-# GuessNova — v1.4 Merged Full Textual Workspace Checkpoint
+# GuessNova — v1.5 Challenge Workspace Active Handoff
 
 ## Current milestone
 
-**GuessNova `v1.4.0` full Textual local-workspace implementation is merged into `main`.**
-
-Merged release work:
+GuessNova `v1.5.0` implementation is prepared on:
 
 - Repository: `https://github.com/sanskarIN/guessnova`
-- Branch: `release/v1.4.0-tui-workspace-20260819`
-- Pull request: `#10` — `feat: ship GuessNova 1.4 full Textual workspace`
-- Base commit: `c45b163b48353aa307d73ecc6095732803cd5503`
-- Final PR head: `149fa6ff3dcfbb523386f732feb188a7503991d3`
-- v1.4 PR commits preserved: **52 granular commits**
-- Merge method: **normal merge**, not squash
-- Merge commit: `b118bdb8903230e1cddc3865b1cfbd3e7b038132`
-- Merge commit author: `Sanskar <sanskarin@outlook.in>`
-- GitHub merge verification: **valid signed merge commit**
-- Post-merge continuity archive commit before this file update: `80ce8eec78d3832dccc443545b09078f534cd083`
-- Package version: `1.4.0`
-- Runtime version: `1.4.0`
-- Citation version: `1.4.0`
-- Local state schema: `2`
-- Backup wrapper version: `2`
-- Supported legacy backup wrapper: `1`
-- Replay format version: `1`
-- Doctor machine report protocol: `1`
+- Branch: `release/v1.5.0-challenge-workspace-20260819`
+- Pull request: `https://github.com/sanskarIN/guessnova/pull/11`
+- PR base: `main`
+- Base `main` SHA: `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`
+- Previous source milestone: `v1.4.0`
+- Prepared package/runtime/citation version: `1.5.0`
 - Python requirement: `>=3.13`
 - License: MIT
+- Required Git commit email: `sanskarin@outlook.in`
 
-The v1.4 merge preserves the full implementation/fix/test/docs/build/CI history. It intentionally does **not** invent schema 3, backup wrapper 3, replay version 2, Doctor report version 2, a third locale, package-signing claims, or a new property-testing dependency without a concrete prerequisite.
+The v1.4 implementation record remains preserved in Git history and continuity documentation. This file records the active v1.5 work rather than duplicating the previous milestone in full.
 
----
+## Milestone purpose
 
-# 1. Continuity archives
+The v1.4 workspace already had deterministic challenge construction helpers, but the mounted Play pane could not configure those challenges. v1.5 closes that concrete gap without changing the local state schema, backup wrapper, replay format, Doctor protocol, account model, or network behavior.
 
-Detailed pre-merge implementation history is preserved in-repository rather than being deleted from the active handoff.
+## Product implementation completed on this branch
 
-## v1.4 complete PR checkpoint
+### Challenge configuration model
 
-- `docs/continuity/v1_4_pr_checkpoint.md`
-- Exact former v1.4 pre-merge `what_changed.md` blob: `440abbc2ac4fd3a0dfdf32897e4dc1aa541f2446`
-- Archive commit: `80ce8eec78d3832dccc443545b09078f534cd083`
+`src/guessnova/tui_workspace.py` provides an immutable `ChallengeConfiguration` and `parse_workspace_challenge(...)` boundary.
 
-That archive contains the full v1.4 source-level architecture, every pane, helper/widget design, tests, smoke/CI changes, documentation map, static-audit findings, local execution limitation, manual gates, and continuation instructions.
+The configuration layer:
 
-## v1.3 and older complete checkpoint
+- accepts stable mode/difficulty identifiers;
+- rejects Reverse from ordinary numeric challenge setup;
+- validates difficulty through the shared `DIFFICULTIES` registry;
+- parses optional whole-number seeds for Classic/Timed/Streak;
+- parses Daily dates as ISO `YYYY-MM-DD`;
+- resolves a blank Daily date to the local current date;
+- prevents a Daily configuration from carrying a manual seed;
+- prevents non-Daily configurations from carrying a Daily date;
+- reconstructs deterministic seeded/Daily games without storing a hidden target.
 
-- `docs/continuity/v1_3_merged_checkpoint.md`
-- Former v1.3 active continuity blob: `014cba52fbe736f33380ce3d8ede5161001eef63`
+`build_workspace_game(...)` delegates through this validated model instead of duplicating construction rules.
 
-That archive preserves the detailed v1.3/v1.2/v1.1/v1.0 history.
+### Challenge presentation
 
-Important prior milestones:
+`src/guessnova/tui_challenge.py` provides localized target-free challenge identity helpers.
 
-- v1.0 audit merge: `3cc6fec1945c97605506de7d004d7ef4436f48f3`
-- v1.1 merge: `b303b764c83dbbca5183ee5b974bd280e7fca0cd`
-- v1.2 merge: `f17594b16426513850c9a1c118d8fcec225702cd`
-- v1.3 merge: `e57cac65b20e6351200ac3ab25a3cf2a07ed9308`
-- v1.3 post-merge / v1.4 base: `c45b163b48353aa307d73ecc6095732803cd5503`
-
----
-
-# 2. v1.4 shipped implementation
-
-`guessnova-tui` is no longer only a single gameplay card. It is now a six-pane keyboard-first local workspace:
-
-1. Play
-2. Profiles
-3. History
-4. Leaderboard
-5. Settings
-6. Recovery
-
-The workspace reuses the existing local product boundaries rather than introducing a second storage/database/network layer.
-
-## Play
-
-Retains:
-
-- deterministic initial guess-input focus;
-- numeric guessing;
-- Submit and Range Hint controls;
-- automatic smart hints;
-- explicit range hints;
-- attempts/range state;
-- result persistence through `GameService`;
-- exactly-once completed-round guard;
-- deterministic seeded reset behavior.
-
-Final shortcut model:
-
-- focused numeric `GuessInput`: plain `R` = new round;
-- focused numeric `GuessInput`: plain `Q` = quit;
-- anywhere: `Ctrl+R` = reset and return to Play;
-- anywhere: `Ctrl+Q` = quit.
-
-Plain `R/Q` are intentionally **not** application-global, so ordinary profile/search/player/path text inputs can type `r` and `q` normally.
-
-## Profiles
-
-Adds TUI flows for:
-
-- active profile summary;
-- unlocked achievement labels;
-- profile selection/use;
-- create;
-- rename;
-- recoverable delete;
-- recoverable-trash visibility;
-- restore;
-- refresh.
-
-Delete requires the selected profile name to be typed exactly before the action succeeds.
-
-Active-profile ownership changes reset any unfinished game before later persistence so a partially played round cannot silently move between profiles.
-
-## History
-
-Adds newest-first bounded table/filter UX for:
-
-- result;
-- mode;
-- difficulty;
-- free-text search;
-- since date;
-- until date.
-
-Invalid ISO-date input reports an error without erasing the last valid table data.
-
-## Leaderboard
-
-Adds local ranked table/filter UX for:
+Identity can report:
 
 - mode;
 - difficulty;
-- case-insensitive player substring.
+- deterministic seed;
+- resolved Daily date;
+- unseeded/random state.
 
-Filtering preserves the existing validated leaderboard rank order.
+The hidden target is deliberately excluded from the challenge identity contract.
 
-## Settings
+### Challenge form
 
-Adds TUI controls for existing per-profile settings:
+`src/guessnova/tui_challenge_widgets.py` provides the mounted Challenge Setup widget with:
 
-- theme;
-- locale;
-- reduced motion;
-- high contrast;
-- sound preference;
-- automatic smart hints.
+- Classic/Timed/Streak/Daily mode selection;
+- shared difficulty selection;
+- optional seed input;
+- Daily date input;
+- Start Challenge action;
+- localized help/status;
+- visible mode/difficulty context;
+- mode-aware field state.
 
-Smart-hint and high-contrast changes apply immediately. Locale is persisted immediately but the already-mounted TUI keeps its launch language until restart, preventing a partially translated interface.
+Daily disables seed and enables date. Classic/Timed/Streak enable seed and disable date. Reverse is not shown in this numeric setup.
 
-Textual Switch controls use `animate=False`.
+### Challenge-enabled Textual application
 
-## Recovery
+`src/guessnova/tui_challenge_app.py` subclasses the stable v1.4 workspace rather than rewriting it.
 
-The TUI Recovery pane is intentionally read-only.
+The installed `guessnova-tui` entry point routes to this challenge-enabled layer.
 
-It can:
+A configured challenge start follows parse/build-before-mutate ordering:
 
-- display local state health;
-- display data directory;
-- display source/current schema;
-- display profile/history/leaderboard/trash counts;
-- refresh diagnostics;
-- verify a selected backup using existing `inspect_backup(...)` preflight.
+1. read form values;
+2. parse/validate configuration;
+3. construct the replacement game;
+4. only then replace the active round;
+5. normalize accepted seed/date fields;
+6. update range/attempt display;
+7. clear stale guess/feedback state;
+8. show target-free identity;
+9. return focus to Guess.
 
-It cannot:
+Invalid configuration leaves the current `GuessGame`, target, attempts, and result-save state intact and focuses the relevant field.
 
-- call repair;
-- import the selected backup;
-- overwrite state;
-- delete state;
-- upload data.
+### Deterministic configured reset
+
+For a challenge created through the form:
+
+- seeded Classic/Timed/Streak reset from mode/difficulty/seed;
+- Daily resets from mode/difficulty/resolved date;
+- deterministic configuration therefore reproduces the same seeded target;
+- unseeded challenges retain normal random reset semantics.
 
-Repair remains explicit through:
+The validated configuration is the reset source rather than mutable widget text.
 
-```bash
-guessnova doctor --repair
-```
+### Keyboard/accessibility behavior
+
+The v1.4 fast-play interaction remains intact:
 
----
+- initial focus is Guess;
+- forward Tab remains Guess → Submit → Range Hint;
+- Challenge Setup is reachable backward from Guess;
+- successful challenge start returns focus to Guess;
+- invalid seed focuses Seed;
+- invalid Daily date focuses Date;
+- plain `Q/R` remain scoped to the numeric `GuessInput`;
+- challenge/profile/search/path fields receive ordinary characters;
+- global `Ctrl+Q`/`Ctrl+R` remain available.
+
+### Localization
+
+`src/guessnova/i18n.py` contains complete English and Hindi Challenge Setup strings for:
+
+- title;
+- mode/difficulty context;
+- seed/date placeholders;
+- Start action;
+- help;
+- active identity;
+- seed/date/random details;
+- localized validation wrapper.
 
-# 3. v1.4 architecture
+Hindi catalog completeness remains enforced against the English key set.
 
-New/expanded source boundaries:
-
-- `src/guessnova/tui_workspace.py` — Textual-independent workspace helpers.
-- `src/guessnova/tui_widgets.py` — focused widget behavior, especially Play-only `GuessInput` shortcuts.
-- `src/guessnova/tui.py` — pane composition, focus, widget events, refresh/orchestration.
-
-`tui_workspace.py` includes reusable helpers for:
-
-- deterministic seeded/daily challenge construction;
-- workspace snapshots;
-- profile statistics;
-- newest-first history filtering;
-- rank-preserving leaderboard filtering;
-- validated settings persistence.
-
-The v1.4 mounted TUI continues using:
-
-- `Storage` for profile/settings/history/leaderboard state;
-- `GameService` for completed results;
-- `diagnose(...)` for state diagnostics;
-- `inspect_backup(...)` for read-only backup verification.
-
-No parallel database, cloud sync, remote leaderboard, or hidden persistence model was introduced.
-
----
-
-# 4. v1.4 regression coverage added
-
-Focused test surfaces now include:
-
-- `tests/test_tui_workspace.py`
-- `tests/test_tui_workspace_app.py`
-- `tests/test_tui_workspace_data.py`
-- `tests/test_tui_workspace_leaderboard.py`
-- `tests/test_tui_workspace_accessibility.py`
-- expanded `tests/test_tui.py`
-- expanded `tests/test_i18n.py`
-
-Coverage added for:
-
-- deterministic workspace challenge construction;
-- reproducible daily date;
-- invalid seed/date and Reverse separation;
-- workspace snapshots;
-- profile statistics;
-- history filtering/order;
-- leaderboard filtering/order;
-- settings persistence;
-- pane shortcuts;
-- normal `q/r` input outside Play;
-- Play-local `R` reset;
-- Play-local `Q` quit;
-- profile create/use/rename/delete/restore;
-- exact-name delete confirmation;
-- active-profile round isolation;
-- invalid History dates;
-- leaderboard filters;
-- settings persistence;
-- launch-locale consistency;
-- high contrast at launch/after save;
-- read-only backup verification.
-
-`scripts/smoke_test.py` also exercises the reusable workspace helper layer in addition to retained gameplay/profile/replay/backup/Doctor/repair/reverse checks.
-
----
-
-# 5. Cross-platform package/release gates
-
-Normal CI and tagged-release package matrices now install the built wheel on:
-
-- Ubuntu;
-- Windows;
-- macOS.
-
-Each package path includes explicit Textual-workspace import verification:
-
-```bash
-python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
-```
-
-and retains game/Doctor/smoke verification.
-
-Strict CI/release gates remain configured for:
-
-- Ruff lint;
-- Ruff format check;
-- strict mypy;
-- pytest/coverage;
-- compileall;
-- release metadata verification;
-- smoke test;
-- dependency audit on release/security paths;
-- CodeQL and Security workflows.
-
----
-
-# 6. Exact final-head hosted verification state at merge
-
-Final PR head:
-
-```text
-149fa6ff3dcfbb523386f732feb188a7503991d3
-```
-
-Immediately before and after the normal merge, GitHub reported:
-
-- CI run `32224689793`: `queued`, conclusion `null`.
-- Security checks run `32224689794`: `queued`, conclusion `null`.
-- CodeQL run `32224689833`: `queued`, conclusion `null`.
-
-CI job-level status for run `32224689793`:
-
-- job `95981909116` — `test (3.13)`: `queued`, conclusion `null`.
-- job `95981909209` — `package (ubuntu-latest)`: `queued`, conclusion `null`.
-- job `95981909299` — `package (macos-latest)`: `queued`, conclusion `null`.
-- job `95981909370` — `package (windows-latest)`: `queued`, conclusion `null`.
-
-**These checks are not recorded as passed.**
-
-No exact-final-head workflow produced an actionable failure conclusion before the merge. The repository continued the GitHub-hosted runner saturation pattern seen in prior release work.
-
-If these runs later execute and expose a reproducible failure, the next continuation must inspect the exact failed job/step/log and apply a focused fix/regression on a new branch/PR.
-
----
-
-# 7. Local execution limitation
-
-The available execution/container environment could not resolve GitHub or package-index hosts.
-
-Observed clone failure:
-
-```text
-fatal: unable to access 'https://github.com/sanskarIN/guessnova.git/':
-Could not resolve host: github.com
-```
-
-Package installation attempts also failed on DNS/name resolution.
-
-Therefore this checkpoint does **not** claim local execution of:
-
-- Ruff;
-- strict mypy;
-- pytest;
-- Textual pilot suites;
-- built-wheel import;
-- dependency audit.
-
-The repository contains the corresponding tests/workflows, but no local pass is fabricated.
-
----
-
-# 8. Static audit issues fixed before merge
-
-Concrete v1.4 interaction/design risks found and fixed during review:
-
-1. **Profile ownership drift** — unfinished gameplay now resets when active-profile ownership changes.
-2. **Partial live localization** — mounted TUI keeps its launch language; selected profile locale fully applies next launch.
-3. **Text-input shortcut conflict** — plain `Q/R` are not global across workspace text fields.
-4. **Play reset/quit regression risk** — dedicated `GuessInput` owns plain `R/Q` so Play preserves legacy keys while other inputs remain normal text editors.
-5. **Workspace testing separation** — non-widget behavior moved to independently testable helpers instead of being buried entirely in a large Textual class.
-6. **Built-wheel visibility** — package matrices explicitly import the Textual workspace on all three desktop OS families.
-7. **Stale manual evidence gate** — accessibility evidence now covers all six panes and their keyboard/safety flows.
-
-The widget-local binding/custom-message approach was checked against current official Textual documentation during the v1.4 audit.
-
----
-
-# 9. Documentation completed
-
-Added:
-
-- `docs/tui_workspace.md`
-- `docs/TUI_WORKSPACE.md`
-- `docs/continuity/v1_4_pr_checkpoint.md`
-- `docs/continuity/v1_3_merged_checkpoint.md`
-
-Updated during v1.4:
+### Persistence/privacy compatibility
+
+v1.5 Challenge Setup is in-memory application/presentation state.
+
+It does **not** add:
+
+- state schema 3;
+- backup wrapper 3;
+- replay format 2;
+- Doctor report 2;
+- cloud account state;
+- telemetry;
+- remote leaderboard;
+- application network calls.
+
+Completed rounds still persist through `GameService` and existing `Storage` behavior.
+
+## Automated coverage added
+
+Focused v1.5 challenge test files:
+
+- `tests/test_tui_challenge_configuration.py`
+- `tests/test_tui_challenge_i18n.py`
+- `tests/test_tui_challenge_presenter.py`
+- `tests/test_tui_challenge_widgets.py`
+- `tests/test_tui_challenge_mode_fields.py`
+- `tests/test_tui_challenge_app.py`
+- `tests/test_tui_challenge_safety.py`
+- `tests/test_tui_challenge_reset.py`
+- `tests/test_tui_challenge_game_status.py`
+- `tests/test_tui_challenge_initial_status.py`
+- `tests/test_tui_challenge_accessibility.py`
+
+Coverage includes:
+
+- configuration invariants;
+- seeded/Daily reconstruction;
+- malformed mode/difficulty/seed/date input;
+- Reverse separation;
+- English/Hindi challenge formatting/completeness;
+- target-free status;
+- widget defaults;
+- mode-aware field state;
+- seeded Timed startup;
+- Daily startup/normalization;
+- invalid-seed current-round preservation;
+- invalid-date current-round preservation;
+- deterministic configured reset;
+- initial challenge identity;
+- guess-first focus;
+- backward keyboard reachability;
+- ordinary `q`/`r` challenge-field input.
+
+`scripts/smoke_test.py` also exercises challenge parsing, deterministic reconstruction, and localized challenge presentation.
+
+## Build/CI/release updates
+
+- `pyproject.toml` routes `guessnova-tui` through `guessnova.tui_challenge_app:run`.
+- `Makefile` verifies both the stable workspace and shipped challenge app imports.
+- Normal CI built-wheel package checks import both Textual application layers on Linux/Windows/macOS.
+- Tagged-release package checks import both Textual application layers on Linux/Windows/macOS.
+- Package/runtime/citation metadata is prepared at `1.5.0`.
+- `CHANGELOG.md` includes the `1.5.0` release section.
+
+### Final dependency/toolchain maintenance pass
+
+The final continuation audit found current Dependabot updates that were still absent from the v1.5 branch. They were incorporated without changing product/runtime compatibility identifiers:
+
+- development coverage compatibility widened from `pytest-cov>=6.2,<7` to `pytest-cov>=6.2,<8`, allowing the current 7.x line;
+- `actions/checkout` updated from v4 to v7 across CI, CodeQL, Security, and Release workflows;
+- `actions/setup-python` updated from v5 to v7 across CI, Security, and Release workflows;
+- `github/codeql-action` updated from v3 to v4 for init/analyze;
+- `softprops/action-gh-release` updated from v2 to v3.
+
+Focused maintenance commits:
+
+- `1ed5b25` — `build(deps-dev): allow pytest-cov 7`
+- `dfd42b7` — `ci(deps): update checkout action to v7`
+- `a7ccef0` — `ci(deps): update setup-python action to v7`
+- `034dedd` — `ci(deps): update CodeQL checkout to v7`
+- `fe3f9eb` — `ci(deps): update CodeQL action to v4`
+- `bec4026` — `ci(deps): update security checkout to v7`
+- `5379fb9` — `ci(deps): update security setup-python to v7`
+- `013f9e2` — `ci(deps): update release checkout to v7`
+- `18f82fe` — `ci(deps): update release setup-python to v7`
+- `56848e7` — `ci(deps): update release action to v3`
+
+These changes mirror the repository's open Dependabot updates instead of inventing unrelated release churn. The Dependabot PRs target `main`, so they are intentionally not closed from this release branch; GitHub/Dependabot can reconcile them after the v1.5 branch is merged.
+
+### Final Phase-6 documentation integrity gate
+
+The master final-audit requirements include documentation-link checking. The repository had comprehensive documentation but no executable local-link verification tool. This was a genuine missing release-quality gate and was closed in this continuation.
+
+Added `scripts/check_docs_links.py`:
+
+- dependency-free and Python-standard-library only;
+- recursively scans repository Markdown;
+- ignores generated/tool directories;
+- ignores fenced and inline code examples;
+- validates inline Markdown links/images;
+- validates reference-style link definitions;
+- validates HTML `href`/`src` targets embedded in Markdown;
+- URL-decodes local paths;
+- accepts repository-root-relative local paths;
+- requires local files/directories to exist;
+- rejects targets that escape the repository root;
+- deliberately does not fetch external URLs or validate fragment-only GitHub anchor slugs, keeping the gate deterministic and offline.
+
+Added `tests/test_docs_links.py` with focused regression coverage for:
+
+- valid local/external/fragment/image links;
+- missing local targets;
+- reference links;
+- embedded HTML targets;
+- fenced/inline code-example exclusion;
+- repository-root escape rejection.
+
+Integrated the checker into:
+
+- `make docs-links`;
+- `make check`;
+- normal CI quality verification;
+- tagged-release verification.
+
+Documentation was updated in concise/canonical testing references, concise/canonical release references, and the definition-of-done audit.
+
+Focused documentation-integrity commits:
+
+- `ca6042a` — `feat(tooling): add offline documentation link checker`
+- `5c2b63d` — `test(tooling): cover documentation link checker`
+- `b4a7ed7` — `build: add documentation links to make check`
+- `441ec58` — `ci: verify documentation links`
+- `9695b49` — `ci: gate releases on documentation links`
+- `8c61cf0` — `docs: document offline link verification`
+- `ce4c28f` — `docs: add canonical documentation link testing guide`
+- `a60b2f1` — `docs: mark documentation link gate implemented`
+
+### Documentation-checker hardening found during final continuation
+
+A final static audit of the new documentation checker found two concrete false-positive classes before release verification:
+
+1. Markdown footnote definitions such as `[^note]: explanatory text` matched the reference-link-definition expression and could incorrectly treat the first footnote word as a local target.
+2. Multi-backtick inline code spans and fence-like lines such as `````python`` inside an already-open fenced example could expose example links to the scanner even though Markdown still treats them as code.
+
+Both were fixed:
+
+- reference definitions now explicitly exclude footnote labels;
+- inline-code stripping supports one-or-more matching backtick delimiters;
+- fenced code closes only on a same-character fence of sufficient length with no info string/content after it;
+- a new regression verifies footnotes, double-backtick code spans, misleading fence-like lines inside code, and a real post-fence local link together.
+
+Focused hardening commits:
+
+- `ffaedb6` — `fix(tooling): avoid false documentation link matches`
+- `91ea2ad` — `test(tooling): cover Markdown false-positive regressions`
+- `e8278c7` — `docs: add documentation link gate to release checklist`
+- `9955a0a` — `docs: document release documentation integrity gate`
+
+The corrected parser behavior was also exercised in isolation against synthetic Markdown containing a footnote, double-backtick example, misleading fence-like line, and one real local link; only the real target remained. This is a targeted parser check, not a claim that the complete repository quality suite has run locally.
+
+The release workflow has not been tagged or published from this branch. A tag must not be created until exact-head automated and manual release gates pass.
+
+## Documentation completed/updated
+
+Added during v1.5:
+
+- `docs/tui_challenges.md`
+- `docs/completion_audit.md`
+- `docs/adr/0005-additive-textual-challenge-layer.md`
+
+Updated during the milestone/final audit:
 
 - `README.md`
 - `CHANGELOG.md`
 - `ROADMAP.md`
-- `CITATION.cff`
+- `CONTRIBUTING.md`
 - `PRIVACY.md`
 - `SECURITY.md`
 - `SUPPORT.md`
-- `CONTRIBUTING.md`
-- `.github/pull_request_template.md`
-- `.github/workflows/ci.yml`
-- `.github/workflows/release.yml`
+- `docs/TUI_WORKSPACE.md`
+- `docs/tui_workspace.md`
+- `docs/ARCHITECTURE.md`
+- `docs/architecture.md`
+- `docs/TESTING.md`
+- `docs/testing.md`
+- `docs/RELEASING.md`
+- `docs/release.md`
+- `docs/setup.md`
+- `docs/development.md`
+- `docs/troubleshooting.md`
+- `docs/localization.md`
 - `docs/accessibility.md`
 - `docs/accessibility_evidence_template.md`
-- `docs/architecture.md`
-- `docs/development.md`
-- `docs/localization.md`
-- `docs/release.md`
-- `docs/RELEASING.md`
-- `docs/setup.md`
-- `docs/testing.md`
-- `docs/TESTING.md`
-- `what_changed.md`
+- `docs/game_modes.md`
+- `docs/performance.md`
+- `docs/completion_audit.md`
+- `what_changed.md` (this final handoff)
 
----
+The documentation explicitly separates implementation completion from release evidence.
 
-# 10. Release metadata / compatibility domains
+## Pull request checkpoint
 
-Current release metadata:
+PR #11 is open and mergeable at the GitHub repository level. It has no review comments or submitted reviews, and its base remains `main` at `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`.
 
-```text
-project version       1.4.0
-runtime version       1.4.0
-citation version      1.4.0
-state schema          2
-backup wrapper        2
-legacy backup         1
-replay format         1
-Doctor report         1
-```
+Immediately before this final handoff commit, PR #11 reported:
 
-v1.4 does not require stored-format migration because it changes the application/TUI layer over existing validated local formats.
+- head: `9955a0af964fd035dcf225ad085b9782cb218931`
+- commits: `84`
+- changed files: `54`
+- additions: `3581`
+- deletions: `661`
+- base: `main` at `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`
 
----
+This handoff update becomes the 85th focused branch commit after the v1.4 base and is intended to be the **final branch mutation before hosted verification**. Treat the resulting handoff SHA as the exact release-candidate head. Do not edit documentation merely to record later workflow status because doing so would create a new unverified head.
 
-# 11. Manual release gates still required
+The history intentionally uses many small Conventional Commits instead of one monolithic or squashed feature commit.
 
-The source merge does **not** automatically authorize a `v1.4.0` tag.
+## Compatibility boundaries
 
-Before a real v1.4 release tag:
+Current prepared v1.5 values:
 
-1. select the exact release candidate commit;
-2. require successful automated checks for that exact commit;
-3. verify package/runtime/citation/changelog metadata;
-4. verify schema migration/future-schema rejection;
-5. verify backup-v2/legacy/tamper/importability behavior;
-6. verify Doctor JSON/exit/repair behavior;
-7. install/verify the built wheel;
-8. manually exercise Play, Profiles, History, Leaderboard, Settings, Recovery;
-9. verify Play-local `R/Q` and global Ctrl equivalents;
-10. verify normal `q/r` input outside Play;
-11. verify profile deletion/restore and unfinished-round isolation;
-12. verify History/Leaderboard filters;
-13. verify high contrast/reduced motion;
-14. verify English and Hindi after relaunch;
-15. complete `docs/accessibility_evidence_template.md` on the exact candidate;
-16. capture real screenshots/demo only from that signed-off build;
-17. record media provenance;
-18. create an immutable tag only after gates pass.
+- package/runtime/citation version: `1.5.0`
+- state schema: `2`
+- backup wrapper: `2`
+- supported legacy backup wrapper: `1`
+- replay format: `1`
+- Doctor report protocol: `1`
 
-Do not fabricate accessibility evidence or release media.
+No compatibility identifier above should change merely to create activity.
 
----
+## Verification reality
 
-# 12. Repository settings reality
+### Local execution environment
 
-After the v1.4 merge, GitHub branch metadata for `main` still reports:
+The available continuation environment cannot resolve GitHub/package-index hosts for a normal local clone/dependency installation. Therefore this continuation does **not** claim a local Ruff, format, mypy, full pytest, build, Twine, pip-audit, dependency-backed smoke, or full-repository documentation-link pass.
 
-```text
-protected: false
-branch protection enabled: false
-required status checks enforcement: off
-```
+Static review and committed deterministic regression coverage have been performed through the GitHub repository interface. Dependency/toolchain edits were checked against the repository's current Dependabot-generated patches before being applied. The documentation checker received targeted isolated parser execution against synthetic Markdown after its final false-positive fixes, but the complete repository checkout required for full execution is not locally available in this continuation environment.
 
-Repository documentation recommends branch protection, but it is not currently enabled. Do not claim otherwise unless repository metadata later confirms a settings change.
+### Hosted verification
 
----
+PR #11 triggers three exact-head workflow families:
 
-# 13. Next continuation priorities
+- CI;
+- Security checks;
+- CodeQL.
 
-If work continues:
+Earlier candidate heads, including `985e5e80ef9f75dffa5250a46f7e20ef9dc0023d` and `5be82d4b2b38f084c22f7972bcda9fd6909bc25c`, successfully triggered CI/Security/CodeQL workflow families but remained queued/pending when inspected. Those runs are now superseded evidence because final documentation-integrity hardening required additional commits.
 
-1. inspect current `main` before branching;
-2. recheck the exact v1.4 PR-head workflow conclusions before claiming they passed/failed;
-3. if a concrete v1.4 failure appears, make the smallest focused patch release/fix branch and add a regression;
-4. do not create schema 3 unless a real stored-format boundary appears;
-5. do not add a third locale without complete/native-quality review;
-6. do not add TUI repair writes unless Doctor confirmation and backup-before-write guarantees are preserved;
-7. do not add property-testing dependency without a demonstrated coverage gap;
-8. do not claim package signing/trusted publishing without a real registry workflow;
-9. keep local-only/privacy/accessibility/determinism guarantees;
-10. keep using `sanskarin@outlook.in` for Git commits;
-11. preserve granular history with normal merges unless explicitly instructed otherwise;
-12. update this live handoff after meaningful continuation work.
+Only workflow conclusions attached to the resulting handoff SHA count as automated release-candidate evidence. A queued, pending, absent, cancelled, or superseded run is not a pass.
 
-Potential future product directions remain gated, including atomic full in-process TUI relocalization, richer challenge configuration inside the mounted TUI, and an optional offline TypeScript/PWA edition that preserves compatibility/privacy/determinism/accessibility constraints.
+Required evidence before release verification can be claimed:
 
----
+- final-head CI success, including Ruff, format, mypy, pytest, compile, release metadata, documentation-link verification, and smoke test;
+- final-head Linux built-wheel package success;
+- final-head Windows built-wheel package success;
+- final-head macOS built-wheel package success;
+- final-head Security checks success;
+- final-head CodeQL success;
+- manual accessibility evidence on the exact release candidate using `docs/accessibility_evidence_template.md`;
+- real screenshots/demo only from the exact signed-off build if release media is published.
 
-# 14. Project identity
+## Definition-of-done status
 
-- Project: **GuessNova**
-- Repository: `https://github.com/sanskarIN/guessnova`
-- GitHub profile: `https://github.com/sanskarIN`
-- License: MIT
-- Credit: **Made by the Sanskar**
-- Business: `sanskarin@outlook.in`
-- Business: `sanskarin.business@gmail.com`
-- Support: `supportramsandesh@gmail.com`
-- Buy Me a Coffee: `https://buymeacoffee.com/sanskarIN`
+See `docs/completion_audit.md` for the requirement-by-requirement audit.
 
-GuessNova remains fully usable without donation, account creation, telemetry, analytics, cloud sync, remote leaderboard, or required runtime network access.
+The final repository audit now includes the previously missing documentation-link gate and its Markdown false-positive hardening. No open ordinary GitHub issues were found, PR #11 has no review comments/reviews, and repository code search previously found no matches for `TODO`, `FIXME`, `XXX`, `NotImplemented`, or placeholder `pass` in the searchable repository state. No additional concrete product defect was identified through the available repository interface after closing the dependency/toolchain, documentation-integrity, and checker-correctness gaps.
+
+Remaining release blockers are evidence gates rather than invented feature work:
+
+1. run/fix exact final-head PR workflows;
+2. complete manual v1.5 accessibility evidence;
+3. capture real release media only after sign-off if desired;
+4. tag/release only after all required gates are satisfied.
+
+Optional candidates listed in `docs/completion_audit.md` remain optional and are not definition-of-done blockers. They should not be added merely to inflate feature or commit count.
+
+## Next exact actions
+
+1. Freeze the resulting branch head from this handoff commit.
+2. Inspect exact-head CI/Security/CodeQL conclusions.
+3. If the documentation-link gate finds an existing broken local target, fix the affected documentation with a focused commit and rerun exact-head verification.
+4. If any other concrete workflow failure occurs, inspect the failed step, fix it with a focused commit plus regression where practical, then repeat exact-head verification.
+5. Merge PR #11 with the normal merge method only after required automated gates pass and no release-blocking code defect remains. Preserve granular history; do not squash.
+6. Do not tag `v1.5.0` until manual accessibility evidence is also complete.

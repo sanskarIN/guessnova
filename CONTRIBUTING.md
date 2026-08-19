@@ -28,27 +28,38 @@ python -m guessnova --help
 python -m guessnova doctor --help
 python -m guessnova.doctor_cli --help
 python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
-`make check` runs the same core quality sequence plus entry-point verification on systems with Make available.
+`make check` runs the same core quality sequence plus entry-point and both Textual application import checks on systems with Make available.
 
 ## Contribution rules
 
 - Keep game/domain logic independent of Rich/Textual presentation, diagnostics, backup wrappers, command dispatch, and filesystem I/O.
 - Keep `entrypoint.py` limited to routing; do not duplicate gameplay or Doctor business logic there.
 - Keep reusable Textual workspace data/configuration behavior in `tui_workspace.py` when it does not require widget/focus knowledge.
-- Keep `tui.py` focused on composition, focus, event handling, and presentation orchestration over existing application/local-adapter APIs.
+- Keep v1.5 Challenge Setup parsing/configuration Textual-independent and deterministic.
+- Keep challenge identity/status formatting in `tui_challenge.py` and keep hidden target values out of that presentation contract.
+- Keep challenge form/mode-aware field state in `tui_challenge_widgets.py`; do not add persistence/game-rule ownership to widgets.
+- Keep challenge-to-workspace orchestration in the additive `tui_challenge_app.py` layer unless an explicit architecture decision replaces ADR 0005.
+- Keep the stable six-pane `tui.py` focused on core composition, focus, event handling, and existing pane/application orchestration.
 - Add or update focused tests for behavior changes and regression fixes.
-- Preserve deterministic behavior for seeded and daily challenges.
-- Use temporary storage and deterministic targets/seeds/clocks in tests; never touch a contributor's real GuessNova state.
+- Preserve deterministic behavior for seeded and Daily challenges.
+- Parse and construct a replacement challenge before mutating the active round; invalid setup must preserve the current round/attempt/result-save state.
+- Keep Reverse out of ordinary numeric Challenge Setup until a dedicated Reverse interaction is designed/tested.
+- Use temporary storage and deterministic targets/seeds/dates/clocks in tests; never touch a contributor's real GuessNova state.
+- Test blank-Daily-date parser behavior with injected `today`, not a runner's real calendar date.
 - Preserve keyboard-only operation and avoid color-only meaning.
+- Preserve Guess as initial TUI focus and the Guess → Submit → Range Hint forward-Tab gameplay path.
+- Keep challenge setup keyboard reachable without turning plain `Q/R` into application-global bindings.
 - Keep destructive local-data operations confirmed and recoverable where practical.
 - TUI profile deletion must retain exact-name confirmation and recoverable trash semantics unless an intentional safer design replaces it.
 - Changing active TUI profile ownership must not allow a partially played round to be persisted under a different profile.
-- TUI global bindings must not steal normal character input from profile/search/path fields; retain globally reliable Ctrl alternatives when single-letter shortcuts exist.
+- TUI global bindings must not steal normal character input from challenge/profile/search/path fields; retain globally reliable Ctrl alternatives when single-letter shortcuts exist.
 - Keep TUI Recovery read-only unless a separately reviewed design proves explicit confirmation and pre-repair backup guarantees.
 - Keep one mounted TUI linguistically consistent; do not partially relabel only some widgets after a locale change.
 - Keep state, replay, backup, and Doctor-report compatibility explicit. Do not invent a schema migration unless a concrete state-format boundary exists.
+- Do not persist transient Challenge Setup state merely to manufacture a new schema version.
 - When introducing a real schema migration, commit representative fixtures for the previous supported schema and test forward migration/future-schema rejection.
 - Keep backup-wrapper versioning independent from state-schema versioning and Doctor-report versioning.
 - Backup integrity changes must retain clear boundaries: unkeyed SHA-256 is corruption/change detection, not encryption, authentication, signing, or origin proof.
@@ -61,7 +72,7 @@ python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 - Keep Doctor exit semantics stable unless an intentional compatibility change is documented, versioned, and tested.
 - New user-facing presentation strings should use the offline message catalog where appropriate. Stable Doctor JSON keys/report kinds are machine identifiers and should remain untranslated.
 - When adding/changing a catalog key, update every shipped locale and keep named placeholders compatible.
-- Do not translate stable command names, environment variables, schema keys, replay fields, backup markers, diagnostic JSON keys, mode/difficulty IDs, or achievement IDs without a compatibility design.
+- Do not translate stable command names, environment variables, schema keys, replay fields, backup markers, diagnostic JSON keys, mode/difficulty IDs, seed/date machine formats, or achievement IDs without a compatibility design.
 - Never commit secrets, private production endpoints, real user data, local profile backups, repair backups, private Doctor reports, generated credentials, or release captures containing private terminal data.
 - Update documentation, `CHANGELOG.md`, and `what_changed.md` for user-visible/release-relevant changes.
 - Prefer small Conventional Commits such as `feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `perf:`, `build:`, `ci:`, and `chore:`.
@@ -119,7 +130,7 @@ Review:
 
 Use `Storage(tmp_path)` and deterministic/injected `GuessGame(...)` instances with Textual's `run_test()` pilot. Reusable non-widget behavior belongs in helper tests when practical.
 
-When changing a pane, review relevant items:
+Stable workspace changes should review:
 
 - initial and post-action focus;
 - Ctrl+number pane shortcuts;
@@ -135,11 +146,27 @@ When changing a pane, review relevant items:
 - read-only Recovery guarantees;
 - temporary/private test state only.
 
+v1.5 Challenge Setup changes should additionally review:
+
+- Classic/Timed/Streak/Daily mode selection;
+- Reverse exclusion from ordinary numeric setup;
+- shared `DIFFICULTIES` use;
+- optional integer seed parsing;
+- ISO Daily date and blank-date resolution;
+- mode-aware seed/date enabled state;
+- parse/build-before-mutate ordering;
+- invalid-config current-round preservation;
+- target-free identity/status;
+- deterministic configured reset;
+- initial Guess focus and backward challenge reachability;
+- plain `Q/R` isolation to GuessInput;
+- all shipped locale keys/formatting.
+
 Keep the focused pilot suites separated by concern rather than growing one giant scenario.
 
 ## Accessibility changes
 
-Keep `docs/accessibility.md` current. Release-candidate changes affecting interaction, layout, contrast, localization, destructive actions, workspace focus, or Recovery behavior should also update the manual evidence checklist when needed. Automated pilot tests supplement rather than replace manual terminal review.
+Keep `docs/accessibility.md` current. Release-candidate changes affecting interaction, layout, contrast, localization, destructive actions, workspace focus, Challenge Setup, or Recovery behavior should also update the manual evidence checklist when needed. Automated pilot tests supplement rather than replace manual terminal review.
 
 ## Pull requests
 

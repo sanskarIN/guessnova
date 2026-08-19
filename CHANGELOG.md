@@ -2,6 +2,52 @@
 
 All notable GuessNova changes are recorded here. The project follows Semantic Versioning where practical.
 
+## [1.5.0] - 2026-08-19
+
+### Added
+
+- Validated Challenge Setup controls inside the shipped Textual Play experience.
+- Play-side Classic, Timed, Streak, and Daily challenge selection while keeping Reverse on its dedicated interaction path.
+- Difficulty selection sourced from the shared `DIFFICULTIES` registry rather than duplicated TUI rules.
+- Optional deterministic integer seeds for Classic/Timed/Streak challenges.
+- Daily `YYYY-MM-DD` configuration with blank-date resolution to the local current date.
+- Immutable `ChallengeConfiguration` plus Textual-independent `parse_workspace_challenge(...)` validation/reconstruction helpers.
+- Localized target-free challenge identity presentation for active/configured games.
+- Mode-aware challenge fields: seed is disabled for Daily, while date is disabled for Classic/Timed/Streak.
+- Additive `tui_challenge_app.py` integration over the stable v1.4 six-pane workspace.
+- Focused challenge configuration, presentation, widget, integration, validation-preservation, reset, initial-status, localization, and keyboard regression suites.
+- Dedicated `docs/tui_challenges.md` guide and a repository definition-of-done audit.
+- Built-wheel import verification for both the stable workspace and the shipped challenge-enabled Textual app on Linux, Windows, and macOS package matrices.
+
+### Changed
+
+- `guessnova-tui` now routes through the challenge-enabled application layer while retaining all v1.4 workspace panes and local persistence/service boundaries.
+- `build_workspace_game(...)` now delegates through the validated challenge configuration parser/model before constructing the game.
+- Play keeps the numeric guess field as initial focus even though challenge controls are mounted before it in document order.
+- Forward Tab from Guess continues to reach Submit then Range Hint; backward keyboard navigation reaches challenge setup.
+- Successful challenge start normalizes seed/date fields, clears prior round UI state, updates range/attempts, reports target-free challenge identity, and returns focus to Guess.
+- Configured seeded/Daily reset reconstructs from validated configuration instead of relying on ad-hoc widget state.
+- Smoke testing now exercises challenge parsing, deterministic reconstruction, and localized challenge presentation.
+- Canonical/concise Textual documentation now describes v1.5 challenge setup in addition to the v1.4 workspace.
+
+### Accessibility, privacy, and reliability
+
+- Invalid seed or Daily-date input is rejected before the active `GuessGame` is replaced, preserving target, attempts, and result-save state.
+- Challenge validation errors are visible text and focus the relevant input.
+- Seed/date inputs remain ordinary text fields; plain `Q/R` continue to belong only to the numeric `GuessInput` rather than becoming application-global shortcuts.
+- Irrelevant challenge inputs are disabled according to selected mode so the form does not imply unsupported configuration.
+- Active challenge status contains mode/difficulty/seed/date identity only and never deliberately exposes the hidden target.
+- English and Hindi catalogs include every new challenge-facing message, with catalog-completeness coverage retained.
+- Challenge configuration remains in-memory application/presentation state and does not create a new persistence schema or remote service.
+
+### Compatibility
+
+- Local state schema remains `2`; v1.5 does not introduce schema 3.
+- Backup wrapper remains version `2` and legacy wrapper-v1 support is retained.
+- Replay format remains version `1`.
+- Doctor machine report protocol remains version `1`.
+- Existing Rich CLI, `guessnova doctor`, standalone `guessnova-doctor`, and v1.4 workspace behavior remain supported.
+
 ## [1.4.0] - 2026-08-19
 
 ### Added
