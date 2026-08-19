@@ -108,4 +108,7 @@ def test_group_history_supports_release_ui_groupings() -> None:
 
 def test_group_history_rejects_unknown_grouping() -> None:
     with pytest.raises(ValueError, match="unsupported history grouping"):
-        group_history([_entry("2026-08-19T08:00:00+00:00")], by="unknown")  # type: ignore[arg-type]
+        group_history(
+            [_entry("2026-08-19T08:00:00+00:00")],
+            by="unknown",  # type: ignore[arg-type]
+        )
