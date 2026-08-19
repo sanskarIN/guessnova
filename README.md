@@ -14,7 +14,7 @@
 
 > **Made by the Sanskar**
 
-**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, recoverable profiles, rich session history, achievements, XP, statistics, a leaderboard, integrity-protected backup/restore, read-only backup verification, local diagnostics/repair, bilingual presentation, first-run onboarding, semantic themes, and both Rich CLI and Textual TUI interfaces.
+**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, recoverable profiles, rich session history, achievements, XP, statistics, a leaderboard, integrity-protected backup/restore, read-only backup verification, local diagnostics/repair, bilingual presentation, first-run onboarding, semantic themes, a full six-pane Textual workspace, and a Rich CLI.
 
 ## Demo
 
@@ -52,10 +52,13 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - **Scriptable diagnostics** — Doctor JSON report protocol v1 plus stable exit codes for healthy/valid, cancelled, and attention/error states.
 - **Deterministic test mode** — use `--seed` or `GUESSNOVA_SEED` for reproducibility.
 - **Accessible terminal modes** — `--plain` disables color and `--compact` prefers concise text over panels/tables.
-- **Keyboard-first TUI** — predictable focus order, Enter submission, range-hint control, reliable reset/quit bindings, and persisted completed rounds.
-- **Themes and contrast** — saved semantic Rich themes plus a dedicated high-contrast palette.
+- **Six-pane Textual workspace** — Play, Profiles, History, Leaderboard, Settings, and read-only Recovery in one keyboard-first local interface.
+- **TUI profile safety** — create/use/rename/delete/restore locally, require exact-name delete confirmation, and reset unfinished rounds when profile ownership changes.
+- **TUI data views** — newest-first bounded history filters plus ranked local leaderboard filters without creating a second storage model.
+- **TUI settings and recovery** — active-profile settings, immediate high-contrast/smart-hint behavior, read-only diagnostics, and read-only backup verification.
+- **Themes and contrast** — saved semantic Rich themes plus dedicated CLI and Textual high-contrast behavior.
 - **English + Hindi** — complete offline `en` and `hi` message catalogs with English fallback and per-profile locale settings.
-- **Privacy-first** — no accounts, ads, analytics, telemetry, cloud sync, or application network calls.
+- **Privacy-first** — no accounts, ads, analytics, telemetry, cloud sync, remote leaderboard, or application network calls.
 
 ## Supported platforms
 
@@ -63,13 +66,13 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - Current macOS releases with Python 3.13+
 - Modern Linux distributions with Python 3.13+
 
-A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain` remains available for reduced formatting. CI builds, validates, installs, launches the game and both doctor routes, and smoke-tests the package on Windows, macOS, and Linux runners.
+A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain` remains available for reduced Rich formatting. CI builds, validates, installs, imports the Textual workspace, launches the game and both Doctor routes, and smoke-tests the package on Windows, macOS, and Linux runners.
 
 ## Tech stack
 
 - **Python 3.13+** for domain/application code.
 - **Rich** for accessible terminal presentation.
-- **Textual** for the app-like TUI and deterministic pilot testing.
+- **Textual** for the six-pane local workspace and deterministic pilot testing.
 - **JSON** for versioned local persistence, backup wrappers, and replay payloads.
 - **SHA-256** from Python's standard library for backup/replay integrity checks.
 - **pytest / pytest-cov** for automated tests.
@@ -90,6 +93,7 @@ Windows PowerShell:
 python -m pip install --upgrade pip
 python -m pip install -e .
 guessnova play
+guessnova-tui
 ```
 
 macOS/Linux:
@@ -99,6 +103,7 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e .
 guessnova play
+guessnova-tui
 ```
 
 See [`docs/setup.md`](docs/setup.md) for full setup details.
@@ -175,13 +180,32 @@ A normal Doctor state run and `--verify-backup` are read-only. Repair requires c
 
 Doctor exit codes are stable: `0` success/healthy/valid, `1` repair cancelled, and `2` attention or validation failure. See [`docs/doctor.md`](docs/doctor.md).
 
-### Textual interface
+### Textual workspace
 
 ```bash
 guessnova-tui
 ```
 
-For deterministic non-daily play you may also set:
+Workspace keyboard map:
+
+```text
+Ctrl+1  Play
+Ctrl+2  Profiles
+Ctrl+3  History
+Ctrl+4  Leaderboard
+Ctrl+5  Settings
+Ctrl+6  Recovery
+Ctrl+R  New round
+Ctrl+Q  Quit
+```
+
+The TUI uses the same local `Storage`, `GameService`, diagnostics, and backup-preflight logic as CLI/Doctor workflows. Profile deletion remains recoverable and requires exact-name confirmation. Changing the active profile resets an unfinished round so the result cannot be silently reassigned. The Recovery pane can inspect state and verify a backup but does not repair or import it.
+
+Locale settings are persisted per profile; the mounted TUI keeps one display language for its current process and fully applies a changed locale on the next launch. Smart-hint and high-contrast settings apply immediately.
+
+See [`docs/tui_workspace.md`](docs/tui_workspace.md).
+
+For deterministic non-daily CLI play you may also set:
 
 ```bash
 GUESSNOVA_SEED=20260819 guessnova play --no-save
@@ -189,9 +213,9 @@ GUESSNOVA_SEED=20260819 guessnova play --no-save
 
 ## Data, privacy, and security
 
-GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use schema-2 normalized JSON and atomic replacement. Local state reads/writes are bounded; backup reads are separately bounded. Backup wrapper v2 records the embedded source schema and verifies a canonical SHA-256 payload digest before import. Legacy version-1 GuessNova backups remain readable when their state schema is supported. Doctor backup verification additionally proves the embedded state can pass current normalization before reporting the backup as valid. Recoverable profile trash is bounded, and replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use. The runtime needs no account, API key, telemetry endpoint, cloud service, or network connection.
+GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use schema-2 normalized JSON and atomic replacement. Local state reads/writes are bounded; backup reads are separately bounded. Backup wrapper v2 records the embedded source schema and verifies a canonical SHA-256 payload digest before import. Legacy version-1 GuessNova backups remain readable when their state schema is supported. Doctor/TUI backup verification additionally proves the embedded state can pass current normalization before reporting the backup as valid. Recoverable profile trash is bounded, and replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use. The runtime needs no account, API key, telemetry endpoint, cloud service, remote leaderboard, or network connection.
 
-Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), [`docs/data_format.md`](docs/data_format.md), and [`docs/doctor.md`](docs/doctor.md).
+Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), [`docs/data_format.md`](docs/data_format.md), [`docs/doctor.md`](docs/doctor.md), and [`docs/tui_workspace.md`](docs/tui_workspace.md).
 
 ## Development and testing
 
@@ -206,27 +230,28 @@ python scripts/verify_release_metadata.py
 python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 python -m build
 ```
 
-The repository CI runs linting, formatting, strict typing, tests, migration fixtures, backup-integrity/importability regressions, bounded state-I/O regressions, doctor/repair protocol regressions, Textual pilot coverage, coverage reporting, bytecode compilation, release-metadata verification, smoke testing, cross-platform package build/install/Twine validation, both doctor entry-path checks, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries retain deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
+The repository CI runs linting, formatting, strict typing, tests, migration fixtures, backup-integrity/importability regressions, bounded state-I/O regressions, Doctor/repair protocol regressions, reusable TUI-workspace helper tests, focused Textual pilot suites, coverage reporting, bytecode compilation, release-metadata verification, smoke testing, cross-platform package build/install/Twine validation, built-wheel Textual-workspace import, both Doctor entry-path checks, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries retain deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
 
 ## Architecture
 
-GuessNova is a modular monolith with UI-independent game rules:
+GuessNova is a modular monolith with UI-independent game rules and shared local adapters:
 
 ```text
 Top-level command dispatcher
         /          \
    Rich game CLI   Doctor CLI
           \        /
-        application services       Textual TUI
-          /            \               |
-      domain        local adapters -----+
+        application services         Textual workspace
+          /            \              /          \
+      domain        local adapters --+-- tui_workspace helpers
      (engine)  (storage/replay/backup/diagnostics)
 ```
 
-The dispatcher only routes command families; it does not duplicate game rules or recovery logic. The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. State migration, backup integrity, diagnostics, and repair remain local adapter/application concerns rather than game-rule concerns. Presentation messages resolve through offline English/Hindi catalogs while serialized identifiers remain stable. See [`docs/architecture.md`](docs/architecture.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
+The dispatcher only routes command families; it does not duplicate game rules or recovery logic. The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. `tui_workspace.py` keeps workspace query/configuration logic independent from Textual widgets, while `tui.py` owns composition/focus/events. State migration, backup integrity, diagnostics, and repair remain local adapter/application concerns rather than game-rule concerns. Presentation messages resolve through offline English/Hindi catalogs while serialized identifiers remain stable. See [`docs/architecture.md`](docs/architecture.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
 
 ## Build and release
 
@@ -236,7 +261,7 @@ python -m build
 python -m twine check dist/*
 ```
 
-Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until strict verification and Windows/macOS/Linux package checks succeed. Built wheels must expose the game CLI, the `guessnova doctor` route, and the standalone doctor compatibility entry point. Release candidates additionally require documented manual accessibility evidence. Real screenshot/demo media must be captured from the exact signed-off build rather than fabricated by automation.
+Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until strict verification and Windows/macOS/Linux package checks succeed. Built wheels must expose the game CLI, import the Textual workspace, expose the `guessnova doctor` route, and retain the standalone Doctor compatibility entry point. Release candidates additionally require documented manual accessibility evidence covering all six TUI panes. Real screenshot/demo media must be captured from the exact signed-off build rather than fabricated by automation.
 
 See [`docs/release.md`](docs/release.md), [`docs/accessibility_evidence_template.md`](docs/accessibility_evidence_template.md), [`docs/media/README.md`](docs/media/README.md), and [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -246,6 +271,7 @@ See [`docs/release.md`](docs/release.md), [`docs/accessibility_evidence_template
 - [Development](docs/development.md)
 - [Architecture](docs/architecture.md)
 - [Game modes](docs/game_modes.md)
+- [Textual workspace](docs/tui_workspace.md)
 - [Data format](docs/data_format.md)
 - [Doctor diagnostics and recovery](docs/doctor.md)
 - [v1.2 reliability plan](docs/v1_2_reliability_plan.md)

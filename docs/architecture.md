@@ -20,30 +20,102 @@ GuessNova is a local-first Python modular monolith. It deliberately avoids netwo
 - `cli.py` — established Rich gameplay/profile/history/settings/data CLI.
 - `doctor_cli.py` — reusable local diagnostics, backup verification, and repair command implementation.
 - `entrypoint.py` — compatibility-preserving top-level dispatcher that routes `doctor` to Doctor and all existing game commands to `cli.py`.
-- `tui.py` — Textual gameplay/presentation layer.
+- `tui_workspace.py` — Textual-independent workspace helpers for challenge construction, local snapshots, profile statistics, history/leaderboard selection, and settings persistence.
+- `tui.py` — Textual six-pane workspace and event/focus orchestration over existing application/local-adapter boundaries.
 - `security.py` — bounded integer, profile-name sanitization, and permitted-path helpers.
 
 ## Dependency direction
 
 Core gameplay does not depend on Rich, Textual, filesystem storage, backup wrappers, diagnostics, or the dispatcher. The dispatcher does not implement game or recovery business logic; it only selects the established command family.
 
-```text
-              entrypoint.py
-             /             \
-         cli.py        doctor_cli.py
-           |             /       \
-           |      diagnostics   backup_inspection
-           |          |              |
-        service     storage      import_export
-           |          \             /
-           +------ game/domain -----+
+The Textual workspace deliberately keeps reusable data/query/configuration logic outside widget code:
 
-                    tui.py
-                      |
-                 game/service
+```text
+                         entrypoint.py
+                        /             \
+                    cli.py        doctor_cli.py
+                      |             /       \
+                      |      diagnostics   backup_inspection
+                      |          |              |
+                   service     storage      import_export
+                      |          \             /
+                      +------ game/domain -----+
+
+                             tui.py
+                               |
+                    +----------+-----------+
+                    |                      |
+             tui_workspace.py          GameService
+              /   |    |   \              |
+        storage history leaderboard    game/domain
 ```
 
-This keeps seeded gameplay deterministic and directly testable while allowing maintenance/recovery tooling without duplicating game rules or state semantics.
+This keeps seeded gameplay deterministic and directly testable while allowing maintenance/recovery tooling and richer interactive presentation without duplicating game rules or state semantics.
+
+## Textual workspace boundary
+
+GuessNova 1.4 expands `guessnova-tui` into six panes:
+
+- Play;
+- Profiles;
+- History;
+- Leaderboard;
+- Settings;
+- Recovery.
+
+`src/guessnova/tui_workspace.py` has no Textual import. It provides reusable helpers for:
+
+- deterministic seeded/non-reverse challenge construction;
+- daily challenge construction from an ISO date;
+- workspace snapshots;
+- derived profile statistics;
+- newest-first history selection;
+- ranked leaderboard filtering;
+- validated settings persistence.
+
+`src/guessnova/tui.py` owns presentation concerns:
+
+- widget composition;
+- focus movement;
+- keyboard shortcuts;
+- user-entered filter/form values;
+- data-table refresh;
+- active-profile transition orchestration;
+- high-contrast screen class;
+- displaying diagnostics and backup-preflight results.
+
+The TUI does not create a second state store. Profile/history/leaderboard/settings changes continue through `Storage`, completed games continue through `GameService`, diagnostics continue through `diagnose`, and backup verification continues through `inspect_backup`.
+
+## Active-profile/game ownership boundary
+
+An in-progress `GuessGame` belongs to the current active profile for persistence purposes. When the workspace changes the active profile by use/create/restore or by deleting the active profile, the unfinished round is reset before further play.
+
+This prevents a user from making guesses under one profile and then accidentally recording the completed round under another profile.
+
+Profile rename does not require a reset because identity continuity is preserved by `Storage.rename_profile(...)` together with matching leaderboard updates.
+
+## TUI Recovery boundary
+
+The Recovery pane is intentionally read-only:
+
+- `diagnose(storage)` reports local state health/counts;
+- `inspect_backup(path)` verifies a selected backup without importing it.
+
+The pane does not call `repair(...)` and does not write a verified backup into application state. Repair remains explicit through Doctor so confirmation and backup-before-write guarantees remain centralized.
+
+## TUI localization boundary
+
+The Textual workspace selects its display locale when mounted. Activating a profile with a different saved locale updates the settings value and runtime preferences, but the current mounted presentation does not partially relabel itself. Full locale presentation changes occur on the next TUI launch.
+
+This avoids a mixed-language UI where dynamically refreshed text changes language while already-created tab/button labels do not.
+
+Stable mode/difficulty/schema/backup/replay/Doctor identifiers remain untranslated machine values.
+
+## TUI accessibility boundary
+
+The workspace adds global Ctrl shortcuts for panes and quit/reset while leaving plain `Q`/`R` as non-priority bindings. Text-editing widgets can therefore consume ordinary characters instead of losing them to application shortcuts.
+
+High-contrast preference is represented by a screen CSS class with stronger borders and focus outlines. Switches use `animate=False`. Reduced-motion remains a saved presentation preference and no fake delays/decorative workspace animation are introduced.
 
 ## Command-dispatch boundary
 
@@ -116,17 +188,17 @@ A future incompatible JSON contract must increment this report version instead o
 
 ## Compatibility domains
 
-Current independent compatibility identifiers are:
+Current independent compatibility identifiers remain:
 
 - state schema: `2`;
 - backup wrapper: `2` plus legacy `1` support;
 - replay format: `1`;
 - Doctor report: `1`.
 
-GuessNova 1.3 changes operator/recovery behavior without creating schema 3, backup wrapper 3, or replay 2.
+GuessNova 1.4 expands the presentation/application layer without creating schema 3, backup wrapper 3, replay 2, or Doctor report 2.
 
 ## Security/privacy boundaries
 
 GuessNova has no runtime authentication, remote API, telemetry, payment, cloud sync, or required network permissions. Untrusted values are bounded, parsed, and normalized before use. Replay and backup integrity mechanisms detect corruption/change but are not encryption, authentication, origin proof, or digital signatures.
 
-See `docs/doctor.md`, `docs/adr/0001-modular-monolith.md`, `docs/adr/0002-versioned-json-storage.md`, and `docs/adr/0004-separate-backup-and-state-versions.md` for the detailed decisions and operating contract.
+See `docs/tui_workspace.md`, `docs/doctor.md`, `docs/adr/0001-modular-monolith.md`, `docs/adr/0002-versioned-json-storage.md`, and `docs/adr/0004-separate-backup-and-state-versions.md` for the detailed decisions and operating contracts.

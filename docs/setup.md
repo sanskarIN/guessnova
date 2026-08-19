@@ -17,6 +17,7 @@ py -3.13 -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -e .
 guessnova play
+guessnova-tui
 guessnova doctor --help
 guessnova-doctor --help
 ```
@@ -31,6 +32,7 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e .
 guessnova play
+guessnova-tui
 guessnova doctor --help
 guessnova-doctor --help
 ```
@@ -41,11 +43,56 @@ A normal installation provides:
 
 ```text
 guessnova          primary CLI dispatcher for gameplay/data commands and `doctor`
-guessnova-tui      Textual app-like terminal interface
+guessnova-tui      six-pane Textual local workspace
 guessnova-doctor   standalone Doctor compatibility entry point
 ```
 
 `python -m guessnova` uses the same top-level dispatcher as the installed `guessnova` script.
+
+## Textual workspace
+
+Launch:
+
+```bash
+guessnova-tui
+```
+
+GuessNova starts on Play with the guess input focused. Workspace panes:
+
+```text
+Ctrl+1  Play
+Ctrl+2  Profiles
+Ctrl+3  History
+Ctrl+4  Leaderboard
+Ctrl+5  Settings
+Ctrl+6  Recovery
+Ctrl+R  New round
+Ctrl+Q  Quit
+```
+
+The workspace provides:
+
+- normal Textual gameplay/hints/result persistence;
+- local profile create/use/rename/recoverable-delete/restore;
+- active-profile statistics and achievements;
+- bounded history filtering;
+- local leaderboard filtering;
+- local profile settings;
+- high-contrast TUI focus/border behavior;
+- read-only state diagnostics;
+- read-only backup verification.
+
+Changing the active profile resets an unfinished round. This prevents a partially played game from being saved under a different profile.
+
+A locale change is persisted immediately but full TUI relabeling happens on the next launch. This keeps one running interface linguistically consistent.
+
+Recovery repair is intentionally not available as a TUI button. Use Doctor for an explicit repair workflow:
+
+```bash
+guessnova doctor --repair
+```
+
+See [`tui_workspace.md`](tui_workspace.md) for complete behavior.
 
 ## Local Doctor
 
@@ -70,6 +117,8 @@ guessnova doctor --verify-backup ./guessnova-backup.json
 guessnova doctor --json --verify-backup ./guessnova-backup.json
 ```
 
+The same backup-preflight logic is available read-only from the TUI Recovery pane.
+
 Repairable migration/normalization changes can be applied only after confirmation. GuessNova creates a pre-repair backup before a required rewrite:
 
 ```bash
@@ -82,12 +131,6 @@ Do not run `--repair` merely because a state file is old; a normal GuessNova loa
 Doctor refuses oversized, undecodable, non-object, future-schema, or otherwise unnormalizable state. `--json --repair` requires `--yes` so machine output cannot be mixed with an interactive prompt.
 
 See [`doctor.md`](doctor.md) for the full recovery contract.
-
-## Textual interface
-
-```bash
-guessnova-tui
-```
 
 ## Development dependencies
 
@@ -103,11 +146,12 @@ python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
 python -m guessnova.doctor_cli --help
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
 ## Optional environment variables
 
-- `GUESSNOVA_HOME` — override the default local application-data directory for normal commands.
+- `GUESSNOVA_HOME` — override the default local application-data directory for normal commands and TUI state.
 - `GUESSNOVA_SEED` — default deterministic seed for CLI challenges.
 
 Doctor `--data-dir PATH` can inspect a specific GuessNova data directory without modifying `GUESSNOVA_HOME`.

@@ -2,6 +2,56 @@
 
 All notable GuessNova changes are recorded here. The project follows Semantic Versioning where practical.
 
+## [1.4.0] - 2026-08-19
+
+### Added
+
+- Full six-pane Textual workspace: Play, Profiles, History, Leaderboard, Settings, and read-only Recovery.
+- Direct keyboard pane navigation with `Ctrl+1` through `Ctrl+6`, plus global `Ctrl+R` reset and `Ctrl+Q` quit.
+- Dedicated Play `GuessInput` bindings that retain plain `R` reset and `Q` quit without making those letters global to workspace text fields.
+- TUI profile summary and unlocked-achievement visibility.
+- TUI profile use/create/rename/recoverable-delete/restore flows using the existing `Storage` lifecycle APIs.
+- Exact selected-name confirmation before a profile can be moved to recoverable trash from the TUI.
+- TUI History table with result, mode, difficulty, search, since-date, and until-date filters.
+- TUI Leaderboard table with mode, difficulty, and case-insensitive player filters.
+- TUI Settings pane for theme, locale, reduced motion, high contrast, sound preference, and automatic smart hints.
+- Immediate Textual high-contrast border/focus treatment plus non-animated Switch controls.
+- Read-only TUI state diagnostics and read-only backup verification using the same v1.3 diagnostics/preflight boundaries as Doctor.
+- `tui_workspace.py` as a Textual-independent helper layer for workspace snapshots, profile summaries, deterministic challenge construction, history selection, leaderboard filtering, and validated settings persistence.
+- Focused Textual pilot suites for workspace navigation, profile lifecycle, history, leaderboard, settings, Recovery, round isolation, locale consistency, and high contrast.
+- Built-wheel Textual workspace import verification on Ubuntu, Windows, and macOS package matrices.
+- Canonical and concise Textual workspace documentation plus an expanded six-pane manual accessibility evidence checklist.
+
+### Changed
+
+- Package/runtime/citation version advanced to `1.4.0`.
+- `guessnova-tui` now opens a full local workspace while preserving Play as the initial pane and the numeric guess field as initial focus.
+- Plain `Q` and `R` are owned only by the focused numeric Play input; profile/search/player/path fields receive those characters normally, while global `Ctrl+Q`/`Ctrl+R` remain available everywhere.
+- Active-profile changes reset any unfinished TUI round so a partially played game cannot later be persisted under another profile.
+- TUI profile activation loads the selected profile's settings without partially changing the mounted UI language.
+- Locale changes are persisted immediately but full mounted Textual presentation changes take effect on the next launch for language consistency.
+- Completed TUI games refresh profile, history, leaderboard, and Recovery views from the shared local state.
+- Smoke testing now exercises reusable workspace snapshots, deterministic challenge construction, history/leaderboard selection, and settings persistence.
+- Normal CI and tagged-release package matrices explicitly import the Textual workspace from the built wheel.
+
+### Accessibility, privacy, and reliability
+
+- High-contrast TUI mode strengthens structural borders and focus visibility without making color the only status signal.
+- Workspace text inputs retain ordinary character entry because single-letter reset/quit bindings are scoped to the Play guess widget instead of the application.
+- TUI profile deletion remains recoverable and requires explicit typed-name confirmation.
+- TUI Recovery intentionally exposes no repair/write button; repair remains centralized in Doctor with confirmation and backup-before-write guarantees.
+- Backup verification in the TUI is read-only and does not import or rewrite selected state.
+- All new normal workspace labels/status copy is represented in both shipped English and Hindi catalogs, with catalog-completeness tests retained.
+- The workspace remains local-only and adds no accounts, telemetry, cloud sync, remote leaderboard, or runtime network dependency.
+
+### Compatibility
+
+- Local state schema remains `2`; v1.4 does not introduce schema 3.
+- Backup wrapper remains version `2` and legacy wrapper-v1 support is retained.
+- Replay format remains version `1`.
+- Doctor machine report protocol remains version `1`.
+- Existing CLI and standalone `guessnova-doctor` entry points remain supported.
+
 ## [1.3.0] - 2026-08-19
 
 ### Added
@@ -125,7 +175,7 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 - Adaptive Textual card layout and an explicit range-hint action.
 - Local leaderboard plus validated JSON export/import.
 - Atomic local state persistence and schema migration baseline.
-- Defensive state/profile/settings/history normalization for untrusted or corrupted imported data.
+- Defensive state/profile/settings/history/leaderboard normalization for untrusted or corrupted imported data.
 - Privacy/security helpers and local-only defaults.
 - Automated tests, smoke checks, replay fuzz-style coverage, strict formatting/type/lint gates, repository quality automation, documentation, and release engineering baseline.
 - Dependency/secret auditing, CodeQL, Dependabot, quality-gated tagged release automation, and repository operations guidance.

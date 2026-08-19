@@ -20,7 +20,7 @@ python -m guessnova.doctor_cli --help
 
 `make check` runs the core lint/format/type/test/compile/metadata/smoke sequence plus entry-point verification on systems with Make available.
 
-CI also builds, validates, installs, launches the game CLI, primary Doctor route, standalone Doctor compatibility entry point, Doctor version output, and smoke-tests distributions on Ubuntu, Windows, and macOS. Separate workflows perform CodeQL and dependency/secret checks.
+CI also builds, validates, installs, imports the Textual workspace, launches the game CLI, primary Doctor route, standalone Doctor compatibility entry point, Doctor version output, and smoke-tests distributions on Ubuntu, Windows, and macOS. Separate workflows perform CodeQL and dependency/secret checks.
 
 ## Coverage areas
 
@@ -50,8 +50,17 @@ CI also builds, validates, installs, launches the game CLI, primary Doctor route
 - Replay-code integrity/backward compatibility.
 - English/Hindi catalog completeness, representative formatting, and English fallback behavior.
 - CLI parser/settings/history/profile command integration.
-- Textual pilot tests for initial focus, tab order, Enter submission, hint interaction, reset, and persisted winning results.
-- End-to-end smoke coverage for gameplay, persistence, schema 2, replay, backup integrity/importability, Doctor state/backup routes, diagnostics/repair, achievements, leaderboard, localization, and reverse mode.
+- Textual Play focus, tab order, Enter submission, hint interaction, reset, and persisted winning results.
+- Textual six-pane workspace navigation and focus shortcuts.
+- Text-field preservation of ordinary `q`/`r` input while global Ctrl bindings remain available.
+- Textual profile create/use/rename/delete/restore and exact-name deletion confirmation.
+- Active-profile round isolation so unfinished gameplay is reset before ownership changes.
+- Textual history result/mode/difficulty/search/date filtering and invalid-date behavior.
+- Textual leaderboard mode/difficulty/player filtering.
+- Textual settings persistence, immediate smart-hint behavior, launch-locale stability, and high-contrast class behavior.
+- Textual read-only diagnostics and backup verification.
+- UI-independent workspace snapshots, profile summaries, challenge construction, history selection, leaderboard selection, and settings persistence.
+- End-to-end smoke coverage for gameplay, persistence, schema 2, replay, backup integrity/importability, Doctor state/backup routes, diagnostics/repair, achievements, leaderboard, localization, workspace helpers, and reverse mode.
 
 ## Migration fixtures
 
@@ -114,23 +123,46 @@ Doctor protocol regression tests cover:
 - backup verification conflicts;
 - primary and standalone entry routes.
 
+## Textual workspace helper tests
+
+`tests/test_tui_workspace.py` exercises logic that intentionally has no Textual dependency:
+
+- deterministic seeded challenge construction;
+- reproducible daily-date challenge construction;
+- invalid seed/date and Reverse-mode separation;
+- workspace snapshots;
+- profile statistics derivation;
+- newest-first history selection;
+- leaderboard filters while preserving rank order;
+- settings validation/persistence while retaining onboarding state.
+
+Keeping these helpers outside widget code allows domain/application behavior to be verified independently from rendering/focus behavior.
+
+## Textual pilot suites
+
+The Textual workspace is covered by several focused pilot suites rather than one oversized scenario:
+
+- `tests/test_tui.py` — original gameplay/focus/persistence regressions;
+- `tests/test_tui_workspace_app.py` — pane shortcuts and profile lifecycle;
+- `tests/test_tui_workspace_data.py` — history, settings, and Recovery;
+- `tests/test_tui_workspace_leaderboard.py` — leaderboard filters;
+- `tests/test_tui_workspace_accessibility.py` — round isolation, launch-locale stability, and high contrast.
+
+All use `Storage(tmp_path)` and deterministic/injected games so tests cannot modify a user's actual data.
+
+Pilot tests supplement rather than replace manual terminal review. Before release, complete `docs/accessibility_evidence_template.md` on the signed-off release candidate.
+
 ## Regression policy
 
 Every reproducible bug should receive a focused regression test where practical. Tests must not read or write the user's real GuessNova state; use pytest `tmp_path`, temporary directories, and environment monkeypatching.
 
 ## Property-testing dependency decision
 
-No property-testing dependency is added in v1.3. The current failure classes are covered by deterministic replay malformed-input suites, migration fixtures, state-normalization cases, bounded-I/O tests, backup-tamper/importability checks, and explicit Doctor/repair regressions. Revisit Hypothesis or another property-testing tool only when a reproducible defect demonstrates materially better coverage than these deterministic suites.
+No property-testing dependency is added merely for v1.4. Current workspace failure classes are directly covered by deterministic helpers and Textual pilot tests, while persistence/replay/backup boundaries retain their existing malformed-input suites. Revisit Hypothesis or another property-testing tool only when a reproducible defect demonstrates materially better coverage than these deterministic suites.
 
 ## Determinism
 
 Use explicit game targets, fixed seeds, fixed ISO dates, injected clocks, committed fixtures, or temporary directories in tests. Never depend on today's challenge target, wall-clock timing, production state, or network services.
-
-## Textual pilot testing
-
-`tests/test_tui.py` uses `GuessNovaApp.run_test()` with Textual's pilot API and injected `Storage(tmp_path)`/deterministic `GuessGame(target=...)` instances. This keeps interactive checks reproducible and prevents test runs from touching a real user profile.
-
-Pilot tests supplement rather than replace manual terminal review. Before release, complete `docs/accessibility_evidence_template.md` on the signed-off release candidate.
 
 ## Cross-platform package verification
 
@@ -144,9 +176,16 @@ Each runner builds source/wheel distributions, runs Twine metadata validation, i
 
 ```bash
 python -m guessnova --help
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 guessnova doctor --help
 guessnova-doctor --help
 guessnova-doctor --version
 ```
 
 and then executes the smoke test. A failure on one platform is a release blocker until reproduced or documented as an infrastructure-only failure.
+
+## Local execution limitation in the current continuation environment
+
+The available execution environment for the v1.4 continuation cannot resolve `github.com` or package-index hosts. A branch clone and a Ruff installation attempt therefore fail before local execution is possible. This limitation must not be converted into a claimed local test pass.
+
+Hosted GitHub Actions remains the exact-head execution source for this continuation. Static review and deterministic regression additions continue while runners are queued; any concrete current-head failure must be inspected and fixed before it can be called successful.

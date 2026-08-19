@@ -58,6 +58,29 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 - [x] Extend smoke, Makefile, normal CI, and tagged-release package matrices through both Doctor entry paths.
 - [x] Add canonical and concise Doctor/recovery documentation.
 
+## v1.4 — Full Textual local workspace
+
+- [x] Expand `guessnova-tui` from one gameplay card into Play, Profiles, History, Leaderboard, Settings, and Recovery panes.
+- [x] Preserve Play as the initial pane with deterministic initial guess-input focus and existing persisted gameplay behavior.
+- [x] Add Ctrl+1…Ctrl+6 direct pane navigation plus global Ctrl+R reset and Ctrl+Q quit.
+- [x] Scope plain `Q`/`R` to the numeric Play input so legacy reset/quit remains available there while workspace text fields receive ordinary letters normally.
+- [x] Add active-profile summary and achievement visibility in the TUI.
+- [x] Add local profile use/create/rename/recoverable-delete/restore actions without duplicating storage semantics.
+- [x] Require exact selected-name confirmation before TUI profile deletion.
+- [x] Reset unfinished gameplay whenever active-profile ownership changes so a partial round cannot be recorded under another profile.
+- [x] Add newest-first bounded History table with result/mode/difficulty/search/date filters and safe invalid-date behavior.
+- [x] Add local Leaderboard table with mode/difficulty/player filters while preserving existing rank order.
+- [x] Add Settings controls for theme, locale, reduced motion, high contrast, sound, and smart hints using the existing settings model.
+- [x] Apply Textual high-contrast borders/focus treatment immediately and keep Switch animation disabled.
+- [x] Keep one running TUI linguistically consistent; a changed profile locale is fully applied on the next launch rather than partially relabeling mounted widgets.
+- [x] Add read-only local diagnostics and read-only backup verification in the Recovery pane while keeping repair in Doctor.
+- [x] Extract Textual-independent workspace helpers for snapshots, profile summaries, deterministic challenge construction, history selection, leaderboard filtering, and settings persistence.
+- [x] Add focused helper tests and Textual pilot suites for navigation, lifecycle, filtering, settings, Recovery, round isolation, locale consistency, and high contrast.
+- [x] Extend smoke coverage through workspace helpers.
+- [x] Verify built-wheel Textual workspace imports on Ubuntu, Windows, and macOS in normal CI and tagged-release matrices.
+- [x] Add canonical/concise TUI workspace documentation and expand the manual accessibility evidence gate through all six panes.
+- [x] Keep state schema `2`, backup wrapper `2`, replay `1`, and Doctor report `1` because v1.4 does not change those compatibility domains.
+
 ## Gated future candidates
 
 These are intentionally not release checkboxes until their prerequisite exists:
@@ -66,6 +89,8 @@ These are intentionally not release checkboxes until their prerequisite exists:
 - A third shipped locale — only after native-quality review and the same catalog-completeness guarantees as English/Hindi.
 - Artifact signing/provenance beyond current GitHub release traceability — only if a real package-registry publishing workflow is introduced.
 - Property-based testing dependency — only if a reproducible defect demonstrates a material coverage gap not addressed by deterministic regression suites.
+- Live in-process full relocalization of every mounted Textual widget — only if implemented atomically so the interface cannot become partially translated.
+- TUI repair/write actions — only if they preserve explicit confirmation, pre-repair backup guarantees, and a clear separation from read-only inspection.
 
 ## Release-media gate
 

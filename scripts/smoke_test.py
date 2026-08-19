@@ -17,6 +17,13 @@ from guessnova.import_export import EXPORT_VERSION, export_state, import_state
 from guessnova.replay import decode_replay, encode_replay
 from guessnova.service import GameService
 from guessnova.storage import Storage
+from guessnova.tui_workspace import (
+    build_workspace_game,
+    load_workspace_snapshot,
+    save_workspace_settings,
+    select_history,
+    select_leaderboard,
+)
 
 
 def main() -> int:
@@ -52,6 +59,56 @@ def main() -> int:
         restored = storage.restore_profile("Smoke Nova")
         assert restored.stats.games_won == 1
         assert storage.load_leaderboard()[0].player == "Smoke Nova"
+
+        snapshot = load_workspace_snapshot(storage, "Smoke Nova")
+        assert snapshot.profile.name == "Smoke Nova"
+        assert snapshot.profile_names == ("Smoke Nova",)
+        assert snapshot.deleted_profile_names == ()
+        assert snapshot.leaderboard_count == 1
+        assert snapshot.diagnostics.healthy
+        assert len(select_history(snapshot.profile, result="win")) == 1
+        assert select_leaderboard(storage.load_leaderboard(), player="smoke")[0].player == (
+            "Smoke Nova"
+        )
+
+        configured = build_workspace_game(
+            mode="timed",
+            difficulty="hard",
+            seed_text="20260819",
+        )
+        configured_again = build_workspace_game(
+            mode="timed",
+            difficulty="hard",
+            seed_text="20260819",
+        )
+        assert configured.mode.value == "timed"
+        assert configured.target_value == configured_again.target_value
+        daily = build_workspace_game(
+            mode="daily",
+            difficulty="normal",
+            day_text="2026-08-19",
+        )
+        daily_again = build_workspace_game(
+            mode="daily",
+            difficulty="normal",
+            day_text="2026-08-19",
+        )
+        assert daily.seed == daily_again.seed
+        assert daily.target_value == daily_again.target_value
+
+        workspace_profile = save_workspace_settings(
+            storage,
+            "Smoke Nova",
+            theme="mono",
+            locale="hi",
+            reduced_motion=True,
+            high_contrast=True,
+            sound=False,
+            show_smart_hints=False,
+        )
+        assert workspace_profile.settings.locale == "hi"
+        assert workspace_profile.settings.high_contrast is True
+        assert workspace_profile.settings.show_smart_hints is False
 
         assert catalog_missing_keys("hi") == set()
         assert "7" in text("reverse.solved", locale="hi", attempts=7)

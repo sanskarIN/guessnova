@@ -2,7 +2,7 @@
 
 This is the concise testing reference. The canonical detailed strategy is [`testing.md`](testing.md).
 
-The automated suite covers deterministic gameplay, timed/reverse/daily behavior, hints, achievements, profile serialization and recoverable lifecycle operations, bounded/filtered/grouped history, schema-2 migration fixtures, bounded atomic local storage, backup-v2 integrity and legacy compatibility, backup importability preflight, Doctor state/backup/repair behavior, leaderboard ordering, replay integrity, English/Hindi catalogs, CLI routing/parsing, service coordination, and Textual pilot interactions.
+The automated suite covers deterministic gameplay, timed/reverse/daily behavior, hints, achievements, profile serialization and recoverable lifecycle operations, bounded/filtered/grouped history, schema-2 migration fixtures, bounded atomic local storage, backup-v2 integrity and legacy compatibility, backup importability preflight, Doctor state/backup/repair behavior, leaderboard ordering, replay integrity, English/Hindi catalogs, CLI routing/parsing, service coordination, reusable TUI workspace helpers, and focused Textual pilot interactions across all six panes.
 
 ## Full development checks
 
@@ -18,9 +18,10 @@ python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
 python -m guessnova.doctor_cli --help
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
-CI additionally builds, validates, installs, checks the game CLI plus both Doctor entry paths, verifies Doctor version output, and smoke-tests package artifacts on Ubuntu, Windows, and macOS. Security checks and CodeQL run separately.
+CI additionally builds, validates, installs, imports the Textual workspace, checks the game CLI plus both Doctor entry paths, verifies Doctor version output, and smoke-tests package artifacts on Ubuntu, Windows, and macOS. Security checks and CodeQL run separately.
 
 ## Migration, state, and backup reliability
 
@@ -34,15 +35,35 @@ Recommended route: `guessnova doctor`. Compatibility route: `guessnova-doctor`.
 
 Tests cover report protocol version `1`, `state`/`backup`/`error` kinds, stable exit codes, explicit `--data-dir`, read-only `--verify-backup`, package-aligned `--version`, safe confirmation, JSON non-interactivity, backup-before-write repair, and refusal of unreadable/non-object/oversized/future-schema state.
 
+## TUI workspace
+
+UI-independent tests cover workspace snapshots, profile summaries, deterministic seeded/daily challenge construction, newest-first history filtering, leaderboard filtering that preserves rank order, and validated settings persistence.
+
+Textual pilot suites cover:
+
+- initial Play focus and legacy gameplay behavior;
+- Ctrl+1…Ctrl+6 pane navigation;
+- ordinary `q`/`r` typing in text fields;
+- profile create/use/rename/delete/restore;
+- exact-name deletion confirmation;
+- active-profile unfinished-round isolation;
+- history filters and invalid dates;
+- leaderboard filters;
+- settings persistence and smart-hint behavior;
+- launch-locale stability;
+- high-contrast launch/save behavior;
+- read-only backup verification.
+
 ## Deterministic manual test
 
 ```bash
 GUESSNOVA_HOME=./.tmp-guessnova GUESSNOVA_SEED=1234 guessnova play --no-save
 guessnova doctor --json --data-dir ./.tmp-guessnova
+guessnova-tui
 ```
 
 ## UI and accessibility evidence
 
-Textual pilot tests cover initial focus, tab order, Enter submission, range hints, reset, and persisted results. Manual release review must still complete [`accessibility_evidence_template.md`](accessibility_evidence_template.md) on the exact release candidate.
+Automated Textual pilot coverage supplements rather than replaces manual review. The release candidate must complete [`accessibility_evidence_template.md`](accessibility_evidence_template.md), including every workspace pane, keyboard shortcut, profile lifecycle action, high-contrast path, localization path, and read-only Recovery flow.
 
 Tests must never depend on network access or a user's real profile/state directory.
