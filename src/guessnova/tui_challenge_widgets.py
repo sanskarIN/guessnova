@@ -37,6 +37,7 @@ class ChallengeSetup(Vertical):
         width: 100%;
         margin-top: 1;
     }
+    ChallengeSetup #challenge-fields-label,
     ChallengeSetup #challenge-help,
     ChallengeSetup #challenge-status {
         height: auto;
@@ -56,11 +57,16 @@ class ChallengeSetup(Vertical):
         super().__init__(id="challenge-setup")
         self.initial_mode = mode if mode != GameMode.REVERSE else GameMode.CLASSIC
         self.initial_difficulty = difficulty if difficulty in DIFFICULTIES else "normal"
-        self.initial_seed = seed
+        self.initial_seed = None if self.initial_mode == GameMode.DAILY else seed
         self.locale = locale
 
     def compose(self) -> ComposeResult:
         yield Label(f"[b]{text('tui.challenge.title', locale=self.locale)}[/b]")
+        yield Static(
+            f"{text('tui.challenge.mode', locale=self.locale)} / "
+            f"{text('tui.challenge.difficulty', locale=self.locale)}",
+            id="challenge-fields-label",
+        )
         with Horizontal(classes="challenge-row"):
             yield Select(
                 [(mode.value, mode.value) for mode in GameMode if mode != GameMode.REVERSE],
@@ -93,3 +99,16 @@ class ChallengeSetup(Vertical):
             id="challenge-help",
         )
         yield Static("", id="challenge-status")
+
+    def on_mount(self) -> None:
+        self._sync_mode_fields()
+
+    def on_select_changed(self, event: Select.Changed) -> None:
+        if event.select.id == "challenge-mode":
+            self._sync_mode_fields()
+
+    def _sync_mode_fields(self) -> None:
+        mode = self.query_one("#challenge-mode", Select).value
+        daily = mode == GameMode.DAILY.value
+        self.query_one("#challenge-seed", Input).disabled = daily
+        self.query_one("#challenge-day", Input).disabled = not daily
