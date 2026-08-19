@@ -29,14 +29,28 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 
 ## v1.2 — Reliability and portability
 
-- [ ] Add schema-2 migration fixtures when schema 2 is introduced; do not invent a migration before a real schema change exists.
-- [x] Add reproducible package build/install/CLI/smoke verification on Windows, macOS, and Linux CI runners.
+- [x] Introduce schema 2 only after a concrete schema boundary existed: recoverable profile trash is now a canonical top-level state container.
+- [x] Add committed schema-1 migration fixtures with and without pre-existing recoverable trash.
+- [x] Preserve schema-0/schema-1 forward migration while rejecting future schemas.
+- [x] Separate backup-wrapper versioning from state-schema versioning.
+- [x] Add backup-v2 SHA-256 payload integrity and wrapper/payload schema provenance checks.
+- [x] Preserve import compatibility for legacy GuessNova version-1 backups.
+- [x] Add local `guessnova-doctor` diagnostics with compact/JSON output.
+- [x] Add safe repair that writes an integrity-protected pre-repair backup before normalization.
+- [x] Add reproducible package build/install/game-CLI/doctor-CLI/smoke verification on Windows, macOS, and Linux CI runners.
 - [x] Add Hindi as a complete second shipped locale and enforce catalog-key completeness in tests.
-- [ ] Evaluate a property-testing dependency only if future parser/state defects demonstrate materially better coverage than the deterministic malformed-input suites already present.
+- [x] Reassess property-testing dependency need: no new dependency is added because current defects are covered by deterministic migration, malformed-input, replay, backup-integrity, and state-normalization regression suites; revisit only when a reproducible gap demonstrates material benefit.
+
+## v1.3 — Future maintainability candidates
+
+- [ ] Consider exposing doctor diagnostics as a `guessnova doctor` subcommand in addition to the packaged `guessnova-doctor` entry point if CLI surface consolidation is worth the compatibility cost.
+- [ ] Add additional state-migration fixtures only when schema 3 has a concrete design.
+- [ ] Consider a third reviewed locale only with native-quality review and the same catalog-completeness requirements.
+- [ ] Consider artifact signing/provenance enhancements if a real package registry publishing workflow is introduced.
 
 ## Release-media gate
 
-The only intentionally incomplete v1.1 item is real screenshot/demo capture. It is a manual release-candidate activity because repository automation cannot truthfully substitute a mock image for a real terminal capture. The exact procedure and provenance requirements are documented in `docs/media/README.md`.
+The only intentionally manual v1.1 carry-over is real screenshot/demo capture. Repository automation cannot truthfully substitute a mock image for a real terminal capture. The exact capture/provenance procedure is documented in `docs/media/README.md`.
 
 ## Future optional edition
 
