@@ -23,7 +23,7 @@ Ctrl+R  New round
 Ctrl+Q  Quit
 ```
 
-Plain `Q`/`R` are non-priority so normal letters remain typable in workspace text fields.
+Plain `R`/`Q` belong only to the focused numeric Play input, preserving the original reset/quit flow there. They are not global bindings, so profile/search/player/path inputs can type ordinary `r`/`q` characters normally.
 
 ## Safety and persistence
 
@@ -48,4 +48,4 @@ replay = 1
 Doctor report = 1
 ```
 
-Automated pilot tests cover navigation, profile lifecycle, history/leaderboard filters, settings, recovery verification, round isolation, launch-locale stability, and high-contrast behavior.
+Automated pilot tests cover Play-local reset/quit, workspace text-entry isolation, navigation, profile lifecycle, history/leaderboard filters, settings, recovery verification, round isolation, launch-locale stability, and high-contrast behavior.
