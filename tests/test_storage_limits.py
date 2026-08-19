@@ -3,7 +3,12 @@ from pathlib import Path
 import pytest
 
 from guessnova.constants import SCHEMA_VERSION
-from guessnova.storage import Storage, read_state_payload
+from guessnova.import_export import MAX_EXPORT_BYTES
+from guessnova.storage import MAX_STATE_BYTES, Storage, read_state_payload
+
+
+def test_backup_capacity_exceeds_state_capacity() -> None:
+    assert MAX_EXPORT_BYTES > MAX_STATE_BYTES
 
 
 def test_read_state_payload_rejects_content_over_configured_bound(
