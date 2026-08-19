@@ -58,11 +58,11 @@ jobs:
       - name: Build distributions
         run: python -m build
       - name: Validate distributions
+        shell: bash
         run: python -m twine check dist/*
       - name: Install wheel
         shell: bash
-        run: |
-          python -m pip install dist/*.whl
+        run: python -m pip install dist/*.whl
       - name: Verify CLI entry point
         run: python -m guessnova --help
       - name: Run smoke test
