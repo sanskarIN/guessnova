@@ -19,18 +19,24 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 
 ## v1.1 — UX and accessibility refinement
 
-- [ ] Add real terminal screenshots and a short demo recording captured from signed-off release builds.
-- [ ] Expand Textual widget/pilot tests for focus order, input submission, reset, and hint interactions.
-- [ ] Add a documented manual accessibility evidence checklist for each release candidate.
-- [ ] Add richer history search/grouping if real user history demonstrates a need beyond mode/difficulty filters.
-- [ ] Consider profile-management commands for listing, renaming, and deleting local profiles with safe confirmation/undo semantics.
+- [ ] Add real terminal screenshots and a short demo recording captured from a signed-off release build. Capture/provenance rules are complete under `docs/media/`; real media must not be fabricated before sign-off.
+- [x] Expand Textual pilot tests for focus order, input submission, reset, hint interactions, and persisted results.
+- [x] Add a documented manual accessibility evidence checklist for each release candidate.
+- [x] Add richer history result/date/text filtering and grouping by day, mode, difficulty, or result.
+- [x] Add profile-management commands for listing, creating, activating, renaming, deleting, viewing recoverable trash, and restoring profiles.
+- [x] Make profile deletion recoverable with bounded local trash and retained leaderboard restoration data.
+- [x] Persist TUI completed rounds through the same local application service used by the CLI.
 
 ## v1.2 — Reliability and portability
 
-- [ ] Add more migration fixtures when schema 2 is introduced; do not invent migrations before a schema change exists.
-- [ ] Add reproducible packaging verification on Windows, macOS, and Linux runners if repository budget/runner availability supports a matrix.
-- [ ] Add a second fully reviewed locale to prove the localization architecture end to end.
-- [ ] Evaluate property-testing libraries only if they provide better parser/state coverage than the deterministic malformed-input suites.
+- [ ] Add schema-2 migration fixtures when schema 2 is introduced; do not invent a migration before a real schema change exists.
+- [x] Add reproducible package build/install/CLI/smoke verification on Windows, macOS, and Linux CI runners.
+- [x] Add Hindi as a complete second shipped locale and enforce catalog-key completeness in tests.
+- [ ] Evaluate a property-testing dependency only if future parser/state defects demonstrate materially better coverage than the deterministic malformed-input suites already present.
+
+## Release-media gate
+
+The only intentionally incomplete v1.1 item is real screenshot/demo capture. It is a manual release-candidate activity because repository automation cannot truthfully substitute a mock image for a real terminal capture. The exact procedure and provenance requirements are documented in `docs/media/README.md`.
 
 ## Future optional edition
 
