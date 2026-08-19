@@ -1,8 +1,8 @@
 """Reusable local workspace helpers for the Textual interface.
 
 The helpers in this module deliberately avoid Textual dependencies so profile,
-history, settings, leaderboard, and diagnostic state can be exercised with
-ordinary unit tests as well as through the interactive TUI.
+history, settings, leaderboard, challenge configuration, and diagnostic state
+can be exercised with ordinary unit tests as well as through the interactive TUI.
 """
 
 from __future__ import annotations
@@ -10,7 +10,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
+from .daily import daily_game
 from .diagnostics import DiagnosticReport, diagnose
+from .domain import DIFFICULTIES, GameMode
+from .engine import GuessGame
 from .history import HistoryEntry, HistoryResult, filter_history
 from .leaderboard import LeaderboardEntry
 from .profile import Profile
@@ -42,6 +45,41 @@ class ProfileSummary:
     xp: int
     achievement_count: int
     history_count: int
+
+
+def build_workspace_game(
+    *,
+    mode: str,
+    difficulty: str,
+    seed_text: str = "",
+    day_text: str = "",
+) -> GuessGame:
+    """Build one configured non-reverse challenge from TUI-friendly strings."""
+    try:
+        selected_mode = GameMode(mode)
+    except ValueError as exc:
+        raise ValueError(f"unknown game mode: {mode}") from exc
+    if selected_mode == GameMode.REVERSE:
+        raise ValueError("reverse mode uses its dedicated reverse interface")
+    if difficulty not in DIFFICULTIES:
+        raise ValueError(f"unknown difficulty: {difficulty}")
+
+    if selected_mode == GameMode.DAILY:
+        try:
+            selected_day = date.fromisoformat(day_text.strip()) if day_text.strip() else None
+        except ValueError as exc:
+            raise ValueError("daily challenge date must use YYYY-MM-DD") from exc
+        return daily_game(selected_day, difficulty=difficulty)
+
+    cleaned_seed = seed_text.strip()
+    if cleaned_seed:
+        try:
+            seed = int(cleaned_seed)
+        except ValueError as exc:
+            raise ValueError("seed must be a whole number") from exc
+    else:
+        seed = None
+    return GuessGame(difficulty_name=difficulty, mode=selected_mode, seed=seed)
 
 
 def load_workspace_snapshot(
