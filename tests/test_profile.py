@@ -7,6 +7,7 @@ def test_profile_round_trip() -> None:
     profile = Profile("Nova Player")
     profile.stats.games_played = 5
     profile.stats.achievements.add("first_win")
+    profile.settings.locale = "hi"
     profile.history.append(
         entry_from_summary(
             GameSummary(GameMode.CLASSIC, "normal", 42, True, 2, 1.0, (10, 42), 7),
@@ -17,6 +18,7 @@ def test_profile_round_trip() -> None:
     assert restored.name == "Nova Player"
     assert restored.stats.games_played == 5
     assert restored.stats.achievements == {"first_win"}
+    assert restored.settings.locale == "hi"
     assert restored.history == profile.history
 
 
@@ -27,6 +29,7 @@ def test_profile_sanitizes_name() -> None:
 def test_profile_loads_legacy_payload_without_history() -> None:
     restored = Profile.from_dict({"name": "Legacy", "stats": {}, "settings": {}})
     assert restored.history == []
+    assert restored.settings.locale == "en"
 
 
 def test_profile_normalizes_untrusted_stat_values() -> None:

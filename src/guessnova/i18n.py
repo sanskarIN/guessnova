@@ -1,4 +1,4 @@
-"""Small externalized message catalog with English as the shipped locale."""
+"""Externalized message catalogs with English fallback."""
 
 from __future__ import annotations
 
@@ -55,6 +55,7 @@ EN_MESSAGES: Final[dict[str, str]] = {
     "history.time": "Time",
     "history.win": "Win",
     "history.loss": "Loss",
+    "history.group": "Group: {value}",
     "leaderboard.empty": "No leaderboard entries yet.",
     "leaderboard.title": "Local Leaderboard",
     "leaderboard.player": "Player",
@@ -62,6 +63,19 @@ EN_MESSAGES: Final[dict[str, str]] = {
     "settings.setting": "Setting",
     "settings.value": "Value",
     "settings.saved": "Settings saved locally.",
+    "profiles.title": "Local Profiles",
+    "profiles.name": "Profile",
+    "profiles.active": "Active",
+    "profiles.empty": "No saved profiles yet.",
+    "profiles.created": "Created profile: {name}",
+    "profiles.activated": "Active profile: {name}",
+    "profiles.renamed": "Profile renamed to: {name}",
+    "profiles.delete_confirm": "Type '{name}' to move this profile to recoverable trash: ",
+    "profiles.delete_cancelled": "Profile deletion cancelled.",
+    "profiles.deleted": "Moved profile to recoverable trash: {name}",
+    "profiles.restore_hint": "Undo with: guessnova profiles restore {name}",
+    "profiles.trash_empty": "Profile trash is empty.",
+    "profiles.restored": "Restored profile: {name}",
     "about.title": "About GuessNova",
     "about.description": "Privacy-first open-source number guessing game",
     "about.license": "License: MIT",
@@ -88,12 +102,119 @@ EN_MESSAGES: Final[dict[str, str]] = {
     "tui.outside_range": "Outside the current range.",
 }
 
-CATALOGS: Final[dict[str, dict[str, str]]] = {DEFAULT_LOCALE: EN_MESSAGES}
+HI_MESSAGES: Final[dict[str, str]] = {
+    "app.name": "GuessNova",
+    "app.tagline": "नंबर अनुमान, सुपरनोवा अंदाज़ में",
+    "app.description": "एक आधुनिक नंबर अनुमान गेम",
+    "play.correct": "सही! एक नया सितारा चमक उठा।",
+    "play.too_low": "नंबर बहुत छोटा है।",
+    "play.too_high": "नंबर बहुत बड़ा है।",
+    "play.out_of_range": "यह नंबर इस चुनौती की सीमा से बाहर है।",
+    "play.timeout": "समय समाप्त हो गया।",
+    "play.exhausted": "कोई प्रयास बाकी नहीं है।",
+    "play.hint_prefix": "संकेत: {hint}",
+    "play.hint_instruction": "सीमा को छोटा करने वाले संकेत के लिए 'hint' लिखें।",
+    "play.abandoned": "चुनौती छोड़ दी गई।",
+    "play.input_invalid": "पूर्णांक लिखें, 'hint' लिखें, या बाहर निकलने के लिए q दबाएँ।",
+    "play.prompt": "अनुमान [{attempts_left} बाकी] › ",
+    "play.summary": "लक्ष्य: {target} · प्रयास: {attempts} · {elapsed:.1f}s · संकेत: {hints}",
+    "play.progress": "XP: {xp} · जीत दर: {win_rate:.0%}",
+    "play.replay": "रीप्ले: {code}",
+    "achievement.unlocked": "उपलब्धि अनलॉक हुई: {label}",
+    "achievement.first_win": "पहली रोशनी",
+    "achievement.one_shot": "नोवा इंस्टिंक्ट",
+    "achievement.streak_5": "ऑन फायर",
+    "achievement.veteran_25": "अनुभवी एक्सप्लोरर",
+    "achievement.expert_win": "इवेंट होराइज़न",
+    "reverse.intro": "1 से 100 के बीच कोई नंबर सोचें। GuessNova उसे खोजेगा।",
+    "reverse.prompt": "क्या यह {guess} है? [higher/lower/correct] › ",
+    "reverse.solved": "{attempts} अनुमानों में हल हो गया।",
+    "stats.title": "{profile} · आँकड़े",
+    "stats.metric": "मापदंड",
+    "stats.value": "मान",
+    "stats.games": "गेम",
+    "stats.wins": "जीत",
+    "stats.win_rate": "जीत दर",
+    "stats.average_guesses": "औसत अनुमान",
+    "stats.current_streak": "वर्तमान स्ट्रीक",
+    "stats.best_streak": "सर्वश्रेष्ठ स्ट्रीक",
+    "stats.xp": "XP",
+    "stats.achievements": "उपलब्धियाँ",
+    "stats.history_entries": "इतिहास प्रविष्टियाँ",
+    "history.empty": "मिलता-जुलता सत्र इतिहास नहीं मिला।",
+    "history.title": "{profile} · सत्र इतिहास",
+    "history.when": "समय",
+    "history.mode": "मोड",
+    "history.difficulty": "कठिनाई",
+    "history.result": "परिणाम",
+    "history.attempts": "प्रयास",
+    "history.time": "समय",
+    "history.win": "जीत",
+    "history.loss": "हार",
+    "history.group": "समूह: {value}",
+    "leaderboard.empty": "लीडरबोर्ड में अभी कोई प्रविष्टि नहीं है।",
+    "leaderboard.title": "स्थानीय लीडरबोर्ड",
+    "leaderboard.player": "खिलाड़ी",
+    "settings.title": "{profile} · सेटिंग्स",
+    "settings.setting": "सेटिंग",
+    "settings.value": "मान",
+    "settings.saved": "सेटिंग्स स्थानीय रूप से सहेजी गईं।",
+    "profiles.title": "स्थानीय प्रोफ़ाइल",
+    "profiles.name": "प्रोफ़ाइल",
+    "profiles.active": "सक्रिय",
+    "profiles.empty": "अभी कोई सहेजी गई प्रोफ़ाइल नहीं है।",
+    "profiles.created": "प्रोफ़ाइल बनाई गई: {name}",
+    "profiles.activated": "सक्रिय प्रोफ़ाइल: {name}",
+    "profiles.renamed": "प्रोफ़ाइल का नया नाम: {name}",
+    "profiles.delete_confirm": "इस प्रोफ़ाइल को रिकवर योग्य ट्रैश में भेजने के लिए '{name}' लिखें: ",
+    "profiles.delete_cancelled": "प्रोफ़ाइल हटाना रद्द किया गया।",
+    "profiles.deleted": "प्रोफ़ाइल रिकवर योग्य ट्रैश में भेजी गई: {name}",
+    "profiles.restore_hint": "वापस पाने के लिए चलाएँ: guessnova profiles restore {name}",
+    "profiles.trash_empty": "प्रोफ़ाइल ट्रैश खाली है।",
+    "profiles.restored": "प्रोफ़ाइल वापस लाई गई: {name}",
+    "about.title": "GuessNova के बारे में",
+    "about.description": "गोपनीयता-केंद्रित ओपन-सोर्स नंबर अनुमान गेम",
+    "about.license": "लाइसेंस: MIT",
+    "about.repository": "रिपॉज़िटरी: {url}",
+    "about.github": "GitHub: {url}",
+    "about.business": "व्यवसाय: {email}",
+    "about.support": "सहायता: {email}",
+    "about.funding": "Buy Me a Coffee: {url}",
+    "data.exported": "यहाँ निर्यात किया गया: {path}",
+    "data.import_complete": "आयात पूरा हुआ।",
+    "onboarding.title": "GuessNova में आपका स्वागत है",
+    "onboarding.body": "छिपे नंबर का अनुमान लगाएँ, मदद के लिए 'hint' लिखें, या बाहर निकलने के लिए q दबाएँ। आपकी प्रोफ़ाइल, सेटिंग्स, इतिहास और लीडरबोर्ड इसी डिवाइस पर रहते हैं।",
+    "onboarding.settings": "थीम, हाई कॉन्ट्रास्ट, कम मोशन और स्मार्ट संकेत के लिए `guessnova settings` उपयोग करें।",
+    "tui.title": "छिपे नंबर का अनुमान लगाएँ",
+    "tui.input_placeholder": "पूर्णांक लिखें",
+    "tui.submit": "अनुमान भेजें",
+    "tui.hint": "सीमा संकेत",
+    "tui.binding.quit": "बाहर निकलें",
+    "tui.binding.new_game": "नया गेम",
+    "tui.range": "सीमा {minimum}–{maximum} · {attempts_left} प्रयास बाकी",
+    "tui.enter_first": "पहले कोई नंबर लिखें।",
+    "tui.correct": "सही! लक्ष्य {target} था। नए गेम के लिए R दबाएँ।",
+    "tui.round_over": "राउंड समाप्त। लक्ष्य: {target}। नए गेम के लिए R दबाएँ।",
+    "tui.outside_range": "वर्तमान सीमा से बाहर।",
+}
+
+CATALOGS: Final[dict[str, dict[str, str]]] = {
+    "en": EN_MESSAGES,
+    "hi": HI_MESSAGES,
+}
 
 
 def available_locales() -> tuple[str, ...]:
     """Return stable locale identifiers exposed to settings/UI code."""
     return tuple(sorted(CATALOGS))
+
+
+def catalog_missing_keys(locale: str) -> set[str]:
+    """Return English keys missing from a shipped locale catalog."""
+    catalog = CATALOGS.get(locale)
+    if catalog is None:
+        raise ValueError(f"unsupported locale: {locale}")
+    return set(EN_MESSAGES) - set(catalog)
 
 
 def text(key: str, /, *, locale: str = DEFAULT_LOCALE, **values: object) -> str:

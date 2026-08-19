@@ -4,7 +4,7 @@ from guessnova.settings import Settings
 def test_settings_round_trip() -> None:
     settings = Settings(
         theme="mono",
-        locale="en",
+        locale="hi",
         reduced_motion=True,
         onboarding_complete=True,
     )
@@ -31,6 +31,6 @@ def test_invalid_setting_types_fall_back_to_safe_defaults() -> None:
     assert settings == Settings()
 
 
-def test_locale_is_preserved_when_supported() -> None:
-    settings = Settings.from_dict({"locale": "en"})
-    assert settings.locale == "en"
+def test_supported_locales_are_preserved() -> None:
+    assert Settings.from_dict({"locale": "en"}).locale == "en"
+    assert Settings.from_dict({"locale": "hi"}).locale == "hi"

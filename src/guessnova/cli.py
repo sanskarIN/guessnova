@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 
@@ -27,9 +28,11 @@ from .constants import (
 from .daily import daily_game
 from .domain import DIFFICULTIES, GameMode, GuessOutcome
 from .engine import GuessGame, ReverseGuesser
+from .history import HistoryEntry, filter_history, group_history
 from .i18n import available_locales, text
 from .import_export import export_state, import_state
 from .leaderboard import LeaderboardEntry
+from .profile_commands import configure_profiles_parser, run_profiles
 from .replay import decode_replay, encode_replay
 from .service import GameService
 from .settings import Settings
@@ -62,12 +65,27 @@ def _configure_console(*, plain: bool, settings: Settings | None = None) -> None
 
 def _presentation_settings(args: argparse.Namespace) -> Settings:
     command = getattr(args, "command", None)
-    if command not in {"play", "stats", "history", "leaderboard", "settings", "about"}:
+    if command not in {
+        "play",
+        "stats",
+        "history",
+        "leaderboard",
+        "settings",
+        "profiles",
+        "about",
+    }:
         return Settings()
     try:
         return Storage().load_profile(getattr(args, "profile", None)).settings
     except (OSError, ValueError):
         return Settings()
+
+
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("value must be at least 1")
+    return parsed
 
 
 def _deterministic_seed(value: int | None) -> int | None:
@@ -265,20 +283,17 @@ def stats(args: argparse.Namespace) -> int:
     return 0
 
 
-def history_cmd(args: argparse.Namespace) -> int:
-    profile = Storage().load_profile(args.profile)
-    filtered = [
-        entry
-        for entry in profile.history
-        if (args.mode is None or entry.mode == args.mode)
-        and (args.difficulty is None or entry.difficulty == args.difficulty)
-    ]
-    selected = list(reversed(filtered[-args.limit :]))
-    if not selected:
-        console.print(text("history.empty", locale=args.locale))
-        return 0
+def _render_history_rows(
+    args: argparse.Namespace,
+    profile_name: str,
+    entries: Sequence[HistoryEntry],
+    *,
+    group_label: str | None = None,
+) -> None:
     if args.compact:
-        for entry in selected:
+        if group_label is not None:
+            console.print(f"[{group_label}]")
+        for entry in entries:
             result = (
                 text("history.win", locale=args.locale)
                 if entry.won
@@ -288,15 +303,19 @@ def history_cmd(args: argparse.Namespace) -> int:
                 f"{entry.played_at} · {entry.mode}/{entry.difficulty} · {result} · "
                 f"attempts={entry.attempts} · time={entry.elapsed_seconds:.2f}s"
             )
-        return 0
-    table = Table(title=text("history.title", locale=args.locale, profile=profile.name))
+        return
+
+    title = text("history.title", locale=args.locale, profile=profile_name)
+    if group_label is not None:
+        title += " · " + text("history.group", locale=args.locale, value=group_label)
+    table = Table(title=title)
     table.add_column(text("history.when", locale=args.locale))
     table.add_column(text("history.mode", locale=args.locale))
     table.add_column(text("history.difficulty", locale=args.locale))
     table.add_column(text("history.result", locale=args.locale))
     table.add_column(text("history.attempts", locale=args.locale), justify="right")
     table.add_column(text("history.time", locale=args.locale), justify="right")
-    for entry in selected:
+    for entry in entries:
         table.add_row(
             entry.played_at,
             entry.mode,
@@ -308,6 +327,28 @@ def history_cmd(args: argparse.Namespace) -> int:
             f"{entry.elapsed_seconds:.2f}s",
         )
     console.print(table)
+
+
+def history_cmd(args: argparse.Namespace) -> int:
+    profile = Storage().load_profile(args.profile)
+    filtered = filter_history(
+        profile.history,
+        mode=args.mode,
+        difficulty=args.difficulty,
+        result=args.result,
+        query=args.search,
+        since=args.since,
+        until=args.until,
+    )
+    selected = list(reversed(filtered[-args.limit :]))
+    if not selected:
+        console.print(text("history.empty", locale=args.locale))
+        return 0
+    if args.group_by is None:
+        _render_history_rows(args, profile.name, selected)
+        return 0
+    for label, entries in group_history(selected, by=args.group_by).items():
+        _render_history_rows(args, profile.name, entries, group_label=label)
     return 0
 
 
@@ -374,9 +415,7 @@ def settings_cmd(args: argparse.Namespace) -> int:
     if args.compact:
         console.print(" · ".join(f"{key}={value}" for key, value in values.items()))
     else:
-        table = Table(
-            title=text("settings.title", locale=args.locale, profile=profile.name)
-        )
+        table = Table(title=text("settings.title", locale=args.locale, profile=profile.name))
         table.add_column(text("settings.setting", locale=args.locale))
         table.add_column(text("settings.value", locale=args.locale))
         for key, value in values.items():
@@ -485,7 +524,27 @@ def build_parser() -> argparse.ArgumentParser:
         choices=[m.value for m in GameMode if m != GameMode.REVERSE],
     )
     history_parser.add_argument("--difficulty", choices=sorted(DIFFICULTIES))
-    history_parser.add_argument("--limit", type=int, default=20)
+    history_parser.add_argument("--result", choices=("win", "loss"))
+    history_parser.add_argument(
+        "--search",
+        help="match mode, difficulty, result, date, attempts, or seed",
+    )
+    history_parser.add_argument(
+        "--since",
+        type=date.fromisoformat,
+        help="include entries on/after YYYY-MM-DD",
+    )
+    history_parser.add_argument(
+        "--until",
+        type=date.fromisoformat,
+        help="include entries on/before YYYY-MM-DD",
+    )
+    history_parser.add_argument(
+        "--group-by",
+        choices=("day", "mode", "difficulty", "result"),
+        help="group matching sessions before rendering",
+    )
+    history_parser.add_argument("--limit", type=_positive_int, default=20)
     history_parser.set_defaults(func=history_cmd)
 
     leaderboard_parser = sub.add_parser("leaderboard", help="show local best results")
@@ -494,7 +553,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=[m.value for m in GameMode if m != GameMode.REVERSE],
     )
     leaderboard_parser.add_argument("--difficulty", choices=sorted(DIFFICULTIES))
-    leaderboard_parser.add_argument("--limit", type=int, default=10)
+    leaderboard_parser.add_argument("--limit", type=_positive_int, default=10)
     leaderboard_parser.set_defaults(func=leaderboard_cmd)
 
     settings_parser = sub.add_parser("settings", help="show or update local profile settings")
@@ -527,6 +586,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     settings_parser.set_defaults(func=settings_cmd)
 
+    configure_profiles_parser(sub)
+
     about_parser = sub.add_parser(
         "about",
         help="show project, license, support, and funding details",
@@ -558,6 +619,8 @@ def main(argv: list[str] | None = None) -> int:
         console.print(f"\n{WATERMARK} · Support: {BMC_URL}")
         return 0
     try:
+        if args.command == "profiles":
+            return run_profiles(args, console)
         return int(args.func(args))
     except (OSError, ValueError) as exc:
         console.print(f"[error]Error: {escape(str(exc))}[/error]")

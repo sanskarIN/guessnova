@@ -23,6 +23,7 @@ def test_storage_migrates_v0(tmp_path: Path) -> None:
     payload = Storage(tmp_path).load_raw()
     assert payload["schema_version"] == 1
     assert "profiles" in payload
+    assert payload["deleted_profiles"] == {}
 
 
 def test_storage_rejects_future_version(tmp_path: Path) -> None:
@@ -58,12 +59,75 @@ def test_storage_normalizes_untrusted_profile_and_leaderboard_data() -> None:
             "unexpected": "dropped",
         }
     )
-    assert normalized["active_profile"] == "Player"
+    assert normalized["active_profile"] == "Tester"
     assert "unexpected" not in normalized
     assert normalized["leaderboard"] == []
     profiles = normalized["profiles"]
     assert isinstance(profiles, dict)
     assert profiles["Tester"]["stats"]["games_won"] == 2  # type: ignore[index]
+
+
+def test_storage_selects_existing_profile_for_orphaned_active_name() -> None:
+    normalized = normalize_state(
+        {
+            "schema_version": 1,
+            "active_profile": "Missing",
+            "profiles": {
+                "Beta": {"name": "Beta", "stats": {}, "settings": {}},
+                "Alpha": {"name": "Alpha", "stats": {}, "settings": {}},
+            },
+        }
+    )
+    assert normalized["active_profile"] == "Alpha"
+
+
+def test_storage_normalizes_recoverable_deleted_profile_records() -> None:
+    normalized = normalize_state(
+        {
+            "schema_version": 1,
+            "profiles": {},
+            "deleted_profiles": {
+                "Old": {
+                    "deleted_at": "2026-08-19T04:00:00+00:00",
+                    "profile": {
+                        "name": "Old",
+                        "stats": {"games_played": 2, "games_won": 1},
+                    },
+                    "leaderboard": [
+                        {
+                            "player": "Old",
+                            "difficulty": "normal",
+                            "mode": "classic",
+                            "attempts": 3,
+                            "elapsed_seconds": 1.2,
+                            "created_at": "2026-08-19T03:59:00+00:00",
+                        }
+                    ],
+                },
+                "Broken": {"deleted_at": 4, "profile": []},
+            },
+        }
+    )
+    deleted = normalized["deleted_profiles"]
+    assert isinstance(deleted, dict)
+    assert set(deleted) == {"Old"}
+    record = deleted["Old"]
+    assert isinstance(record, dict)
+    profile = record["profile"]
+    assert isinstance(profile, dict)
+    assert profile["name"] == "Old"
+    leaderboard = record["leaderboard"]
+    assert isinstance(leaderboard, list)
+    assert len(leaderboard) == 1
+
+
+def test_deleting_active_profile_selects_remaining_profile(tmp_path: Path) -> None:
+    storage = Storage(tmp_path)
+    storage.create_profile("Alpha")
+    storage.create_profile("Beta")
+    assert storage.active_profile_name() == "Beta"
+    storage.delete_profile("Beta")
+    assert storage.active_profile_name() == "Alpha"
 
 
 def test_storage_leaderboard_round_trip(tmp_path: Path) -> None:
