@@ -35,6 +35,7 @@ dev = [
 [project.scripts]
 guessnova = "guessnova.cli:main"
 guessnova-tui = "guessnova.tui:run"
+guessnova-doctor = "guessnova.doctor_cli:main"
 
 [project.urls]
 Homepage = "https://github.com/sanskarIN/guessnova"
