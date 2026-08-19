@@ -26,6 +26,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "mypy>=1.17,<2",
   "pytest>=9.0,<10",
   "pytest-cov>=6.2,<7",
   "ruff>=0.12,<1",
@@ -57,3 +58,11 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F"]
 ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["src/guessnova"]
+pretty = true
+show_error_codes = true
+warn_unused_ignores = true
