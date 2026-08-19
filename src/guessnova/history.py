@@ -1,14 +1,18 @@
-"""Bounded local session-history records."""
+"""Bounded local session-history records and query helpers."""
 
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from typing import Literal
 
 from .domain import DIFFICULTIES, GameMode, GameSummary
 
 MAX_HISTORY_ENTRIES = 200
+HistoryResult = Literal["win", "loss"]
+HistoryGroup = Literal["day", "mode", "difficulty", "result"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +44,78 @@ def append_history(
     if limit < 1:
         raise ValueError("history limit must be positive")
     return [*entries, entry][-limit:]
+
+
+def _entry_date(entry: HistoryEntry) -> date | None:
+    try:
+        return datetime.fromisoformat(entry.played_at.replace("Z", "+00:00")).date()
+    except ValueError:
+        return None
+
+
+def filter_history(
+    entries: list[HistoryEntry],
+    *,
+    mode: str | None = None,
+    difficulty: str | None = None,
+    result: HistoryResult | None = None,
+    query: str | None = None,
+    since: date | None = None,
+    until: date | None = None,
+) -> list[HistoryEntry]:
+    """Return entries matching optional structured and free-text filters."""
+    needle = query.casefold().strip() if query else ""
+    filtered: list[HistoryEntry] = []
+    for entry in entries:
+        if mode is not None and entry.mode != mode:
+            continue
+        if difficulty is not None and entry.difficulty != difficulty:
+            continue
+        if result == "win" and not entry.won:
+            continue
+        if result == "loss" and entry.won:
+            continue
+        played_on = _entry_date(entry)
+        if since is not None and (played_on is None or played_on < since):
+            continue
+        if until is not None and (played_on is None or played_on > until):
+            continue
+        if needle:
+            searchable = " ".join(
+                (
+                    entry.played_at,
+                    entry.mode,
+                    entry.difficulty,
+                    "win" if entry.won else "loss",
+                    str(entry.attempts),
+                    str(entry.seed) if entry.seed is not None else "",
+                )
+            ).casefold()
+            if needle not in searchable:
+                continue
+        filtered.append(entry)
+    return filtered
+
+
+def group_history(
+    entries: list[HistoryEntry], *, by: HistoryGroup
+) -> dict[str, list[HistoryEntry]]:
+    """Group history while preserving the first-seen group ordering."""
+    groups: defaultdict[str, list[HistoryEntry]] = defaultdict(list)
+    for entry in entries:
+        if by == "day":
+            played_on = _entry_date(entry)
+            key = played_on.isoformat() if played_on is not None else "unknown-date"
+        elif by == "mode":
+            key = entry.mode
+        elif by == "difficulty":
+            key = entry.difficulty
+        elif by == "result":
+            key = "win" if entry.won else "loss"
+        else:
+            raise ValueError(f"unsupported history grouping: {by}")
+        groups[key].append(entry)
+    return dict(groups)
 
 
 def serialize(entries: list[HistoryEntry]) -> list[dict[str, object]]:
