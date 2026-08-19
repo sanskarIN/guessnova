@@ -27,10 +27,10 @@ class GuessNovaApp(WorkspaceApp):
         super().__init__(profile_name=profile_name, game=game, storage=storage)
         self.challenge_configuration: ChallengeConfiguration | None = None
 
-    async def on_mount(self) -> None:
+    def on_mount(self) -> None:
         super().on_mount()
         card = self.query_one("#card", Vertical)
-        await card.mount(
+        card.mount(
             ChallengeSetup(
                 mode=self.game.mode,
                 difficulty=self.game.difficulty_name,
