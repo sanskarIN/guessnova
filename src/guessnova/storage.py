@@ -13,6 +13,8 @@ from .constants import APP_NAME, DEFAULT_PROFILE, MAX_DELETED_PROFILES, SCHEMA_V
 from .leaderboard import LeaderboardEntry, add_entry, deserialize, serialize
 from .profile import Profile
 
+MAX_STATE_BYTES = 5_000_000
+
 
 def default_data_dir() -> Path:
     override = os.getenv("GUESSNOVA_HOME")
@@ -118,6 +120,21 @@ def normalize_state(payload: dict[str, object]) -> dict[str, object]:
     }
 
 
+def read_state_payload(path: Path) -> dict[str, object]:
+    """Read one local state file with a hard byte bound before JSON decoding."""
+    with path.open("rb") as handle:
+        raw = handle.read(MAX_STATE_BYTES + 1)
+    if len(raw) > MAX_STATE_BYTES:
+        raise ValueError("state file is too large")
+    try:
+        decoded = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise ValueError("state file contains invalid JSON") from exc
+    if not isinstance(decoded, dict):
+        raise ValueError("state file root must be an object")
+    return decoded
+
+
 class Storage:
     def __init__(self, data_dir: Path | None = None) -> None:
         self.data_dir = (data_dir or default_data_dir()).expanduser()
@@ -132,24 +149,19 @@ class Storage:
                     "profiles": {},
                 }
             )
-        try:
-            payload = json.loads(self.path.read_text(encoding="utf-8"))
-        except (UnicodeDecodeError, ValueError) as exc:
-            raise ValueError("state file contains invalid JSON") from exc
-        if not isinstance(payload, dict):
-            raise ValueError("state file root must be an object")
-        return normalize_state(payload)
+        return normalize_state(read_state_payload(self.path))
 
     def save_raw(self, payload: dict[str, object]) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         normalized = normalize_state(payload)
+        rendered = (json.dumps(normalized, indent=2, sort_keys=True) + "\n").encode("utf-8")
+        if len(rendered) > MAX_STATE_BYTES:
+            raise ValueError("state is too large to save")
+
         temp_path: Path | None = None
         try:
-            with NamedTemporaryFile(
-                "w", encoding="utf-8", dir=self.data_dir, delete=False
-            ) as temp:
-                json.dump(normalized, temp, indent=2, sort_keys=True)
-                temp.write("\n")
+            with NamedTemporaryFile("wb", dir=self.data_dir, delete=False) as temp:
+                temp.write(rendered)
                 temp.flush()
                 os.fsync(temp.fileno())
                 temp_path = Path(temp.name)
