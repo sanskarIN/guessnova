@@ -35,6 +35,8 @@ jobs:
         run: pytest --cov=guessnova --cov-report=term-missing
       - name: Compile
         run: python -m compileall -q src tests scripts
+      - name: Verify release metadata
+        run: python scripts/verify_release_metadata.py
       - name: Smoke test
         run: python scripts/smoke_test.py
       - name: Dependency audit
