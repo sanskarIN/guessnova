@@ -24,7 +24,7 @@ The Play pane retains the original Textual gameplay loop:
 - result persistence through `GameService`;
 - deterministic reset when a seed is present.
 
-`R` starts a new round when normal gameplay focus allows the application binding to handle it. `Ctrl+R` is the global reset binding.
+The numeric Play input is a dedicated `GuessInput` widget. While that field is focused, `R` requests a new round and `Q` quits, preserving the original single-card keyboard behavior. `Ctrl+R` and `Ctrl+Q` are the global equivalents available from every pane.
 
 ### Profiles
 
@@ -120,7 +120,7 @@ This separation keeps the everyday workspace safe while preserving the stronger 
 
 ## Keyboard navigation
 
-Global pane shortcuts:
+Global pane and application shortcuts:
 
 ```text
 Ctrl+1  Play
@@ -133,7 +133,7 @@ Ctrl+R  New round
 Ctrl+Q  Quit
 ```
 
-Plain `Q` and `R` are non-priority application bindings. This matters because Profiles, History, Leaderboard, and Recovery contain text inputs where ordinary letters must remain typable. The priority `Ctrl+Q` and `Ctrl+R` alternatives remain available everywhere.
+Plain `Q` and `R` are **Play-local bindings owned by the numeric guess input**, not global application bindings. Profiles, History, Leaderboard, and Recovery therefore receive ordinary `q`/`r` characters normally in their text fields. The Ctrl variants remain available everywhere.
 
 Each Ctrl+number pane shortcut also moves focus to a useful first control for that pane.
 
@@ -144,6 +144,7 @@ The workspace preserves these principles:
 - keyboard-first operation;
 - visible text status, not color-only meaning;
 - deterministic initial focus on the guess field;
+- Play-local `Q`/`R` without stealing letters from other text inputs;
 - non-destructive/read-only Recovery pane;
 - recoverable profile deletion;
 - no required mouse interaction;
@@ -173,7 +174,8 @@ Current v1.4 coverage includes:
 - leaderboard filtering/order;
 - settings persistence;
 - tab shortcuts;
-- text-field handling of ordinary `q`/`r` letters;
+- Play-local `R` reset and `Q` quit;
+- text-field handling of ordinary `q`/`r` letters outside Play;
 - profile create/rename/delete/restore;
 - exact delete confirmation;
 - history filters and invalid dates;
