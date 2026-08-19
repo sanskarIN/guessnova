@@ -27,6 +27,16 @@ def test_export_import_round_trip(tmp_path: Path) -> None:
     assert len(wrapped["integrity"]["payload_sha256"]) == 64
 
 
+def test_export_records_legacy_payload_schema_for_repair_backup(tmp_path: Path) -> None:
+    payload = {"schema_version": 1, "profiles": {}}
+    target = tmp_path / "legacy-source-backup.json"
+    export_state(payload, target)
+    wrapped = json.loads(target.read_text(encoding="utf-8"))
+    assert wrapped["version"] == EXPORT_VERSION
+    assert wrapped["schema_version"] == 1
+    assert import_state(target) == payload
+
+
 def test_import_accepts_legacy_version1_backup(tmp_path: Path) -> None:
     payload = {"schema_version": 1, "profiles": {"Legacy": {"name": "Legacy"}}}
     target = tmp_path / "legacy.json"
@@ -78,6 +88,16 @@ def test_import_rejects_tampered_version2_payload(tmp_path: Path) -> None:
     wrapped["payload"]["profiles"] = {"Injected": {}}
     target.write_text(json.dumps(wrapped), encoding="utf-8")
     with pytest.raises(ValueError, match="integrity check"):
+        import_state(target)
+
+
+def test_import_rejects_schema_metadata_mismatch(tmp_path: Path) -> None:
+    target = tmp_path / "backup.json"
+    export_state({"schema_version": 1, "profiles": {}}, target)
+    wrapped = json.loads(target.read_text(encoding="utf-8"))
+    wrapped["schema_version"] = 2
+    target.write_text(json.dumps(wrapped), encoding="utf-8")
+    with pytest.raises(ValueError, match="does not match"):
         import_state(target)
 
 
