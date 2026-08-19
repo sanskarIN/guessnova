@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 
-from .domain import GameSummary
+from .domain import DIFFICULTIES, GameMode, GameSummary
 
 MAX_HISTORY_ENTRIES = 200
 
@@ -48,23 +48,50 @@ def serialize(entries: list[HistoryEntry]) -> list[dict[str, object]]:
 def deserialize(items: object) -> list[HistoryEntry]:
     if not isinstance(items, list):
         return []
+    valid_modes = {mode.value for mode in GameMode if mode != GameMode.REVERSE}
     result: list[HistoryEntry] = []
     for item in items:
         if not isinstance(item, dict):
             continue
         try:
-            seed = item.get("seed")
+            mode = item["mode"]
+            difficulty = item["difficulty"]
+            won = item["won"]
+            attempts_raw = item["attempts"]
+            elapsed_raw = item["elapsed_seconds"]
+            played_at = item["played_at"]
+            seed_raw = item.get("seed")
+            if not isinstance(mode, str) or mode not in valid_modes:
+                continue
+            if not isinstance(difficulty, str) or difficulty not in DIFFICULTIES:
+                continue
+            if not isinstance(won, bool):
+                continue
+            if isinstance(attempts_raw, bool) or isinstance(elapsed_raw, bool):
+                continue
+            attempts = int(attempts_raw)
+            elapsed = float(elapsed_raw)
+            if attempts < 0 or elapsed < 0:
+                continue
+            if not isinstance(played_at, str) or not played_at or len(played_at) > 80:
+                continue
+            if seed_raw is None:
+                seed = None
+            elif isinstance(seed_raw, bool):
+                continue
+            else:
+                seed = int(seed_raw)
             result.append(
                 HistoryEntry(
-                    mode=str(item["mode"]),
-                    difficulty=str(item["difficulty"]),
-                    won=bool(item["won"]),
-                    attempts=int(item["attempts"]),
-                    elapsed_seconds=float(item["elapsed_seconds"]),
-                    seed=int(seed) if seed is not None else None,
-                    played_at=str(item["played_at"]),
+                    mode=mode,
+                    difficulty=difficulty,
+                    won=won,
+                    attempts=attempts,
+                    elapsed_seconds=elapsed,
+                    seed=seed,
+                    played_at=played_at,
                 )
             )
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError, OverflowError):
             continue
     return result[-MAX_HISTORY_ENTRIES:]
