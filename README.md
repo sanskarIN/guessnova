@@ -1,13 +1,12 @@
 # GuessNova
 
 <p align="center">
-  <img src="assets/guessnova-logo.svg" alt="GuessNova logo" width="150" />
+  <img src="assets/banner.svg" alt="GuessNova — number guessing, supernova style" width="820" />
 </p>
-
-<p align="center"><strong>A production-quality, privacy-first number guessing game for the terminal.</strong></p>
 
 <p align="center">
   <a href="https://github.com/sanskarIN/guessnova/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/sanskarIN/guessnova/ci.yml?branch=main&label=CI"></a>
+  <a href="https://github.com/sanskarIN/guessnova/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://img.shields.io/github/actions/workflow/status/sanskarIN/guessnova/codeql.yml?branch=main&label=CodeQL"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <a href="https://www.python.org/"><img alt="Python 3.13+" src="https://img.shields.io/badge/python-3.13%2B-3776AB.svg"></a>
   <a href="https://buymeacoffee.com/sanskarIN"><img alt="Buy Me a Coffee" src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support%20GuessNova-FFDD00?logo=buymeacoffee&logoColor=000000"></a>
@@ -15,33 +14,56 @@
 
 > **Made by the Sanskar**
 
-GuessNova turns the familiar number-guessing game into a polished local experience with multiple modes, deterministic challenges, replay codes, profiles, achievements, XP, statistics, a local leaderboard, export/import, smart hints, and both Rich CLI and Textual TUI interfaces.
+**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, profiles, bounded session history, achievements, XP, statistics, a leaderboard, backup/restore, and both Rich CLI and Textual TUI interfaces.
 
-## Highlights
+## Demo
+
+Real release captures belong in `docs/media/`. Until then, the CLI flow looks like:
+
+```text
+GuessNova · Classic · Normal · 1–100
+Guess [9 left] › 50
+Too low.
+Hint: warm; try higher. The target is odd.
+Guess [8 left] › hint
+Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning reward.
+```
+
+## Features
 
 - **Classic** — focused number guessing with difficulty-based ranges and attempt budgets.
 - **Timed** — solve before the difficulty-specific timer expires.
 - **Streak** — play streak-tagged rounds and build persistent profile streaks.
 - **Reverse** — think of a number and let GuessNova find it with binary search.
-- **Daily Challenge** — date-seeded, reproducible challenge shared by everyone using the same version.
-- **Smart hints** — temperature, direction, and parity clues without revealing the answer.
-- **Profiles** — local-only stats, streaks, XP, settings, and achievements.
-- **Replay codes** — checksum-protected portable summaries for replayable seeded challenges.
+- **Daily Challenge** — date-seeded, reproducible challenges shared by players using the same rules version.
+- **Smart hints** — temperature, direction, and parity feedback after guesses.
+- **Explicit range hints** — type `hint` for a narrowed range clue, with optional XP penalty via `--hint-penalty` / `--no-hint-penalty`.
+- **Profiles** — local stats, average guesses, streaks, XP, settings, achievements, and bounded session history.
+- **Replay codes** — checksum-protected portable summaries for completed challenges.
 - **Local leaderboard** — ranked winning results stored on your device.
-- **Import/export** — human-readable JSON backups with schema validation.
+- **Import/export** — human-readable JSON backups with format/schema validation.
 - **Deterministic test mode** — use `--seed` or `GUESSNOVA_SEED` for reproducibility.
-- **Accessible terminal UX** — keyboard-first operation, reduced-noise CLI, high-contrast-ready settings, no mandatory animation or audio.
-- **Privacy-first** — no accounts, ads, analytics, telemetry, or network calls in the application.
+- **Accessible terminal modes** — `--plain` disables color and `--compact` prefers concise text over panels/tables.
+- **Privacy-first** — no accounts, ads, analytics, telemetry, or application network calls.
 
-## Requirements
+## Supported platforms
 
-- Python **3.13+**
-- Windows 10/11, macOS, or modern Linux
-- A terminal capable of Unicode and ANSI color for the best experience
+- Windows 10/11
+- Current macOS releases with Python 3.13+
+- Modern Linux distributions with Python 3.13+
 
-## Install
+A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain` remains available for reduced formatting.
 
-### From source
+## Tech stack
+
+- **Python 3.13+** for domain/application code.
+- **Rich** for accessible terminal presentation.
+- **Textual** for the app-like TUI.
+- **JSON** for versioned local persistence, exports, and replay payloads.
+- **pytest / pytest-cov** for automated tests.
+- **Ruff**, **pip-audit**, **CodeQL**, and **GitHub Actions** for repository quality and security automation.
+
+## Quick start
 
 ```bash
 git clone https://github.com/sanskarIN/guessnova.git
@@ -55,6 +77,7 @@ Windows PowerShell:
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -e .
+guessnova play
 ```
 
 macOS/Linux:
@@ -63,9 +86,12 @@ macOS/Linux:
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e .
+guessnova play
 ```
 
-## Play
+See [`docs/setup.md`](docs/setup.md) for full setup details.
+
+## Play and manage local data
 
 ```bash
 guessnova play
@@ -73,76 +99,107 @@ guessnova play --difficulty hard
 guessnova play --mode timed --difficulty expert
 guessnova play --mode daily
 guessnova play --mode daily --day 2026-08-19
+guessnova play --seed 20260819 --no-save
 guessnova reverse
 guessnova stats
+guessnova history --limit 20
 guessnova leaderboard
+guessnova settings
+guessnova settings --theme mono --reduced-motion --no-smart-hints
+guessnova --plain --compact about
+guessnova export ./guessnova-backup.json
+guessnova import ./guessnova-backup.json
 guessnova-tui
 ```
 
-For a fully deterministic run:
-
-```bash
-guessnova play --seed 20260819 --no-save
-```
-
-or:
+For deterministic non-daily play you may also set:
 
 ```bash
 GUESSNOVA_SEED=20260819 guessnova play --no-save
 ```
 
-## Data and privacy
+## Data, privacy, and security
 
-GuessNova stores data only in a local application-data directory. Set `GUESSNOVA_HOME` to choose a custom location. See [PRIVACY.md](PRIVACY.md) and [docs/DATA_FORMAT.md](docs/DATA_FORMAT.md).
+GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use versioned JSON and atomic replacement. Export/import and replay formats are validated before use. The runtime needs no account, API key, telemetry endpoint, or network connection.
 
-Back up local data:
+Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), and [`docs/data_format.md`](docs/data_format.md).
 
-```bash
-guessnova export ./guessnova-backup.json
-guessnova import ./guessnova-backup.json
-```
-
-## Development
+## Development and testing
 
 ```bash
 python -m pip install -e '.[dev]'
-pytest
 ruff check .
+pytest --cov=guessnova --cov-report=term-missing
+python -m compileall -q src tests
 python scripts/smoke_test.py
+python -m build
 ```
 
-The repository uses CI for Python 3.13 tests, linting, package build validation, and security-oriented dependency review.
+The repository CI runs linting, tests, coverage reporting, bytecode compilation, smoke testing, package build/twine validation, dependency auditing, and CodeQL analysis. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
 
-## Project documentation
+## Architecture
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [Game modes](docs/GAME_MODES.md)
-- [Data format](docs/DATA_FORMAT.md)
-- [Accessibility](docs/ACCESSIBILITY.md)
-- [Testing](docs/TESTING.md)
-- [Release process](docs/RELEASING.md)
+GuessNova is a modular monolith with UI-independent game rules:
+
+```text
+Rich CLI / Textual TUI
+          |
+  application service
+     /          \
+ domain       local adapters
+(engine)   (storage/replay/export)
+```
+
+The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. See [`docs/architecture.md`](docs/architecture.md) and [`docs/adr/`](docs/adr/).
+
+## Build and release
+
+```bash
+python -m pip install build twine
+python -m build
+python -m twine check dist/*
+```
+
+Tagged releases are handled by the GitHub release workflow after quality checks. See [`docs/release.md`](docs/release.md) and [`CHANGELOG.md`](CHANGELOG.md).
+
+## Documentation
+
+- [Setup](docs/setup.md)
+- [Development](docs/development.md)
+- [Architecture](docs/architecture.md)
+- [Game modes](docs/game_modes.md)
+- [Data format](docs/data_format.md)
+- [Accessibility](docs/accessibility.md)
+- [Testing](docs/testing.md)
+- [Performance](docs/performance.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Release process](docs/release.md)
+- [Architecture decisions](docs/adr/)
+- [Branding](docs/BRANDING.md)
 - [Roadmap](ROADMAP.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security](SECURITY.md)
-- [Support](SUPPORT.md)
+- [Changelog](CHANGELOG.md)
+- [Work continuity](what_changed.md)
 
 ## Contributing
 
-Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) first.
+Issues and pull requests are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) first. Security vulnerabilities should follow the private reporting guidance in [`SECURITY.md`](SECURITY.md) rather than being published as exploit details in a normal issue.
 
-## Contact
+## License
+
+GuessNova is open source under the [MIT License](LICENSE).
+
+## Contact and support
 
 - Business: **sanskarin@outlook.in**
 - Business: **sanskarin.business@gmail.com**
 - Support: **supportramsandesh@gmail.com**
 - GitHub: **https://github.com/sanskarIN**
+- Repository: **https://github.com/sanskarIN/guessnova**
 
 ## Support the project
 
 <a href="https://buymeacoffee.com/sanskarIN"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-@sanskarIN-FFDD00?logo=buymeacoffee&logoColor=000000" alt="Buy Me a Coffee @sanskarIN"></a>
 
-Your support helps fund maintenance, documentation, accessibility improvements, and future open-source projects.
+Support is optional; every GuessNova feature remains fully usable without donating.
 
-## License
-
-GuessNova is open source under the [MIT License](LICENSE).
+**Made by the Sanskar**
