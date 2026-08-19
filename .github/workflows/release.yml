@@ -40,8 +40,36 @@ jobs:
       - name: Dependency audit
         run: pip-audit
 
+  platform-package:
+    name: release package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install build tools
+        run: python -m pip install build twine
+      - name: Build distributions
+        run: python -m build
+      - name: Validate distributions
+        shell: bash
+        run: python -m twine check dist/*
+      - name: Install wheel
+        shell: bash
+        run: python -m pip install dist/*.whl
+      - name: Verify CLI entry point
+        run: python -m guessnova --help
+      - name: Run smoke test
+        run: python scripts/smoke_test.py
+
   build-release:
-    needs: verify
+    needs: [verify, platform-package]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
