@@ -44,17 +44,30 @@ Typical shape:
       ]
     }
   },
-  "leaderboard": []
+  "leaderboard": [],
+  "deleted_profiles": {
+    "OldPlayer": {
+      "deleted_at": "2026-08-19T04:00:00+00:00",
+      "profile": {"name": "OldPlayer", "stats": {}, "settings": {}, "history": []},
+      "leaderboard": []
+    }
+  }
 }
 ```
 
-History is bounded to the most recent 200 entries per profile so local state cannot grow indefinitely. The exact file location is platform dependent and can be overridden with `GUESSNOVA_HOME`.
+History is bounded to the most recent 200 entries per profile. Recoverable profile trash is bounded to the most recent 20 deleted profiles. The exact file location is platform dependent and can be overridden with `GUESSNOVA_HOME`.
+
+## Profile deletion and restore
+
+`guessnova profiles delete NAME` removes the profile from the active profile map and removes matching local leaderboard rows, but stores both inside `deleted_profiles` for recovery. `guessnova profiles restore NAME` restores the profile and its retained leaderboard rows. Trash is local, exported with normal state backups, validated on load, and capped so it cannot grow without bound.
+
+Creating a new live profile with the same name as a deleted profile is allowed, but restoring the deleted profile then fails safely until the live-name collision is resolved.
 
 ## Migration and forward safety
 
-Legacy version-0 payloads receive baseline `profiles`/`active_profile` fields and are upgraded in memory to schema 1. Additive profile fields such as `history`, `locale`, and `onboarding_complete` have safe defaults, so existing schema-1 saves that predate them continue to load. Files with a schema newer than the application supports are rejected to avoid destructive downgrade writes.
+Legacy version-0 payloads receive baseline `profiles`/`active_profile` fields and are upgraded in memory to schema 1. Additive fields such as `history`, `locale`, `onboarding_complete`, and `deleted_profiles` have safe defaults, so existing schema-1 saves that predate them continue to load. Files with a schema newer than the application supports are rejected to avoid destructive downgrade writes.
 
-Every load/save passes through state normalization: unknown top-level fields are discarded, malformed profile/stat/settings/history values are ignored or reduced to safe defaults, leaderboard entries are reconstructed through their typed adapter, and an invalid profiles container is rejected. Writes use a temporary file, flush/fsync it, and atomically replace the state file.
+Every load/save passes through state normalization: unknown top-level fields are discarded, malformed profile/stat/settings/history/trash values are ignored or reduced to safe defaults, leaderboard entries are reconstructed through their typed adapter, and an invalid profiles container is rejected. Writes use a temporary file, flush/fsync it, and atomically replace the state file.
 
 ## Export wrapper
 
@@ -84,4 +97,4 @@ The locale is a presentation preference only. Stable serialized identifiers—mo
 
 ## Privacy
 
-Player names, statistics, settings, bounded history, and leaderboard data remain local unless the user explicitly exports/shares a file or replay code. See `PRIVACY.md`.
+Player names, statistics, settings, bounded history, recoverable profile trash, and leaderboard data remain local unless the user explicitly exports/shares a file or replay code. See `PRIVACY.md`.
