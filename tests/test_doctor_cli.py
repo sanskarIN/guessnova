@@ -58,3 +58,26 @@ def test_doctor_repair_requires_confirmation_and_can_repair(
     assert main(["--repair", "--yes", "--backup-dir", str(backups)]) == 0
     assert storage.load_raw()["schema_version"] == 2
     assert len(list(backups.glob("*.guessnova.json"))) == 1
+
+
+def test_doctor_json_repair_emits_single_json_document(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    monkeypatch.setenv("GUESSNOVA_HOME", str(tmp_path / "data"))
+    storage = Storage()
+    storage.data_dir.mkdir(parents=True, exist_ok=True)
+    storage.path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "active_profile": "Legacy",
+                "profiles": {"Legacy": {"name": "Legacy", "stats": {}, "settings": {}}},
+                "leaderboard": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert main(["--json", "--repair", "--yes"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["healthy"] is True
+    assert payload["repair_backup"] is not None
