@@ -1,6 +1,6 @@
 # Data Format
 
-GuessNova stores local data as JSON through `Storage`. The current schema version is defined in `src/guessnova/constants.py`.
+GuessNova stores local data as JSON through `Storage`. The current state schema is defined by `SCHEMA_VERSION` in `src/guessnova/constants.py` and is currently **2**.
 
 ## Local state
 
@@ -8,7 +8,7 @@ Typical shape:
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "active_profile": "Player",
   "profiles": {
     "Player": {
@@ -31,70 +31,102 @@ Typical shape:
         "show_smart_hints": true,
         "onboarding_complete": false
       },
-      "history": [
-        {
-          "mode": "classic",
-          "difficulty": "normal",
-          "won": true,
-          "attempts": 4,
-          "elapsed_seconds": 12.5,
-          "seed": 20260819,
-          "played_at": "2026-08-19T03:00:00+00:00"
-        }
-      ]
+      "history": []
     }
   },
   "leaderboard": [],
-  "deleted_profiles": {
-    "OldPlayer": {
-      "deleted_at": "2026-08-19T04:00:00+00:00",
-      "profile": {"name": "OldPlayer", "stats": {}, "settings": {}, "history": []},
-      "leaderboard": []
-    }
-  }
+  "deleted_profiles": {}
 }
 ```
 
-History is bounded to the most recent 200 entries per profile. Recoverable profile trash is bounded to the most recent 20 deleted profiles. The exact file location is platform dependent and can be overridden with `GUESSNOVA_HOME`.
+History is bounded to the most recent 200 entries per profile. Recoverable profile trash is bounded to the most recent 20 deleted profiles. The exact state location is platform dependent and can be overridden with `GUESSNOVA_HOME`.
+
+## Schema 2
+
+Schema 2 formally makes `deleted_profiles` a canonical top-level state container. GuessNova 1.1 already wrote this field additively while still identifying the state as schema 1, so the schema-1-to-schema-2 migration is intentionally idempotent:
+
+1. schema 0 receives baseline `profiles` and `active_profile`, then advances to schema 1;
+2. schema 1 receives `deleted_profiles: {}` only when missing, then advances to schema 2;
+3. schema 2 is normalized and persisted as the current format;
+4. future schemas are rejected rather than silently downgraded.
+
+Committed migration fixtures live under `tests/fixtures/state/` and cover both a legacy schema-1 save without trash and a schema-1 save that already contains recoverable trash.
 
 ## Profile deletion and restore
 
-`guessnova profiles delete NAME` removes the profile from the active profile map and removes matching local leaderboard rows, but stores both inside `deleted_profiles` for recovery. `guessnova profiles restore NAME` restores the profile and its retained leaderboard rows. Trash is local, exported with normal state backups, validated on load, and capped so it cannot grow without bound.
+`guessnova profiles delete NAME` removes the profile from the live profile map and removes matching local leaderboard rows, but stores both inside `deleted_profiles` for recovery. `guessnova profiles restore NAME` restores the profile and retained leaderboard rows. Trash is local, exported with normal backups, validated on load, and bounded.
 
-Creating a new live profile with the same name as a deleted profile is allowed, but restoring the deleted profile then fails safely until the live-name collision is resolved.
+Creating a new live profile with the same name as a deleted profile is allowed, but restoring the deleted profile fails safely until the live-name collision is resolved.
 
-## Migration and forward safety
+## Normalization and forward safety
 
-Legacy version-0 payloads receive baseline `profiles`/`active_profile` fields and are upgraded in memory to schema 1. Additive fields such as `history`, `locale`, `onboarding_complete`, and `deleted_profiles` have safe defaults, so existing schema-1 saves that predate them continue to load. Files with a schema newer than the application supports are rejected to avoid destructive downgrade writes.
+Every load/save passes through state normalization. The normalizer validates or repairs supported data including profile names, statistics, settings, history, leaderboard rows, deleted-profile records, active-profile references, and top-level structure. Unknown top-level fields are dropped. Invalid profiles containers and future schemas are rejected.
 
-Every load/save passes through state normalization: unknown top-level fields are discarded, malformed profile/stat/settings/history/trash values are ignored or reduced to safe defaults, leaderboard entries are reconstructed through their typed adapter, and an invalid profiles container is rejected. Writes use a temporary file, flush/fsync it, and atomically replace the state file.
+Writes use a temporary file in the destination directory, flush and `fsync` it, then atomically replace the state file where supported by the host filesystem.
 
-## Export wrapper
+## Backup wrapper v2
 
-`guessnova export` writes:
+The backup wrapper has its **own format version**, independent of the local state schema version. This avoids coupling backup compatibility to every future state migration.
+
+`guessnova export` writes a wrapper like:
 
 ```json
 {
   "format": "guessnova-export",
-  "version": 1,
-  "payload": {"...": "local state"}
+  "version": 2,
+  "schema_version": 2,
+  "integrity": {
+    "algorithm": "sha256",
+    "payload_sha256": "<64 lowercase hex characters>"
+  },
+  "payload": {"schema_version": 2}
 }
 ```
 
-Imports require the marker, a supported version, and an object payload. Imported payloads are normalized again when saved; an export wrapper is not treated as trusted merely because it has the correct marker.
+The digest is calculated from canonical UTF-8 JSON for the payload using sorted keys and compact separators. Import compares the expected and supplied digest with constant-time comparison.
+
+The wrapper's `schema_version` records the embedded payload's actual schema version. For example, the pre-repair backup created by `guessnova-doctor --repair` can be a version-2 backup wrapper containing a schema-1 payload. The wrapper schema metadata and embedded payload schema must match.
+
+### Legacy backup compatibility
+
+GuessNova 1.0/1.1 used backup wrapper version 1 and coupled that wrapper version to the then-current state schema. Version-1 backup wrappers remain importable when their embedded payload schema is supported. The payload is migrated only when it is saved through current `Storage`.
+
+### Backup validation
+
+Import rejects:
+
+- an invalid GuessNova format marker;
+- invalid/non-integer wrapper versions;
+- unsupported old wrapper versions;
+- future wrapper versions;
+- invalid/future schema versions;
+- wrapper/payload schema metadata mismatches;
+- missing or unsupported integrity metadata in wrapper v2;
+- invalid integrity digest length/type;
+- payload tampering that changes the digest;
+- invalid JSON or non-object payloads;
+- oversized files.
+
+Backup integrity protects against accidental modification/corruption. SHA-256 here is not a secret-key signature, encryption, origin authentication, or proof that a backup came from a trusted person.
+
+## Doctor and safe repair
+
+`guessnova-doctor` inspects local state without network access. It reports source/current schema, active profile, profile/history/leaderboard/trash counts, normalization changes, and detected migration/normalization issues.
+
+`guessnova-doctor --repair` requires confirmation (or `--yes`) and refuses state it cannot safely decode/normalize. Before rewriting repairable state it writes an integrity-protected backup of the original payload. Use `--backup-dir PATH` to place that backup elsewhere.
+
+`guessnova-doctor --json` emits machine-readable diagnostic output suitable for scripts.
 
 ## Replay codes
 
-Replay codes contain a compact JSON `GameSummary`, replay version, and truncated SHA-256 integrity digest, then use URL-safe Base64 encoding. Summaries include mode, difficulty, target, win status, attempts, elapsed time, guesses, optional seed, explicit-hint count, and accumulated XP hint penalty.
+Replay codes retain replay version 1. They contain a compact JSON `GameSummary`, replay version, and truncated SHA-256 integrity digest, then use URL-safe Base64 encoding. GuessNova 1.2 does not change replay compatibility or guessing rules.
 
-The replay parser enforces a maximum encoded length, valid URL-safe Base64, envelope/checksum structure, supported version, an allowlist of fields, difficulty/range constraints, attempt/guess consistency, finite non-negative elapsed time, signed 64-bit portable seeds, and bounded hint metadata. Older version-1 replay payloads that omit the later optional hint fields continue to load with zero-value defaults.
-
-A replay code is integrity protected against accidental corruption; the checksum is not a secret-key signature, encryption, authentication, or proof that a challenge came from a trusted person. Replay codes must not contain secrets.
+The replay parser enforces a maximum encoded length, valid URL-safe Base64, envelope/checksum structure, supported version, an allowlist of fields, difficulty/range constraints, attempt/guess consistency, finite non-negative elapsed time, signed 64-bit portable seeds, and bounded hint metadata.
 
 ## Localization identifiers
 
-The locale is a presentation preference only. Stable serialized identifiers—mode names, difficulty names, schema keys, achievement IDs, and replay field names—are not translated. See `docs/localization.md`.
+The locale is a presentation preference only. Stable serialized identifiers—mode names, difficulty names, schema keys, achievement IDs, replay field names, backup format markers, and diagnostic JSON keys—are not translated.
 
 ## Privacy
 
-Player names, statistics, settings, bounded history, recoverable profile trash, and leaderboard data remain local unless the user explicitly exports/shares a file or replay code. See `PRIVACY.md`.
+Player names, statistics, settings, bounded history, recoverable profile trash, leaderboard data, diagnostics, and repair backups remain local unless the user explicitly exports/shares a file or replay code. GuessNova requires no runtime account, telemetry service, analytics service, or network connection. See `PRIVACY.md`.
