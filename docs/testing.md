@@ -12,6 +12,7 @@ mypy src/guessnova
 pytest --cov=guessnova --cov-report=term-missing
 python -m compileall -q src tests scripts
 python scripts/verify_release_metadata.py
+python scripts/check_docs_links.py
 python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
@@ -20,9 +21,9 @@ python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
-`make check` runs the core lint/format/type/test/compile/metadata/smoke sequence plus entry-point and both Textual application import checks on systems with Make available.
+`make check` runs the core lint/format/type/test/compile/metadata/documentation-link/smoke sequence plus entry-point and both Textual application import checks on systems with Make available.
 
-CI also builds, validates, installs, imports both the stable v1.4 Textual workspace and the shipped v1.5 challenge-enabled application, launches the game CLI, primary Doctor route, standalone Doctor compatibility entry point, Doctor version output, and smoke-tests distributions on Ubuntu, Windows, and macOS. Separate workflows perform CodeQL and dependency/secret checks.
+CI also validates local Markdown link/image targets, builds, validates, installs, imports both the stable v1.4 Textual workspace and the shipped v1.5 challenge-enabled application, launches the game CLI, primary Doctor route, standalone Doctor compatibility entry point, Doctor version output, and smoke-tests distributions on Ubuntu, Windows, and macOS. Separate workflows perform CodeQL and dependency/secret checks.
 
 A configured workflow is not a passed workflow. Final release evidence requires successful conclusions for the exact release-candidate head.
 
@@ -74,7 +75,26 @@ A configured workflow is not a passed workflow. Final release evidence requires 
 - v1.5 deterministic seeded/Daily reset from validated configuration.
 - v1.5 initial challenge identity without target disclosure.
 - v1.5 guess-first focus, backward challenge reachability, and ordinary `q`/`r` challenge-field input.
+- Offline documentation-link validation for local Markdown links/images, reference targets, HTML href/src targets, code-example exclusion, missing-target detection, and repository-root escape rejection.
 - End-to-end smoke coverage for gameplay, persistence, schema 2, replay, backup integrity/importability, Doctor state/backup routes, diagnostics/repair, achievements, leaderboard, localization, workspace/challenge helpers, and reverse mode.
+
+## Documentation-link verification
+
+`scripts/check_docs_links.py` is a dependency-free release tool for repository-local documentation integrity. It recursively scans Markdown files while excluding generated/tool directories. Fenced code blocks and inline-code examples are removed from the scan so example syntax cannot masquerade as a real navigation target.
+
+The checker validates:
+
+- inline Markdown links and images;
+- reference-style definitions;
+- HTML `href` and `src` values embedded in Markdown;
+- URL-decoded local paths;
+- repository-root-relative local paths;
+- existence of local files/directories;
+- rejection of local paths that escape the repository root.
+
+External schemes and fragment-only links are deliberately not fetched. This keeps the gate deterministic, offline, fast, and free from third-party availability/rate-limit failures. It is a local-link integrity check, not an internet crawler or anchor-slug validator.
+
+`tests/test_docs_links.py` exercises valid local/external/fragment links, missing targets, reference/HTML targets, code-example exclusion, and root-escape rejection. The checker runs in `make check`, normal CI, and tagged-release verification.
 
 ## Migration fixtures
 
@@ -231,4 +251,6 @@ The tagged-release package matrix performs the same two Textual import checks be
 
 The available execution environment for this v1.5 continuation cannot resolve GitHub or package-index hosts. Local dependency-backed execution is therefore not claimed. Static review and committed regression coverage continue, while GitHub-hosted workflows provide exact-head execution when runners are available.
 
-Do not convert this limitation into a local Ruff/mypy/pytest/build pass. Any concrete final-head workflow failure must be inspected at the failed job/step and fixed with a focused regression before release verification can be called successful.
+The documentation-link checker itself is intentionally dependency-free, but this continuation still relies on exact-head GitHub CI to execute it against the complete repository checkout because no local clone is available in this environment.
+
+Do not convert this limitation into a local Ruff/mypy/pytest/build/link-check pass. Any concrete final-head workflow failure must be inspected at the failed job/step and fixed with a focused regression before release verification can be called successful.
