@@ -1,8 +1,8 @@
 """Reusable local workspace helpers for the Textual interface.
 
 The helpers in this module deliberately avoid Textual dependencies so profile,
-history, settings, and diagnostic state can be exercised with ordinary unit
-tests as well as through the interactive TUI.
+history, settings, leaderboard, and diagnostic state can be exercised with
+ordinary unit tests as well as through the interactive TUI.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from datetime import date
 
 from .diagnostics import DiagnosticReport, diagnose
 from .history import HistoryEntry, HistoryResult, filter_history
+from .leaderboard import LeaderboardEntry
 from .profile import Profile
 from .settings import Settings
 from .storage import Storage
@@ -96,6 +97,28 @@ def select_history(
         until=until,
     )
     return list(reversed(filtered[-limit:]))
+
+
+def select_leaderboard(
+    entries: list[LeaderboardEntry],
+    *,
+    mode: str | None = None,
+    difficulty: str | None = None,
+    player: str | None = None,
+    limit: int = 100,
+) -> list[LeaderboardEntry]:
+    """Return the already-ranked leaderboard after optional local filters."""
+    if limit < 1:
+        raise ValueError("leaderboard limit must be positive")
+    player_filter = player.casefold().strip() if player else ""
+    selected = [
+        entry
+        for entry in entries
+        if (mode is None or entry.mode == mode)
+        and (difficulty is None or entry.difficulty == difficulty)
+        and (not player_filter or player_filter in entry.player.casefold())
+    ]
+    return selected[:limit]
 
 
 def save_workspace_settings(
