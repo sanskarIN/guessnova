@@ -14,7 +14,7 @@
 
 > **Made by the Sanskar**
 
-**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, profiles, bounded session history, achievements, XP, statistics, a leaderboard, backup/restore, and both Rich CLI and Textual TUI interfaces.
+**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, profiles, bounded session history, achievements, XP, statistics, a leaderboard, backup/restore, first-run onboarding, semantic themes, and both Rich CLI and Textual TUI interfaces.
 
 ## Demo
 
@@ -39,11 +39,14 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - **Smart hints** — temperature, direction, and parity feedback after guesses.
 - **Explicit range hints** — type `hint` for a narrowed range clue, with optional XP penalty via `--hint-penalty` / `--no-hint-penalty`.
 - **Profiles** — local stats, average guesses, streaks, XP, settings, achievements, and bounded session history.
-- **Replay codes** — checksum-protected portable summaries for completed challenges.
+- **First-run onboarding** — concise keyboard/privacy/settings guidance with no sign-in or network requirement.
+- **Replay codes** — checksum-protected, strictly validated portable summaries for completed challenges.
 - **Local leaderboard** — ranked winning results stored on your device.
-- **Import/export** — human-readable JSON backups with format/schema validation.
+- **Import/export** — human-readable JSON backups with format/schema validation and state normalization.
 - **Deterministic test mode** — use `--seed` or `GUESSNOVA_SEED` for reproducibility.
 - **Accessible terminal modes** — `--plain` disables color and `--compact` prefers concise text over panels/tables.
+- **Themes and contrast** — saved semantic Rich themes plus a dedicated high-contrast palette.
+- **Localization-ready** — English ships first through an externalized offline message catalog and persisted locale preference.
 - **Privacy-first** — no accounts, ads, analytics, telemetry, or application network calls.
 
 ## Supported platforms
@@ -61,7 +64,7 @@ A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain`
 - **Textual** for the app-like TUI.
 - **JSON** for versioned local persistence, exports, and replay payloads.
 - **pytest / pytest-cov** for automated tests.
-- **Ruff**, **pip-audit**, **CodeQL**, and **GitHub Actions** for repository quality and security automation.
+- **Ruff**, **mypy**, **pip-audit**, **CodeQL**, and **GitHub Actions** for repository quality and security automation.
 
 ## Quick start
 
@@ -105,7 +108,8 @@ guessnova stats
 guessnova history --limit 20
 guessnova leaderboard
 guessnova settings
-guessnova settings --theme mono --reduced-motion --no-smart-hints
+guessnova settings --theme mono --locale en --reduced-motion --no-smart-hints
+guessnova settings --high-contrast
 guessnova --plain --compact about
 guessnova export ./guessnova-backup.json
 guessnova import ./guessnova-backup.json
@@ -120,7 +124,7 @@ GUESSNOVA_SEED=20260819 guessnova play --no-save
 
 ## Data, privacy, and security
 
-GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use versioned JSON and atomic replacement. Export/import and replay formats are validated before use. The runtime needs no account, API key, telemetry endpoint, or network connection.
+GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use versioned JSON and atomic replacement. Export/import state is normalized before persistence, while replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use. The runtime needs no account, API key, telemetry endpoint, or network connection.
 
 Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), and [`docs/data_format.md`](docs/data_format.md).
 
@@ -129,13 +133,15 @@ Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), and [`docs/data_f
 ```bash
 python -m pip install -e '.[dev]'
 ruff check .
+ruff format --check .
+mypy src/guessnova
 pytest --cov=guessnova --cov-report=term-missing
-python -m compileall -q src tests
+python -m compileall -q src tests scripts
 python scripts/smoke_test.py
 python -m build
 ```
 
-The repository CI runs linting, tests, coverage reporting, bytecode compilation, smoke testing, package build/twine validation, dependency auditing, and CodeQL analysis. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
+The repository CI runs linting, formatting, strict typing, tests, coverage reporting, bytecode compilation, smoke testing, package build/Twine validation, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries also have deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
 
 ## Architecture
 
@@ -150,7 +156,7 @@ Rich CLI / Textual TUI
 (engine)   (storage/replay/export)
 ```
 
-The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. See [`docs/architecture.md`](docs/architecture.md) and [`docs/adr/`](docs/adr/).
+The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. Presentation messages are resolved through an English-first catalog while serialized identifiers remain stable. See [`docs/architecture.md`](docs/architecture.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
 
 ## Build and release
 
@@ -160,7 +166,7 @@ python -m build
 python -m twine check dist/*
 ```
 
-Tagged releases are handled by the GitHub release workflow after quality checks. See [`docs/release.md`](docs/release.md) and [`CHANGELOG.md`](CHANGELOG.md).
+Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until the full verification suite succeeds. See [`docs/release.md`](docs/release.md) and [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Documentation
 
@@ -169,11 +175,13 @@ Tagged releases are handled by the GitHub release workflow after quality checks.
 - [Architecture](docs/architecture.md)
 - [Game modes](docs/game_modes.md)
 - [Data format](docs/data_format.md)
+- [Localization](docs/localization.md)
 - [Accessibility](docs/accessibility.md)
 - [Testing](docs/testing.md)
 - [Performance](docs/performance.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Release process](docs/release.md)
+- [GitHub repository operations](docs/github_repository.md)
 - [Architecture decisions](docs/adr/)
 - [Branding](docs/BRANDING.md)
 - [Roadmap](ROADMAP.md)
