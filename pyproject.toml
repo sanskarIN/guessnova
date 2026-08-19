@@ -34,7 +34,7 @@ dev = [
 
 [project.scripts]
 guessnova = "guessnova.entrypoint:main"
-guessnova-tui = "guessnova.tui:run"
+guessnova-tui = "guessnova.tui_challenge_app:run"
 guessnova-doctor = "guessnova.doctor_cli:main"
 
 [project.urls]
