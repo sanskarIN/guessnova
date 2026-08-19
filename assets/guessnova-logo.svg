@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">GuessNova logo</title>
+  <desc id="desc">A glowing nova around a question mark.</desc>
+  <defs>
+    <linearGradient id="nova" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0B1020"/>
+  <path d="M256 42l31 127 109-73-73 109 127 31-127 31 73 109-109-73-31 127-31-127-109 73 73-109-127-31 127-31-73-109 109 73z" fill="url(#nova)" opacity=".9"/>
+  <circle cx="256" cy="236" r="116" fill="#0B1020" opacity=".76"/>
+  <path d="M194 205c5-54 43-87 100-87 58 0 99 34 99 86 0 42-25 65-62 87-28 17-37 31-37 60v10h-80v-17c0-46 17-75 57-99 24-15 35-27 35-46 0-18-13-30-34-30-22 0-36 13-38 36h-40zm18 196h85v82h-85z" fill="#F8FAFC" transform="translate(-5 -50) scale(.9)"/>
+</svg>
