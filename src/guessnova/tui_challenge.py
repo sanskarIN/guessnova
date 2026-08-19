@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .domain import GameMode
+from .engine import GuessGame
 from .i18n import text
 from .tui_workspace import ChallengeConfiguration
 
@@ -32,4 +33,31 @@ def challenge_status(configuration: ChallengeConfiguration, *, locale: str) -> s
         mode=configuration.mode_value,
         difficulty=configuration.difficulty,
         detail=challenge_detail(configuration, locale=locale),
+    )
+
+
+def game_status(game: GuessGame, *, locale: str) -> str:
+    """Describe an already-created numeric game without revealing its target."""
+    if game.mode == GameMode.REVERSE:
+        return ""
+    if game.mode == GameMode.DAILY:
+        detail = (
+            text("tui.challenge.seed_detail", locale=locale, seed=game.seed)
+            if game.seed is not None
+            else text("tui.challenge.random_detail", locale=locale)
+        )
+        return text(
+            "tui.challenge.active",
+            locale=locale,
+            mode=game.mode.value,
+            difficulty=game.difficulty_name,
+            detail=detail,
+        )
+    return challenge_status(
+        ChallengeConfiguration(
+            mode=game.mode,
+            difficulty=game.difficulty_name,
+            seed=game.seed,
+        ),
+        locale=locale,
     )
