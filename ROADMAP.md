@@ -63,7 +63,7 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 - [x] Expand `guessnova-tui` from one gameplay card into Play, Profiles, History, Leaderboard, Settings, and Recovery panes.
 - [x] Preserve Play as the initial pane with deterministic initial guess-input focus and existing persisted gameplay behavior.
 - [x] Add Ctrl+1…Ctrl+6 direct pane navigation plus global Ctrl+R reset and Ctrl+Q quit.
-- [x] Make plain `Q`/`R` non-priority so normal letters remain typable in workspace text fields.
+- [x] Scope plain `Q`/`R` to the numeric Play input so legacy reset/quit remains available there while workspace text fields receive ordinary letters normally.
 - [x] Add active-profile summary and achievement visibility in the TUI.
 - [x] Add local profile use/create/rename/recoverable-delete/restore actions without duplicating storage semantics.
 - [x] Require exact selected-name confirmation before TUI profile deletion.
