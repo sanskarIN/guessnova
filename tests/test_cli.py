@@ -73,3 +73,17 @@ def test_no_save_onboarding_does_not_write_profile_state(tmp_path: Path) -> None
     args = Namespace(locale="en", compact=True, no_save=True)
     _show_onboarding(args, storage, Settings(), profile_name="Tester")
     assert not storage.path.exists()
+
+
+def test_invalid_replay_returns_clean_failure_code() -> None:
+    assert main(["replay", "not-a-replay"]) == 2
+
+
+def test_missing_import_file_returns_clean_failure_code(tmp_path: Path) -> None:
+    assert main(["import", str(tmp_path / "missing.json")]) == 2
+
+
+def test_corrupt_local_state_returns_clean_failure_code(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("GUESSNOVA_HOME", str(tmp_path))
+    (tmp_path / "state.json").write_text("{broken", encoding="utf-8")
+    assert main(["stats"]) == 2
