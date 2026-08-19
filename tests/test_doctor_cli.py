@@ -136,6 +136,21 @@ def test_doctor_verifies_backup_without_importing(tmp_path: Path, capsys) -> Non
     assert payload["profile_count"] == 1
 
 
+def test_doctor_rejects_checksum_valid_unimportable_backup(tmp_path: Path, capsys) -> None:
+    backup = tmp_path / "unimportable.json"
+    export_state(
+        {"schema_version": SCHEMA_VERSION, "profiles": []},
+        backup,
+    )
+
+    assert main(["--json", "--verify-backup", str(backup)]) == EXIT_ATTENTION
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["report_version"] == DOCTOR_REPORT_VERSION
+    assert payload["kind"] == "error"
+    assert payload["healthy"] is False
+    assert "profiles" in payload["error"]
+
+
 def test_doctor_rejects_backup_verification_with_repair(tmp_path: Path, capsys) -> None:
     backup = tmp_path / "backup.json"
     export_state({"schema_version": SCHEMA_VERSION}, backup)
