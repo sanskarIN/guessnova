@@ -34,18 +34,49 @@ Evidence / notes:
 
 Evidence / notes:
 
-## Textual TUI — Play
+## Textual TUI — Play baseline
 
 - [ ] Initial focus lands on the guess input.
-- [ ] Tab order starts guess input → submit → range hint.
+- [ ] Forward Tab order starts guess input → submit → range hint.
 - [ ] Enter submits a guess from the input.
 - [ ] Range Hint returns focus to the input and does not consume an attempt.
-- [ ] `R` resets the round from normal gameplay focus.
+- [ ] `R` resets the round from the focused numeric GuessInput.
 - [ ] `Ctrl+R` resets the round globally and returns to Play.
-- [ ] `Q` exits when normal gameplay focus allows the application binding.
+- [ ] `Q` exits from the focused numeric GuessInput.
 - [ ] `Ctrl+Q` exits globally.
 - [ ] Winning/losing feedback remains understandable from text alone.
 - [ ] A completed TUI round persists exactly one result.
+
+Evidence / notes:
+
+## Textual TUI — v1.5 Challenge Setup
+
+- [ ] Challenge Setup is visible without hiding the normal Play controls.
+- [ ] Mode/difficulty meaning is understandable from visible text.
+- [ ] Classic can be selected by keyboard.
+- [ ] Timed can be selected by keyboard.
+- [ ] Streak can be selected by keyboard.
+- [ ] Daily can be selected by keyboard.
+- [ ] Reverse is not presented as an ordinary numeric challenge option.
+- [ ] Easy/normal/hard/expert difficulty can be selected by keyboard.
+- [ ] Classic/Timed/Streak enable the optional seed field and disable the Daily date field.
+- [ ] Daily disables the seed field and enables the date field.
+- [ ] Shift+Tab from Guess reaches Start Challenge and allows continued backward navigation through configuration controls.
+- [ ] Enter from the enabled seed field can start a non-Daily challenge.
+- [ ] Enter from the enabled Daily date field can start a Daily challenge.
+- [ ] A valid seeded challenge clears the previous round and returns focus to Guess.
+- [ ] A valid Daily date is normalized/displayed as `YYYY-MM-DD` and returns focus to Guess.
+- [ ] Blank Daily date resolves to an explicit current local date after successful start.
+- [ ] Invalid seed reports a text error, focuses seed, and leaves the active round/attempt count intact.
+- [ ] Invalid Daily date reports a text error, focuses date, and leaves the active round/attempt count intact.
+- [ ] The active challenge line identifies mode and difficulty.
+- [ ] Seeded challenge identity reports the seed without reporting the hidden target.
+- [ ] Configured Daily identity reports the date without reporting the hidden target.
+- [ ] Unseeded challenge identity is understandable without exposing the target.
+- [ ] `Ctrl+R` on a configured seeded challenge reproduces the same deterministic target.
+- [ ] `Ctrl+R` on a configured Daily challenge reproduces the same resolved-date challenge.
+- [ ] Plain `q`/`r` typed in challenge text fields are field input rather than global quit/reset actions.
+- [ ] Challenge errors/status are understandable without color.
 
 Evidence / notes:
 
@@ -74,6 +105,7 @@ Evidence / notes:
 - [ ] A deleted profile can be restored from the keyboard.
 - [ ] Profile summary and achievement text remain readable without color.
 - [ ] Switching the active profile resets an unfinished round instead of reassigning it.
+- [ ] If challenge setup was active, profile switching resets attempt state before later persistence.
 
 Evidence / notes:
 
@@ -137,6 +169,7 @@ Test at a normal width and a narrow terminal.
 - [ ] 100% terminal font scale is usable.
 - [ ] Increased font scale remains usable without hiding required controls.
 - [ ] Narrow terminal layout remains navigable across all six panes.
+- [ ] Challenge Setup remains navigable at narrow width and increased font scale.
 - [ ] High-contrast CLI setting remains readable.
 - [ ] High-contrast TUI focus/borders remain readable.
 - [ ] Reduced-motion preference does not trigger unnecessary animation or fake delays.
@@ -150,6 +183,8 @@ Evidence / notes:
 - [ ] Hindi CLI labels/prompts render correctly after `guessnova settings --locale hi`.
 - [ ] English TUI workspace labels/status render correctly.
 - [ ] Hindi TUI workspace labels/status render correctly after relaunch with a Hindi profile.
+- [ ] English Challenge Setup labels/help/errors/status render correctly.
+- [ ] Hindi Challenge Setup labels/help/errors/status render correctly.
 - [ ] Placeholders and formatted values remain present in both locales.
 - [ ] No untranslated catalog key name is exposed to users.
 - [ ] Switching to a differently localized profile does not leave the current mounted TUI partially translated.
@@ -158,9 +193,10 @@ Evidence / notes:
 
 ## Privacy and local-data review
 
-- [ ] No workspace action unexpectedly requires network access.
+- [ ] No workspace/challenge action unexpectedly requires network access.
+- [ ] Challenge status does not expose the hidden target.
 - [ ] Recovery backup verification does not import or modify the selected backup/state.
-- [ ] Screenshots/support captures are reviewed for profile names, history, paths, and other local data before sharing.
+- [ ] Screenshots/support captures are reviewed for profile names, history, paths, seeds/dates, and other local data before sharing.
 
 Evidence / notes:
 
