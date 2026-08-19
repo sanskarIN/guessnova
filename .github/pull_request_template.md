@@ -18,6 +18,7 @@ Explain the user/developer problem being solved.
 - [ ] `python -m guessnova --help`
 - [ ] `python -m guessnova doctor --help`
 - [ ] `python -m guessnova.doctor_cli --help`
+- [ ] `python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"`
 
 ## Persistence / backup / Doctor
 
@@ -36,9 +37,27 @@ Explain the user/developer problem being solved.
 - [ ] JSON repair remains noninteractive unless `--yes` is explicit.
 - [ ] Doctor report-version and exit-code semantics remain compatible or the change is explicitly versioned/documented.
 
+## Textual workspace
+
+- [ ] Play remains usable with deterministic initial focus and exactly-once completed-round persistence.
+- [ ] Ctrl+1…Ctrl+6 pane shortcuts still reach Play/Profiles/History/Leaderboard/Settings/Recovery.
+- [ ] Global Ctrl+Q/Ctrl+R remain available without stealing normal `q`/`r` input from text fields.
+- [ ] Profile create/use/rename/delete/restore changes reuse existing `Storage` semantics.
+- [ ] TUI profile deletion still requires exact selected-name confirmation and remains recoverable.
+- [ ] Active-profile ownership changes reset unfinished gameplay before later persistence.
+- [ ] History filters preserve bounded/newest-first semantics and invalid-date handling.
+- [ ] Leaderboard filters preserve the already-ranked local order.
+- [ ] Settings persist through the existing settings/profile model.
+- [ ] High-contrast state and focus remain visible; Switch controls do not add decorative animation.
+- [ ] A running TUI stays linguistically consistent; locale changes fully apply on next launch rather than partially relabeling mounted widgets.
+- [ ] Recovery diagnostics/backup verification remain read-only and do not expose repair/import writes.
+- [ ] Reusable non-widget behavior has helper tests where practical.
+- [ ] Changed widget/focus behavior has deterministic Textual pilot coverage.
+- [ ] Built-wheel Textual workspace import is covered by cross-platform package CI when packaging/import behavior changes.
+
 ## Privacy / compatibility / accessibility
 
-- [ ] No telemetry, cloud sync, account requirement, or unexpected runtime network behavior was added.
+- [ ] No telemetry, cloud sync, remote leaderboard, account requirement, or unexpected runtime network behavior was added.
 - [ ] Persistence changes are backward-compatible or include a documented real migration.
 - [ ] New local-data deletion behavior is confirmed/recoverable where practical.
 - [ ] New presentation messages are represented in every shipped locale where applicable.
@@ -46,7 +65,7 @@ Explain the user/developer problem being solved.
 - [ ] Essential UI information does not rely on color alone.
 - [ ] Keyboard focus/bindings remain usable for changed interactive flows.
 - [ ] Tests use temporary/deterministic state instead of real user data.
-- [ ] Fixtures, exports, repair backups, Doctor reports, logs, and screenshots contain no real private user data.
+- [ ] Fixtures, exports, repair backups, Doctor/TUI reports, logs, and screenshots contain no real private user data.
 - [ ] Integrity checks are not described as encryption, authentication, signing, or origin proof.
 
 ## Release impact
@@ -54,6 +73,6 @@ Explain the user/developer problem being solved.
 - [ ] `CHANGELOG.md` updated when user-visible behavior changed.
 - [ ] `what_changed.md` updated when release/continuation state changed.
 - [ ] Package/runtime/citation/changelog versions are synchronized for a release change.
-- [ ] Built-wheel entry-point changes are covered by the cross-platform package matrix.
+- [ ] Built-wheel entry-point/workspace-import changes are covered by the cross-platform package matrix.
 - [ ] Exact current-head CI/CodeQL/Security status was checked; queued/pending/older-head results were not recorded as passes.
 - [ ] Manual accessibility/media evidence requirements were considered for UI changes.
