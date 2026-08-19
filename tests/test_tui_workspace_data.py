@@ -78,7 +78,7 @@ def test_workspace_settings_persist_without_restarting_app(tmp_path: Path) -> No
         storage.save_profile(Profile("Nova"))
         app = GuessNovaApp(profile_name="Nova", storage=storage, game=GuessGame(target=42))
         async with app.run_test() as pilot:
-            await pilot.press("ctrl+4")
+            await pilot.press("ctrl+5")
             await pilot.pause()
             app.query_one("#settings-theme", Select).value = "mono"
             app.query_one("#settings-locale", Select).value = "hi"
@@ -110,7 +110,7 @@ def test_workspace_recovery_verifies_backup_without_importing(tmp_path: Path) ->
 
         app = GuessNovaApp(profile_name="Nova", storage=storage, game=GuessGame(target=42))
         async with app.run_test() as pilot:
-            await pilot.press("ctrl+5")
+            await pilot.press("ctrl+6")
             await pilot.pause()
             app.query_one("#recovery-backup-path", Input).value = str(backup)
             await pilot.click("#recovery-verify")
