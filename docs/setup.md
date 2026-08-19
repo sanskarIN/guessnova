@@ -43,7 +43,7 @@ A normal installation provides:
 
 ```text
 guessnova          primary CLI dispatcher for gameplay/data commands and `doctor`
-guessnova-tui      six-pane Textual local workspace
+guessnova-tui      six-pane Textual workspace with v1.5 Play challenge setup
 guessnova-doctor   standalone Doctor compatibility entry point
 ```
 
@@ -57,7 +57,7 @@ Launch:
 guessnova-tui
 ```
 
-GuessNova starts on Play with the guess input focused. Workspace panes:
+GuessNova starts on Play with the numeric guess input focused. Workspace panes:
 
 ```text
 Ctrl+1  Play
@@ -73,6 +73,11 @@ Ctrl+Q  Quit
 The workspace provides:
 
 - normal Textual gameplay/hints/result persistence;
+- v1.5 Challenge Setup for Classic, Timed, Streak, and Daily numeric challenges;
+- difficulty selection from the same registry used by the engine;
+- optional deterministic integer seed for Classic/Timed/Streak;
+- Daily `YYYY-MM-DD` selection, with blank date resolving to the local current date when started;
+- target-free active challenge identity;
 - local profile create/use/rename/recoverable-delete/restore;
 - active-profile statistics and achievements;
 - bounded history filtering;
@@ -81,6 +86,38 @@ The workspace provides:
 - high-contrast TUI focus/border behavior;
 - read-only state diagnostics;
 - read-only backup verification.
+
+Reverse mode has a different interaction model and remains available through:
+
+```bash
+guessnova reverse
+```
+
+### Challenge Setup behavior
+
+For Classic, Timed, and Streak, the optional seed field is active and the Daily date field is disabled. For Daily, the seed field is disabled and the date field is active.
+
+Example deterministic challenge configuration:
+
+```text
+Mode: timed
+Difficulty: hard
+Seed: 20260819
+```
+
+Example Daily configuration:
+
+```text
+Mode: daily
+Difficulty: normal
+Date: 2026-08-19
+```
+
+Press **Start Challenge** after choosing the configuration. A valid challenge replaces the current round, updates the range/attempt display, shows its identity without exposing the hidden target, and returns focus to Guess.
+
+Invalid seed/date text is rejected before the current round is replaced. Existing target and attempt state remain active, and focus moves to the field that needs correction.
+
+For a configured seeded or Daily challenge, `Ctrl+R` reconstructs that deterministic challenge. Plain `R` and `Q` remain commands only while the numeric Guess field is focused; ordinary text inputs receive those letters normally.
 
 Changing the active profile resets an unfinished round. This prevents a partially played game from being saved under a different profile.
 
@@ -92,7 +129,7 @@ Recovery repair is intentionally not available as a TUI button. Use Doctor for a
 guessnova doctor --repair
 ```
 
-See [`tui_workspace.md`](tui_workspace.md) for complete behavior.
+See [`tui_workspace.md`](tui_workspace.md) for complete workspace behavior and [`tui_challenges.md`](tui_challenges.md) for challenge semantics.
 
 ## Local Doctor
 
@@ -147,6 +184,7 @@ python -m guessnova --help
 python -m guessnova doctor --help
 python -m guessnova.doctor_cli --help
 python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
 ## Optional environment variables
