@@ -6,7 +6,9 @@ GuessNova `v1.5.0` implementation is prepared on:
 
 - Repository: `https://github.com/sanskarIN/guessnova`
 - Branch: `release/v1.5.0-challenge-workspace-20260819`
-- Base `main`: `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`
+- Pull request: `https://github.com/sanskarIN/guessnova/pull/11`
+- PR base: `main`
+- Base `main` SHA: `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`
 - Previous source milestone: `v1.4.0`
 - Prepared package/runtime/citation version: `1.5.0`
 - Python requirement: `>=3.13`
@@ -207,6 +209,10 @@ Updated:
 - `README.md`
 - `CHANGELOG.md`
 - `ROADMAP.md`
+- `CONTRIBUTING.md`
+- `PRIVACY.md`
+- `SECURITY.md`
+- `SUPPORT.md`
 - `docs/TUI_WORKSPACE.md`
 - `docs/tui_workspace.md`
 - `docs/ARCHITECTURE.md`
@@ -221,21 +227,27 @@ Updated:
 - `docs/localization.md`
 - `docs/accessibility.md`
 - `docs/accessibility_evidence_template.md`
+- `docs/game_modes.md`
+- `docs/performance.md`
 
 The documentation explicitly separates implementation completion from release evidence.
 
-## Branch change size at this checkpoint
+## Pull request checkpoint
 
-Immediately before this handoff update, GitHub compare reported:
+PR #11 is open and mergeable at the GitHub repository level.
 
-- branch status: ahead of `main`;
-- commits ahead: `52`;
-- commits behind: `0`;
-- changed files: `44`;
+Immediately before this final handoff-only commit, PR #11 reported:
 
-This handoff update is one additional focused commit.
+- head: `1ee30d6a422077a2e3a55f56c050e14cb0bcf0c2`
+- commits: `59`
+- changed files: `50`
+- additions: `3078`
+- deletions: `624`
+- base: `main` at `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`
 
-The history intentionally uses many small Conventional Commits instead of one monolithic commit.
+This handoff update is the 60th focused branch commit after the v1.4 base and is intended to be the **final branch mutation before hosted verification**. Do not edit documentation merely to record later workflow status because doing so would create a new unverified head.
+
+The history intentionally uses many small Conventional Commits instead of one monolithic or squashed feature commit.
 
 ## Compatibility boundaries
 
@@ -258,22 +270,32 @@ The available continuation environment cannot resolve GitHub/package-index hosts
 
 Static review and committed deterministic regression coverage have been performed through the GitHub repository interface.
 
-### Hosted verification required next
+### Hosted verification
 
-The branch must be opened as a pull request so current-head workflows run.
+PR #11 triggers three exact-head workflow families:
+
+- CI;
+- Security checks;
+- CodeQL.
+
+The immediately previous head `1ee30d6a422077a2e3a55f56c050e14cb0bcf0c2` had newly triggered runs:
+
+- CI `32238952893` — queued when last inspected;
+- Security checks `32238952815` — queued when last inspected;
+- CodeQL `32238952817` — pending when last inspected.
+
+This handoff commit necessarily supersedes that head. New workflow runs for the final handoff SHA must be treated as the release-candidate automated evidence. A queued/pending/superseded run is not a pass.
 
 Required evidence before release verification can be claimed:
 
-- current-head CI success;
-- current-head Security checks success;
-- current-head CodeQL success;
+- final-head CI success;
+- final-head Security checks success;
+- final-head CodeQL success;
 - Linux built-wheel package success;
 - Windows built-wheel package success;
 - macOS built-wheel package success;
 - manual accessibility evidence on the exact release candidate using `docs/accessibility_evidence_template.md`;
 - real screenshots/demo only from the exact signed-off build if release media is published.
-
-A queued/configured workflow is not a pass.
 
 ## Definition-of-done status
 
@@ -281,16 +303,15 @@ See `docs/completion_audit.md` for the requirement-by-requirement audit.
 
 Implementation/repository capability is prepared. Remaining release blockers are evidence gates rather than invented feature work:
 
-1. run/fix exact-head PR workflows;
+1. run/fix exact final-head PR workflows;
 2. complete manual v1.5 accessibility evidence;
 3. capture real release media only after sign-off if desired;
 4. tag/release only after all required gates are satisfied.
 
 ## Next exact actions
 
-1. Open the v1.5 pull request against `main` without squashing the granular history.
-2. Inspect exact-head CI/Security/CodeQL conclusions.
-3. Fix every concrete failure with a focused commit plus regression where practical.
-4. Update this file with workflow run IDs/conclusions and any fixes.
-5. Merge only after required automated gates pass and no release-blocking code defect remains.
-6. Do not tag `v1.5.0` until manual accessibility evidence is also complete.
+1. Freeze this branch head.
+2. Inspect final-head CI/Security/CodeQL conclusions.
+3. If a concrete failure occurs, fix it with a focused commit plus regression where practical; then repeat exact-head verification.
+4. Merge PR #11 with the normal merge method only after required automated gates pass and no release-blocking code defect remains. Preserve granular history; do not squash.
+5. Do not tag `v1.5.0` until manual accessibility evidence is also complete.
