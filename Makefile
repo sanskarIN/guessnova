@@ -1,4 +1,4 @@
-.PHONY: install test lint format type compile metadata smoke entrypoints check build
+.PHONY: install test lint format type compile metadata docs-links smoke entrypoints check build
 
 install:
 	python -m pip install -e '.[dev]'
@@ -21,6 +21,9 @@ compile:
 metadata:
 	python scripts/verify_release_metadata.py
 
+docs-links:
+	python scripts/check_docs_links.py
+
 smoke:
 	python scripts/smoke_test.py
 
@@ -31,7 +34,7 @@ entrypoints:
 	python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 	python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 
-check: lint format type test compile metadata smoke entrypoints
+check: lint format type test compile metadata docs-links smoke entrypoints
 
 build:
 	python -m build
