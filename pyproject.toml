@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "guessnova"
-version = "1.4.0"
+version = "1.5.0"
 description = "A polished, privacy-first number guessing game for the terminal."
 readme = "README.md"
 requires-python = ">=3.13"
