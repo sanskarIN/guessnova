@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 
 from .domain import PlayerStats
+from .history import HistoryEntry, deserialize as deserialize_history, serialize as serialize_history
 from .security import sanitize_profile_name
 from .settings import Settings
 
@@ -14,6 +15,7 @@ class Profile:
     name: str = "Player"
     stats: PlayerStats = field(default_factory=PlayerStats)
     settings: Settings = field(default_factory=Settings)
+    history: list[HistoryEntry] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.name = sanitize_profile_name(self.name)
@@ -25,6 +27,7 @@ class Profile:
             "name": self.name,
             "stats": stats,
             "settings": self.settings.to_dict(),
+            "history": serialize_history(self.history),
         }
 
     @classmethod
@@ -35,4 +38,9 @@ class Profile:
         stats = PlayerStats(**stats_data)
         settings_data = data.get("settings", {})
         settings = Settings.from_dict(settings_data if isinstance(settings_data, dict) else {})
-        return cls(name=str(data.get("name", "Player")), stats=stats, settings=settings)
+        return cls(
+            name=str(data.get("name", "Player")),
+            stats=stats,
+            settings=settings,
+            history=deserialize_history(data.get("history", [])),
+        )
