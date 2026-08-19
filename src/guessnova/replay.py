@@ -15,6 +15,8 @@ from .domain import DIFFICULTIES, GameMode, GameSummary
 
 MAX_REPLAY_CODE_LENGTH = 16_384
 MAX_HINT_METADATA = 1_000_000
+MIN_PORTABLE_SEED = -(2**63)
+MAX_PORTABLE_SEED = 2**63 - 1
 
 
 def encode_replay(summary: GameSummary) -> str:
@@ -69,7 +71,7 @@ def decode_replay(code: str) -> GameSummary:
 
     try:
         payload = json.loads(raw.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, ValueError) as exc:
         raise ValueError("invalid replay payload") from exc
     if not isinstance(payload, dict):
         raise ValueError("replay payload must be an object")
@@ -140,7 +142,12 @@ def decode_replay(code: str) -> GameSummary:
     if seed_raw is None:
         seed = None
     else:
-        seed = _integer(seed_raw, "seed", maximum=2**63 - 1)
+        seed = _integer(
+            seed_raw,
+            "seed",
+            minimum=MIN_PORTABLE_SEED,
+            maximum=MAX_PORTABLE_SEED,
+        )
 
     hints_used = _integer(
         payload.get("hints_used", 0),
