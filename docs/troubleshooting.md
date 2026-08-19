@@ -14,9 +14,11 @@ Verify the installed routes:
 python -m guessnova --help
 guessnova doctor --help
 guessnova-doctor --help
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
-`guessnova doctor` is the recommended diagnostics route. `guessnova-doctor` remains the standalone compatibility entry point.
+`guessnova doctor` is the recommended diagnostics route. `guessnova-doctor` remains the standalone compatibility entry point. `guessnova-tui` is expected to route through the challenge-enabled v1.5 application layer.
 
 ## Python version error
 
@@ -25,6 +27,97 @@ GuessNova requires Python 3.13+. Check:
 ```bash
 python --version
 ```
+
+## Challenge Setup rejects a seed
+
+Classic, Timed, and Streak accept an optional whole-number seed.
+
+Valid examples:
+
+```text
+731
+20260819
+-7
+```
+
+Text such as `nova` is intentionally rejected. The existing round remains active while the error is shown, so correct the seed and start the challenge again.
+
+Daily mode does not accept a manual seed. Its seed is derived from the Daily date.
+
+## Challenge Setup rejects a Daily date
+
+Use ISO format:
+
+```text
+YYYY-MM-DD
+```
+
+Example:
+
+```text
+2026-08-19
+```
+
+`19-08-2026` is intentionally rejected.
+
+Leaving the Daily date blank is supported: GuessNova resolves the local current date when the challenge is successfully started and writes the resolved date back into the field.
+
+If date validation fails, the current game is not replaced.
+
+## Seed or date field is disabled
+
+This is expected mode-aware behavior:
+
+- Classic/Timed/Streak → seed enabled, Daily date disabled.
+- Daily → seed disabled, Daily date enabled.
+
+Reverse is intentionally not offered by the numeric Challenge Setup because it uses a different interaction model. Use:
+
+```bash
+guessnova reverse
+```
+
+## `R` or `Q` behaves differently between fields
+
+Plain `R`/`Q` are commands only in the focused numeric Guess input. This preserves the original quick reset/quit flow without stealing normal letters from challenge/profile/search/path text fields.
+
+From any pane, global alternatives are:
+
+```text
+Ctrl+R  reset/new round
+Ctrl+Q  quit
+```
+
+Typing `q` or `r` in a challenge seed/date field is treated as ordinary text and may then fail validation if the selected field requires numeric/date input.
+
+## Configured reset does not choose a new target
+
+For deterministic configured challenges this is expected:
+
+- seeded Classic/Timed/Streak reset from the same mode/difficulty/seed;
+- Daily resets from the same resolved date.
+
+Those configurations intentionally reproduce the same challenge.
+
+Leave the seed blank for a normal unseeded challenge when you want ordinary random reset behavior.
+
+## Active challenge status shows a Daily seed instead of a date
+
+A Daily challenge created through v1.5 Challenge Setup retains its resolved date and can show that date.
+
+If the Textual app starts with an already-created Daily `GuessGame`, the presentation layer may know its deterministic seed but not the original source date. In that case it reports the seed rather than guessing a date. The hidden target is not part of challenge identity status.
+
+## Challenge controls are hard to reach by keyboard
+
+GuessNova intentionally keeps Guess as initial focus and preserves the fast forward-Tab flow:
+
+```text
+Guess → Submit → Range Hint
+```
+
+Use `Shift+Tab` from Guess to move backward into Start Challenge and then through the challenge controls.
+
+`Ctrl+1` returns to Play and focuses Guess.
 
 ## Local data appears corrupted, oversized, or old
 
@@ -131,4 +224,4 @@ This rule prevents an interactive prompt from corrupting machine-readable stdout
 
 Try a terminal with modern Unicode/ANSI support and use profile settings/high-contrast theme where available. Core CLI and Doctor commands remain keyboard-driven and do not require mouse input. `--plain` is available for reduced terminal styling.
 
-For unresolved problems, see `SUPPORT.md` and [`doctor.md`](doctor.md). Include OS, Python version, GuessNova version/commit, command, Doctor report version, and non-sensitive error output. Do not attach personal state/backup files publicly unless you have reviewed and intentionally removed private data.
+For unresolved problems, see `SUPPORT.md`, [`tui_challenges.md`](tui_challenges.md), and [`doctor.md`](doctor.md). Include OS, Python version, GuessNova version/commit, command, Doctor report version when relevant, and non-sensitive error output. Do not attach personal state/backup files or screenshots containing private local data publicly unless you have reviewed and intentionally removed it.
