@@ -26,6 +26,7 @@ from .constants import (
 from .daily import daily_game
 from .domain import DIFFICULTIES, GameMode, GuessOutcome
 from .engine import GuessGame, ReverseGuesser
+from .i18n import available_locales, text
 from .import_export import export_state, import_state
 from .leaderboard import LeaderboardEntry
 from .replay import decode_replay, encode_replay
@@ -75,26 +76,57 @@ def _deterministic_seed(value: int | None) -> int | None:
     return int(env) if env else None
 
 
-def _render_feedback(game: GuessGame, outcome: GuessOutcome, hint: str | None) -> None:
+def _render_feedback(
+    game: GuessGame,
+    outcome: GuessOutcome,
+    hint: str | None,
+    *,
+    locale: str,
+) -> None:
     if outcome == GuessOutcome.CORRECT:
-        console.print("[success]Correct! A new star is born.[/success]")
+        console.print(f"[success]{text('play.correct', locale=locale)}[/success]")
     elif outcome == GuessOutcome.TOO_LOW:
-        console.print("[info]Too low.[/info]")
+        console.print(f"[info]{text('play.too_low', locale=locale)}[/info]")
     elif outcome == GuessOutcome.TOO_HIGH:
-        console.print("[accent]Too high.[/accent]")
+        console.print(f"[accent]{text('play.too_high', locale=locale)}[/accent]")
     elif outcome == GuessOutcome.OUT_OF_RANGE:
-        console.print("[warning]That number is outside this challenge range.[/warning]")
+        console.print(f"[warning]{text('play.out_of_range', locale=locale)}[/warning]")
     elif outcome == GuessOutcome.TIMEOUT:
-        console.print("[error]Time expired.[/error]")
+        console.print(f"[error]{text('play.timeout', locale=locale)}[/error]")
     elif outcome == GuessOutcome.EXHAUSTED:
-        console.print("[error]No attempts remain.[/error]")
+        console.print(f"[error]{text('play.exhausted', locale=locale)}[/error]")
     if hint and not game.is_finished:
-        console.print(f"[hint]Hint: {hint}[/hint]")
+        console.print(f"[hint]{text('play.hint_prefix', locale=locale, hint=hint)}[/hint]")
+
+
+def _show_onboarding(
+    args: argparse.Namespace,
+    storage: Storage,
+    settings: Settings,
+    *,
+    profile_name: str,
+) -> None:
+    if settings.onboarding_complete:
+        return
+    locale = args.locale
+    body = (
+        f"{text('onboarding.body', locale=locale)}\n"
+        f"{text('onboarding.settings', locale=locale)}"
+    )
+    if args.compact:
+        console.print(f"{text('onboarding.title', locale=locale)}: {body.replace(chr(10), ' ')}")
+    else:
+        console.print(Panel.fit(body, title=text("onboarding.title", locale=locale)))
+    if not args.no_save:
+        profile = storage.load_profile(profile_name)
+        profile.settings.onboarding_complete = True
+        storage.save_profile(profile)
 
 
 def play(args: argparse.Namespace) -> int:
     storage = Storage()
     profile = storage.load_profile(args.profile)
+    _show_onboarding(args, storage, profile.settings, profile_name=profile.name)
     show_hints = profile.settings.show_smart_hints if args.hints is None else args.hints
     game = (
         daily_game(date.fromisoformat(args.day), args.difficulty)
@@ -114,15 +146,18 @@ def play(args: argparse.Namespace) -> int:
         console.print(
             Panel.fit(
                 f"[bold]GuessNova[/bold]\n{args.mode.title()} · {args.difficulty.title()} · "
-                f"{diff.minimum}–{diff.maximum}\nType 'hint' for a narrowed range clue."
+                f"{diff.minimum}–{diff.maximum}\n"
+                f"{text('play.hint_instruction', locale=args.locale)}"
             )
         )
     while not game.is_finished:
         try:
-            raw = console.input(f"Guess [{game.attempts_left} left] › ").strip()
+            raw = console.input(
+                text("play.prompt", locale=args.locale, attempts_left=game.attempts_left)
+            ).strip()
             command = raw.lower()
             if command in {"q", "quit", "exit"}:
-                console.print("Challenge abandoned.")
+                console.print(text("play.abandoned", locale=args.locale))
                 return 1
             if command in {"h", "hint"}:
                 try:
@@ -134,63 +169,91 @@ def play(args: argparse.Namespace) -> int:
                 continue
             feedback = game.guess(int(raw))
         except ValueError:
-            console.print("[warning]Enter a whole number, 'hint', or q to quit.[/warning]")
+            console.print(f"[warning]{text('play.input_invalid', locale=args.locale)}[/warning]")
             continue
-        _render_feedback(game, feedback.outcome, feedback.hint if show_hints else None)
+        _render_feedback(
+            game,
+            feedback.outcome,
+            feedback.hint if show_hints else None,
+            locale=args.locale,
+        )
 
     summary = game.summary()
     console.print(
-        f"Target: [bold]{summary.target}[/bold] · Attempts: {summary.attempts} · "
-        f"{summary.elapsed_seconds:.1f}s · Hints: {summary.hints_used}"
+        text(
+            "play.summary",
+            locale=args.locale,
+            target=summary.target,
+            attempts=summary.attempts,
+            elapsed=summary.elapsed_seconds,
+            hints=summary.hints_used,
+        )
     )
     if args.no_save:
         return 0 if summary.won else 2
     profile, unlocked = GameService(storage).record(summary, args.profile)
-    console.print(f"XP: {profile.stats.xp} · Win rate: {profile.stats.win_rate:.0%}")
-    for achievement in sorted(unlocked):
-        console.print(
-            f"[warning]Achievement unlocked:[/warning] "
-            f"{ACHIEVEMENT_LABELS.get(achievement, achievement)}"
+    console.print(
+        text(
+            "play.progress",
+            locale=args.locale,
+            xp=profile.stats.xp,
+            win_rate=profile.stats.win_rate,
         )
-    console.print(f"Replay: {encode_replay(summary)}")
+    )
+    for achievement in sorted(unlocked):
+        label = ACHIEVEMENT_LABELS.get(achievement, achievement)
+        console.print(
+            f"[warning]{text('achievement.unlocked', locale=args.locale, label=label)}[/warning]"
+        )
+    console.print(text("play.replay", locale=args.locale, code=encode_replay(summary)))
     return 0 if summary.won else 2
 
 
 def reverse(args: argparse.Namespace) -> int:
     engine = ReverseGuesser()
-    message = "Think of a number from 1 to 100. GuessNova will find it."
+    message = text("reverse.intro", locale=args.locale)
     console.print(message if args.compact else Panel.fit(message))
     while not engine.finished:
         guess = engine.next_guess()
-        response = console.input(f"Is it {guess}? [higher/lower/correct] › ").strip().lower()
+        response = console.input(
+            text("reverse.prompt", locale=args.locale, guess=guess)
+        ).strip().lower()
         try:
             engine.respond(response)
         except ValueError as exc:
             console.print(f"[warning]{exc}[/warning]")
             return 2
-    console.print(f"[success]Solved in {engine.attempts} guesses.[/success]")
+    console.print(
+        f"[success]{text('reverse.solved', locale=args.locale, attempts=engine.attempts)}[/success]"
+    )
     return 0
 
 
 def stats(args: argparse.Namespace) -> int:
     profile = Storage().load_profile(args.profile)
     values = [
-        ("Games", str(profile.stats.games_played)),
-        ("Wins", str(profile.stats.games_won)),
-        ("Win rate", f"{profile.stats.win_rate:.1%}"),
-        ("Average guesses", f"{profile.stats.average_guesses:.2f}"),
-        ("Current streak", str(profile.stats.current_streak)),
-        ("Best streak", str(profile.stats.best_streak)),
-        ("XP", str(profile.stats.xp)),
-        ("Achievements", str(len(profile.stats.achievements))),
-        ("History entries", str(len(profile.history))),
+        (text("stats.games", locale=args.locale), str(profile.stats.games_played)),
+        (text("stats.wins", locale=args.locale), str(profile.stats.games_won)),
+        (text("stats.win_rate", locale=args.locale), f"{profile.stats.win_rate:.1%}"),
+        (
+            text("stats.average_guesses", locale=args.locale),
+            f"{profile.stats.average_guesses:.2f}",
+        ),
+        (text("stats.current_streak", locale=args.locale), str(profile.stats.current_streak)),
+        (text("stats.best_streak", locale=args.locale), str(profile.stats.best_streak)),
+        (text("stats.xp", locale=args.locale), str(profile.stats.xp)),
+        (
+            text("stats.achievements", locale=args.locale),
+            str(len(profile.stats.achievements)),
+        ),
+        (text("stats.history_entries", locale=args.locale), str(len(profile.history))),
     ]
     if args.compact:
         console.print(
             f"{profile.name}: " + " · ".join(f"{label}={value}" for label, value in values)
         )
         return 0
-    table = Table(title=f"{profile.name} · Statistics")
+    table = Table(title=text("stats.title", locale=args.locale, profile=profile.name))
     table.add_column("Metric")
     table.add_column("Value", justify="right")
     for row in values:
@@ -209,29 +272,35 @@ def history_cmd(args: argparse.Namespace) -> int:
     ]
     selected = list(reversed(filtered[-args.limit :]))
     if not selected:
-        console.print("No matching session history yet.")
+        console.print(text("history.empty", locale=args.locale))
         return 0
     if args.compact:
         for entry in selected:
-            result = "win" if entry.won else "loss"
+            result = (
+                text("history.win", locale=args.locale)
+                if entry.won
+                else text("history.loss", locale=args.locale)
+            )
             console.print(
                 f"{entry.played_at} · {entry.mode}/{entry.difficulty} · {result} · "
                 f"attempts={entry.attempts} · time={entry.elapsed_seconds:.2f}s"
             )
         return 0
-    table = Table(title=f"{profile.name} · Session History")
-    table.add_column("When")
-    table.add_column("Mode")
-    table.add_column("Difficulty")
-    table.add_column("Result")
-    table.add_column("Attempts", justify="right")
-    table.add_column("Time", justify="right")
+    table = Table(title=text("history.title", locale=args.locale, profile=profile.name))
+    table.add_column(text("history.when", locale=args.locale))
+    table.add_column(text("history.mode", locale=args.locale))
+    table.add_column(text("history.difficulty", locale=args.locale))
+    table.add_column(text("history.result", locale=args.locale))
+    table.add_column(text("history.attempts", locale=args.locale), justify="right")
+    table.add_column(text("history.time", locale=args.locale), justify="right")
     for entry in selected:
         table.add_row(
             entry.played_at,
             entry.mode,
             entry.difficulty,
-            "Win" if entry.won else "Loss",
+            text("history.win", locale=args.locale)
+            if entry.won
+            else text("history.loss", locale=args.locale),
             str(entry.attempts),
             f"{entry.elapsed_seconds:.2f}s",
         )
@@ -249,7 +318,7 @@ def leaderboard_cmd(args: argparse.Namespace) -> int:
     ]
     selected = filtered[: args.limit]
     if not selected:
-        console.print("No leaderboard entries yet.")
+        console.print(text("leaderboard.empty", locale=args.locale))
         return 0
     if args.compact:
         for index, entry in enumerate(selected, 1):
@@ -258,13 +327,13 @@ def leaderboard_cmd(args: argparse.Namespace) -> int:
                 f"attempts={entry.attempts} · time={entry.elapsed_seconds:.2f}s"
             )
         return 0
-    table = Table(title="Local Leaderboard")
+    table = Table(title=text("leaderboard.title", locale=args.locale))
     table.add_column("#", justify="right")
-    table.add_column("Player")
-    table.add_column("Mode")
-    table.add_column("Difficulty")
-    table.add_column("Attempts", justify="right")
-    table.add_column("Time", justify="right")
+    table.add_column(text("leaderboard.player", locale=args.locale))
+    table.add_column(text("history.mode", locale=args.locale))
+    table.add_column(text("history.difficulty", locale=args.locale))
+    table.add_column(text("history.attempts", locale=args.locale), justify="right")
+    table.add_column(text("history.time", locale=args.locale), justify="right")
     for index, entry in enumerate(selected, 1):
         table.add_row(
             str(index),
@@ -283,6 +352,7 @@ def settings_cmd(args: argparse.Namespace) -> int:
     profile = storage.load_profile(args.profile)
     updates = {
         "theme": args.theme,
+        "locale": args.locale_setting,
         "reduced_motion": args.reduced_motion,
         "high_contrast": args.high_contrast,
         "sound": args.sound,
@@ -295,51 +365,58 @@ def settings_cmd(args: argparse.Namespace) -> int:
             changed = True
     if changed:
         storage.save_profile(profile)
+    args.locale = profile.settings.locale
     _configure_console(plain=args.plain, settings=profile.settings)
     values = profile.settings.to_dict()
     if args.compact:
         console.print(" · ".join(f"{key}={value}" for key, value in values.items()))
     else:
-        table = Table(title=f"{profile.name} · Settings")
-        table.add_column("Setting")
-        table.add_column("Value")
+        table = Table(
+            title=text("settings.title", locale=args.locale, profile=profile.name)
+        )
+        table.add_column(text("settings.setting", locale=args.locale))
+        table.add_column(text("settings.value", locale=args.locale))
         for key, value in values.items():
             table.add_row(key.replace("_", " ").title(), str(value))
         console.print(table)
     if changed:
-        console.print("Settings saved locally.")
+        console.print(text("settings.saved", locale=args.locale))
     return 0
 
 
 def about_cmd(args: argparse.Namespace) -> int:
     lines = [
         f"GuessNova {__version__}",
-        "Privacy-first open-source number guessing game",
-        "License: MIT",
-        f"Repository: {PROJECT_URL}",
-        f"GitHub: {GITHUB_PROFILE_URL}",
-        f"Business: {BUSINESS_EMAILS[0]}",
-        f"Business: {BUSINESS_EMAILS[1]}",
-        f"Support: {SUPPORT_EMAIL}",
-        f"Buy Me a Coffee: {BMC_URL}",
+        text("about.description", locale=args.locale),
+        text("about.license", locale=args.locale),
+        text("about.repository", locale=args.locale, url=PROJECT_URL),
+        text("about.github", locale=args.locale, url=GITHUB_PROFILE_URL),
+        text("about.business", locale=args.locale, email=BUSINESS_EMAILS[0]),
+        text("about.business", locale=args.locale, email=BUSINESS_EMAILS[1]),
+        text("about.support", locale=args.locale, email=SUPPORT_EMAIL),
+        text("about.funding", locale=args.locale, url=BMC_URL),
         WATERMARK,
     ]
-    text = "\n".join(lines)
-    console.print(text if args.compact else Panel.fit(text, title="About GuessNova"))
+    rendered = "\n".join(lines)
+    console.print(
+        rendered
+        if args.compact
+        else Panel.fit(rendered, title=text("about.title", locale=args.locale))
+    )
     return 0
 
 
 def export_cmd(args: argparse.Namespace) -> int:
     storage = Storage()
     path = export_state(storage.load_raw(), Path(args.path))
-    console.print(f"Exported to {path}")
+    console.print(text("data.exported", locale=args.locale, path=path))
     return 0
 
 
 def import_cmd(args: argparse.Namespace) -> int:
     payload = import_state(Path(args.path))
     Storage().save_raw(payload)
-    console.print("Import complete.")
+    console.print(text("data.import_complete", locale=args.locale))
     return 0
 
 
@@ -350,7 +427,10 @@ def replay_cmd(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="guessnova", description="A modern number guessing game")
+    parser = argparse.ArgumentParser(
+        prog="guessnova",
+        description=text("app.description"),
+    )
     parser.add_argument("--plain", action="store_true", help="disable terminal color for simpler output")
     parser.add_argument(
         "--compact", action="store_true", help="prefer concise text instead of rich tables/panels"
@@ -409,6 +489,7 @@ def build_parser() -> argparse.ArgumentParser:
     settings_parser = sub.add_parser("settings", help="show or update local profile settings")
     settings_parser.add_argument("--profile")
     settings_parser.add_argument("--theme", choices=sorted(THEMES))
+    settings_parser.add_argument("--locale", dest="locale_setting", choices=available_locales())
     settings_parser.add_argument(
         "--reduced-motion", action=argparse.BooleanOptionalAction, default=None
     )
@@ -443,7 +524,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    _configure_console(plain=args.plain, settings=_presentation_settings(args))
+    presentation = _presentation_settings(args)
+    args.locale = presentation.locale
+    _configure_console(plain=args.plain, settings=presentation)
     if not hasattr(args, "func"):
         parser.print_help()
         console.print(f"\n{WATERMARK} · Support: {BMC_URL}")
