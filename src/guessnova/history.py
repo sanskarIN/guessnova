@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 
@@ -53,45 +54,44 @@ def deserialize(items: object) -> list[HistoryEntry]:
     for item in items:
         if not isinstance(item, dict):
             continue
-        try:
-            mode = item["mode"]
-            difficulty = item["difficulty"]
-            won = item["won"]
-            attempts_raw = item["attempts"]
-            elapsed_raw = item["elapsed_seconds"]
-            played_at = item["played_at"]
-            seed_raw = item.get("seed")
-            if not isinstance(mode, str) or mode not in valid_modes:
-                continue
-            if not isinstance(difficulty, str) or difficulty not in DIFFICULTIES:
-                continue
-            if not isinstance(won, bool):
-                continue
-            if isinstance(attempts_raw, bool) or isinstance(elapsed_raw, bool):
-                continue
-            attempts = int(attempts_raw)
-            elapsed = float(elapsed_raw)
-            if attempts < 0 or elapsed < 0:
-                continue
-            if not isinstance(played_at, str) or not played_at or len(played_at) > 80:
-                continue
-            if seed_raw is None:
-                seed = None
-            elif isinstance(seed_raw, bool):
-                continue
-            else:
-                seed = int(seed_raw)
-            result.append(
-                HistoryEntry(
-                    mode=mode,
-                    difficulty=difficulty,
-                    won=won,
-                    attempts=attempts,
-                    elapsed_seconds=elapsed,
-                    seed=seed,
-                    played_at=played_at,
-                )
-            )
-        except (KeyError, TypeError, ValueError, OverflowError):
+        mode = item.get("mode")
+        difficulty = item.get("difficulty")
+        won = item.get("won")
+        attempts_raw = item.get("attempts")
+        elapsed_raw = item.get("elapsed_seconds")
+        played_at = item.get("played_at")
+        seed_raw = item.get("seed")
+        if not isinstance(mode, str) or mode not in valid_modes:
             continue
+        if not isinstance(difficulty, str) or difficulty not in DIFFICULTIES:
+            continue
+        if not isinstance(won, bool):
+            continue
+        if isinstance(attempts_raw, bool) or not isinstance(attempts_raw, int):
+            continue
+        if isinstance(elapsed_raw, bool) or not isinstance(elapsed_raw, (int, float)):
+            continue
+        attempts = attempts_raw
+        elapsed = float(elapsed_raw)
+        if attempts < 0 or elapsed < 0 or not math.isfinite(elapsed):
+            continue
+        if not isinstance(played_at, str) or not played_at or len(played_at) > 80:
+            continue
+        if seed_raw is None:
+            seed = None
+        elif isinstance(seed_raw, bool) or not isinstance(seed_raw, int):
+            continue
+        else:
+            seed = seed_raw
+        result.append(
+            HistoryEntry(
+                mode=mode,
+                difficulty=difficulty,
+                won=won,
+                attempts=attempts,
+                elapsed_seconds=elapsed,
+                seed=seed,
+                played_at=played_at,
+            )
+        )
     return result[-MAX_HISTORY_ENTRIES:]
