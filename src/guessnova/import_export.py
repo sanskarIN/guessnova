@@ -12,7 +12,7 @@ from tempfile import NamedTemporaryFile
 
 from .constants import SCHEMA_VERSION
 
-MAX_EXPORT_BYTES = 2_000_000
+MAX_EXPORT_BYTES = 6_000_000
 EXPORT_FORMAT = "guessnova-export"
 EXPORT_VERSION = 2
 LEGACY_EXPORT_VERSION = 1
