@@ -10,8 +10,10 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
+from . import __version__
 from .backup_inspection import BackupInspection, inspect_backup
 from .diagnostics import DiagnosticReport, diagnose, repair
+from .doctor_protocol import DOCTOR_REPORT_VERSION, EXIT_ATTENTION, EXIT_CANCELLED, EXIT_OK
 from .storage import Storage
 
 console = Console()
@@ -21,6 +23,7 @@ def _as_dict(
     report: DiagnosticReport, *, repair_backup: Path | None = None
 ) -> dict[str, object]:
     return {
+        "report_version": DOCTOR_REPORT_VERSION,
         "kind": "state",
         "healthy": report.healthy,
         "state_exists": report.state_exists,
@@ -39,7 +42,12 @@ def _as_dict(
 
 
 def _backup_dict(inspection: BackupInspection) -> dict[str, object]:
-    return {"kind": "backup", "valid": True, **inspection.to_dict()}
+    return {
+        "report_version": DOCTOR_REPORT_VERSION,
+        "kind": "backup",
+        "valid": True,
+        **inspection.to_dict(),
+    }
 
 
 def _render_state(
@@ -63,7 +71,7 @@ def _render_state(
     table.add_column("Check")
     table.add_column("Value")
     for key, value in payload.items():
-        if key in {"kind", "issues", "repair_backup"}:
+        if key in {"report_version", "kind", "issues", "repair_backup"}:
             continue
         table.add_row(key.replace("_", " ").title(), str(value))
     output_console.print(table)
@@ -96,7 +104,7 @@ def _render_backup(
     table.add_column("Check")
     table.add_column("Value")
     for key, value in payload.items():
-        if key == "kind":
+        if key in {"report_version", "kind"}:
             continue
         table.add_row(key.replace("_", " ").title(), str(value))
     output_console.print(table)
@@ -105,7 +113,12 @@ def _render_backup(
 def _render_json_error(message: str, *, output_console: Console) -> None:
     output_console.print_json(
         json.dumps(
-            {"healthy": False, "error": message},
+            {
+                "report_version": DOCTOR_REPORT_VERSION,
+                "kind": "error",
+                "healthy": False,
+                "error": message,
+            },
             ensure_ascii=False,
             sort_keys=True,
         )
@@ -149,6 +162,11 @@ def configure_doctor_options(
         type=Path,
         help="validate a GuessNova backup and report structural metadata without importing it",
     )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"GuessNova Doctor {__version__}",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -191,14 +209,14 @@ def run_doctor(args: argparse.Namespace, output_console: Console | None = None) 
             _render_json_error(mode_error, output_console=active_console)
         else:
             active_console.print(f"Error: {mode_error}")
-        return 2
+        return EXIT_ATTENTION
 
     if as_json and repair_requested and not confirmed:
         _render_json_error(
             "--json --repair requires --yes to avoid an interactive prompt",
             output_console=active_console,
         )
-        return 2
+        return EXIT_ATTENTION
 
     verify_backup = getattr(args, "verify_backup", None)
     try:
@@ -210,7 +228,7 @@ def run_doctor(args: argparse.Namespace, output_console: Console | None = None) 
                 as_json=as_json,
                 compact=compact,
             )
-            return 0
+            return EXIT_OK
 
         data_dir = getattr(args, "data_dir", None)
         storage = Storage(data_dir if isinstance(data_dir, Path) else None)
@@ -230,7 +248,7 @@ def run_doctor(args: argparse.Namespace, output_console: Console | None = None) 
                         compact=compact,
                         repair_requested=True,
                     )
-                    return 1
+                    return EXIT_CANCELLED
             backup_dir = getattr(args, "backup_dir", None)
             backup = repair(
                 storage,
@@ -245,13 +263,13 @@ def run_doctor(args: argparse.Namespace, output_console: Console | None = None) 
             repair_backup=backup,
             repair_requested=repair_requested,
         )
-        return 0 if report.healthy else 2
+        return EXIT_OK if report.healthy else EXIT_ATTENTION
     except (OSError, ValueError) as exc:
         if as_json:
             _render_json_error(str(exc), output_console=active_console)
         else:
             active_console.print(f"Error: {exc}")
-        return 2
+        return EXIT_ATTENTION
 
 
 def main(argv: list[str] | None = None) -> int:
