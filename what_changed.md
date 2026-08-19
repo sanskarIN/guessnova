@@ -149,7 +149,7 @@ Completed rounds still persist through `GameService` and existing `Storage` beha
 
 ## Automated coverage added
 
-New focused test files:
+New focused challenge test files:
 
 - `tests/test_tui_challenge_configuration.py`
 - `tests/test_tui_challenge_i18n.py`
@@ -204,7 +204,7 @@ The final continuation audit found current Dependabot updates that were still ab
 - `github/codeql-action` updated from v3 to v4 for init/analyze;
 - `softprops/action-gh-release` updated from v2 to v3.
 
-Focused maintenance commits added in this continuation:
+Focused maintenance commits:
 
 - `1ed5b25` — `build(deps-dev): allow pytest-cov 7`
 - `dfd42b7` — `ci(deps): update checkout action to v7`
@@ -219,17 +219,65 @@ Focused maintenance commits added in this continuation:
 
 These changes mirror the repository's open Dependabot updates instead of inventing unrelated release churn. The Dependabot PRs target `main`, so they are intentionally not closed from this release branch; GitHub/Dependabot can reconcile them after the v1.5 branch is merged.
 
+### Final Phase-6 documentation integrity gate
+
+The master final-audit requirements include documentation-link checking. The repository had comprehensive documentation but no executable local-link verification tool. This was a genuine missing release-quality gate and was closed in this continuation.
+
+Added `scripts/check_docs_links.py`:
+
+- dependency-free and Python-standard-library only;
+- recursively scans repository Markdown;
+- ignores generated/tool directories;
+- ignores fenced and inline code examples;
+- validates inline Markdown links/images;
+- validates reference-style link definitions;
+- validates HTML `href`/`src` targets embedded in Markdown;
+- URL-decodes local paths;
+- accepts repository-root-relative local paths;
+- requires local files/directories to exist;
+- rejects targets that escape the repository root;
+- deliberately does not fetch external URLs or validate fragment-only GitHub anchor slugs, keeping the gate deterministic and offline.
+
+Added `tests/test_docs_links.py` with focused regression coverage for:
+
+- valid local/external/fragment/image links;
+- missing local targets;
+- reference links;
+- embedded HTML targets;
+- fenced/inline code-example exclusion;
+- repository-root escape rejection.
+
+Integrated the checker into:
+
+- `make docs-links`;
+- `make check`;
+- normal CI quality verification;
+- tagged-release verification.
+
+Documentation was updated in both concise and canonical testing references and in the definition-of-done audit.
+
+Focused documentation-integrity commits:
+
+- `ca6042a` — `feat(tooling): add offline documentation link checker`
+- `5c2b63d` — `test(tooling): cover documentation link checker`
+- `b4a7ed7` — `build: add documentation links to make check`
+- `441ec58` — `ci: verify documentation links`
+- `9695b49` — `ci: gate releases on documentation links`
+- `8c61cf0` — `docs: document offline link verification`
+- `ce4c28f` — `docs: add canonical documentation link testing guide`
+- `a60b2f1` — `docs: mark documentation link gate implemented`
+
 The release workflow has not been tagged or published from this branch. A tag must not be created until exact-head automated and manual release gates pass.
 
 ## Documentation completed/updated
 
-Added:
+Added during v1.5:
 
 - `docs/tui_challenges.md`
 - `docs/completion_audit.md`
 - `docs/adr/0005-additive-textual-challenge-layer.md`
 
-Updated:
+Updated during the milestone/final audit:
 
 - `README.md`
 - `CHANGELOG.md`
@@ -254,7 +302,8 @@ Updated:
 - `docs/accessibility_evidence_template.md`
 - `docs/game_modes.md`
 - `docs/performance.md`
-- `what_changed.md` (this final maintenance/evidence handoff)
+- `docs/completion_audit.md`
+- `what_changed.md` (this final handoff)
 
 The documentation explicitly separates implementation completion from release evidence.
 
@@ -262,16 +311,16 @@ The documentation explicitly separates implementation completion from release ev
 
 PR #11 is open and mergeable at the GitHub repository level.
 
-Immediately before this final maintenance handoff commit, PR #11 reported:
+Immediately before this final handoff commit, PR #11 reported:
 
-- head: `56848e7deb118769e51c335d0864d42ab7267d84`
-- commits: `70`
-- changed files: `52`
-- additions: `3113`
-- deletions: `638`
+- head: `a60b2f170aa11b00c10dee6ec639a5674fba2642`
+- commits: `79`
+- changed files: `54`
+- additions: `3474`
+- deletions: `643`
 - base: `main` at `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`
 
-This handoff update becomes the 71st focused branch commit after the v1.4 base and is intended to be the **final branch mutation before hosted verification**. Do not edit documentation merely to record later workflow status because doing so would create a new unverified head.
+This handoff update becomes the 80th focused branch commit after the v1.4 base and is intended to be the **final branch mutation before hosted verification**. Do not edit documentation merely to record later workflow status because doing so would create a new unverified head.
 
 The history intentionally uses many small Conventional Commits instead of one monolithic or squashed feature commit.
 
@@ -292,9 +341,9 @@ No compatibility identifier above should change merely to create activity.
 
 ### Local execution environment
 
-The available continuation environment cannot resolve GitHub/package-index hosts for a normal local clone/dependency installation. Therefore this continuation does **not** claim a local Ruff, format, mypy, pytest, build, Twine, pip-audit, or dependency-backed smoke pass.
+The available continuation environment cannot resolve GitHub/package-index hosts for a normal local clone/dependency installation. Therefore this continuation does **not** claim a local Ruff, format, mypy, pytest, build, Twine, pip-audit, dependency-backed smoke, or full-repository documentation-link pass.
 
-Static review and committed deterministic regression coverage have been performed through the GitHub repository interface. The dependency/toolchain edits above were additionally checked against the repository's current Dependabot-generated patches before being applied.
+Static review and committed deterministic regression coverage have been performed through the GitHub repository interface. Dependency/toolchain edits were checked against the repository's current Dependabot-generated patches before being applied. The documentation-link checker is itself dependency-free, but the complete repository checkout required to execute it is not locally available in this continuation environment.
 
 ### Hosted verification
 
@@ -304,18 +353,18 @@ PR #11 triggers three exact-head workflow families:
 - Security checks;
 - CodeQL.
 
-All workflow results from heads before this maintenance handoff are superseded release evidence, including the earlier `dfb947e910b526ea9a900ed6a7756f0e0483219b` run set. The final handoff commit necessarily creates a new exact head and therefore new workflow runs.
+The intermediate head `985e5e80ef9f75dffa5250a46f7e20ef9dc0023d` successfully triggered new CI/Security/CodeQL runs, all queued when inspected. That evidence is now superseded because the documentation integrity gate required additional source/workflow/documentation commits.
 
-A queued/pending/superseded run is not a pass. Only conclusions attached to the final handoff SHA count as automated release-candidate evidence.
+Only workflow conclusions attached to the final handoff SHA count as automated release-candidate evidence. A queued, pending, absent, cancelled, or superseded run is not a pass.
 
 Required evidence before release verification can be claimed:
 
-- final-head CI success;
+- final-head CI success, including Ruff, format, mypy, pytest, compile, release metadata, documentation-link verification, and smoke test;
+- final-head Linux built-wheel package success;
+- final-head Windows built-wheel package success;
+- final-head macOS built-wheel package success;
 - final-head Security checks success;
 - final-head CodeQL success;
-- Linux built-wheel package success;
-- Windows built-wheel package success;
-- macOS built-wheel package success;
 - manual accessibility evidence on the exact release candidate using `docs/accessibility_evidence_template.md`;
 - real screenshots/demo only from the exact signed-off build if release media is published.
 
@@ -323,7 +372,9 @@ Required evidence before release verification can be claimed:
 
 See `docs/completion_audit.md` for the requirement-by-requirement audit.
 
-Implementation/repository capability is prepared. The final audit found no open ordinary GitHub issues, no repository code-search matches for `TODO`, `FIXME`, `XXX`, `NotImplemented`, or placeholder `pass`, and no additional concrete product defect was identified through the available repository interface. The remaining blockers are evidence gates rather than invented feature work:
+The final repository audit now includes the previously missing documentation-link gate. No open ordinary GitHub issues were found, and repository code search found no matches for `TODO`, `FIXME`, `XXX`, `NotImplemented`, or placeholder `pass` in the searchable repository state. No additional concrete product defect was identified through the available repository interface after closing the dependency/toolchain and documentation-integrity gaps.
+
+Remaining release blockers are evidence gates rather than invented feature work:
 
 1. run/fix exact final-head PR workflows;
 2. complete manual v1.5 accessibility evidence;
@@ -336,6 +387,7 @@ Optional candidates listed in `docs/completion_audit.md` remain optional and are
 
 1. Freeze this branch head.
 2. Inspect final-head CI/Security/CodeQL conclusions.
-3. If a concrete failure occurs, fix it with a focused commit plus regression where practical; then repeat exact-head verification.
-4. Merge PR #11 with the normal merge method only after required automated gates pass and no release-blocking code defect remains. Preserve granular history; do not squash.
-5. Do not tag `v1.5.0` until manual accessibility evidence is also complete.
+3. If the documentation-link gate finds an existing broken local target, fix the affected documentation with a focused commit and rerun exact-head verification.
+4. If any other concrete workflow failure occurs, inspect the failed step, fix it with a focused commit plus regression where practical, then repeat exact-head verification.
+5. Merge PR #11 with the normal merge method only after required automated gates pass and no release-blocking code defect remains. Preserve granular history; do not squash.
+6. Do not tag `v1.5.0` until manual accessibility evidence is also complete.
