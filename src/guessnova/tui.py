@@ -41,20 +41,28 @@ class GuessNovaApp(App[None]):
         profile = self.storage.load_profile(profile_name)
         self.profile_name = profile.name
         self.locale = profile.settings.locale
+        self.show_smart_hints = profile.settings.show_smart_hints
         self.game = game or GuessGame()
         self._result_saved = False
 
     def compose(self) -> ComposeResult:
         yield Header()
         with Vertical(id="card"):
-            yield Static(f"[b]{text('tui.title', locale=self.locale)}[/b]", id="title")
+            yield Static(
+                f"[b]{text('tui.title', locale=self.locale)}[/b]",
+                id="title",
+            )
             yield Label(self._range_text(), id="range")
             yield Input(
                 placeholder=text("tui.input_placeholder", locale=self.locale),
                 type="integer",
                 id="guess",
             )
-            yield Button(text("tui.submit", locale=self.locale), id="submit", variant="primary")
+            yield Button(
+                text("tui.submit", locale=self.locale),
+                id="submit",
+                variant="primary",
+            )
             yield Button(text("tui.hint", locale=self.locale), id="hint")
             yield Static("", id="feedback")
         yield Footer()
@@ -96,17 +104,23 @@ class GuessNovaApp(App[None]):
         if result.outcome == GuessOutcome.CORRECT:
             self._save_finished_result()
             feedback.update(
-                f"[b green]{text('tui.correct', locale=self.locale, target=self.game.target_value)}[/b green]"
+                f"[b green]{text('tui.correct', locale=self.locale, target=self.game.target_value)}"
+                "[/b green]"
             )
         elif result.outcome in {GuessOutcome.EXHAUSTED, GuessOutcome.TIMEOUT}:
             self._save_finished_result()
             feedback.update(
-                f"[b red]{text('tui.round_over', locale=self.locale, target=self.game.target_value)}[/b red]"
+                f"[b red]{text('tui.round_over', locale=self.locale, target=self.game.target_value)}"
+                "[/b red]"
             )
         elif result.outcome == GuessOutcome.OUT_OF_RANGE:
-            feedback.update(f"[yellow]{text('tui.outside_range', locale=self.locale)}[/yellow]")
+            feedback.update(
+                f"[yellow]{text('tui.outside_range', locale=self.locale)}[/yellow]"
+            )
+        elif self.show_smart_hints and result.hint:
+            feedback.update(result.hint)
         else:
-            feedback.update(result.hint or result.outcome.value)
+            feedback.update(result.outcome.value)
         field.focus()
 
     def _show_hint(self) -> None:
@@ -130,6 +144,7 @@ class GuessNovaApp(App[None]):
         self.game = GuessGame(
             difficulty_name=self.game.difficulty_name,
             mode=self.game.mode,
+            seed=self.game.seed,
         )
         self._result_saved = False
         self.query_one("#range", Label).update(self._range_text())
