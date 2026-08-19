@@ -43,6 +43,12 @@ class GuessGame:
         return DIFFICULTIES[self.difficulty_name]
 
     @property
+    def target_value(self) -> int:
+        if self.target is None:
+            raise RuntimeError("game target has not been initialized")
+        return self.target
+
+    @property
     def attempts_used(self) -> int:
         return len(self._guesses)
 
@@ -80,7 +86,7 @@ class GuessGame:
         if self._is_timed_out():
             self._finished = True
             raise RuntimeError("time expired")
-        target = int(self.target)
+        target = self.target_value
         radius = max(2, self.difficulty.span // 10)
         lower = max(self.difficulty.minimum, target - radius)
         upper = min(self.difficulty.maximum, target + radius)
@@ -90,7 +96,9 @@ class GuessGame:
         self._hints_used += 1
         if penalize:
             self._hint_penalty += HINT_PENALTY_XP
-        suffix = f" Using it costs {HINT_PENALTY_XP} XP from a winning reward." if penalize else ""
+        suffix = (
+            f" Using it costs {HINT_PENALTY_XP} XP from a winning reward." if penalize else ""
+        )
         return f"Range hint: the target is between {lower} and {upper}.{suffix}"
 
     def guess(self, value: int) -> GuessFeedback:
@@ -98,34 +106,41 @@ class GuessGame:
             raise RuntimeError("game is already finished")
         if self._is_timed_out():
             self._finished = True
-            return GuessFeedback(value, GuessOutcome.TIMEOUT, self.attempts_used, self.attempts_left)
+            return GuessFeedback(
+                value, GuessOutcome.TIMEOUT, self.attempts_used, self.attempts_left
+            )
         if not self.difficulty.minimum <= value <= self.difficulty.maximum:
-            return GuessFeedback(value, GuessOutcome.OUT_OF_RANGE, self.attempts_used, self.attempts_left)
+            return GuessFeedback(
+                value, GuessOutcome.OUT_OF_RANGE, self.attempts_used, self.attempts_left
+            )
 
         self._guesses.append(value)
-        if value == self.target:
+        target = self.target_value
+        if value == target:
             self._finished = True
             self._won = True
-            return GuessFeedback(value, GuessOutcome.CORRECT, self.attempts_used, self.attempts_left)
+            return GuessFeedback(
+                value, GuessOutcome.CORRECT, self.attempts_used, self.attempts_left
+            )
 
         if self.attempts_left == 0:
             self._finished = True
             return GuessFeedback(value, GuessOutcome.EXHAUSTED, self.attempts_used, 0)
 
-        outcome = GuessOutcome.TOO_LOW if value < self.target else GuessOutcome.TOO_HIGH
+        outcome = GuessOutcome.TOO_LOW if value < target else GuessOutcome.TOO_HIGH
         return GuessFeedback(
             value,
             outcome,
             self.attempts_used,
             self.attempts_left,
-            smart_hint(int(self.target), value, self.difficulty),
+            smart_hint(target, value, self.difficulty),
         )
 
     def summary(self) -> GameSummary:
         return GameSummary(
             mode=self.mode,
             difficulty=self.difficulty_name,
-            target=int(self.target),
+            target=self.target_value,
             won=self._won,
             attempts=self.attempts_used,
             elapsed_seconds=self.elapsed_seconds,
