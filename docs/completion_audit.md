@@ -151,6 +151,7 @@ Do not convert an evidence gap into a feature rewrite. Do not mark an evidence i
 - [x] Ruff lint configured.
 - [x] Ruff format check configured.
 - [x] pytest configured.
+- [x] Dependency-free offline documentation-link checker implemented under `scripts/`.
 - [x] No microservice/network layer added for an offline terminal game.
 
 ## Automated testing surfaces
@@ -170,9 +171,11 @@ Do not convert an evidence gap into a feature rewrite. Do not mark an evidence i
 - [x] v1.5 deterministic-reset regressions.
 - [x] v1.5 keyboard regressions.
 - [x] v1.5 localization completeness tests.
+- [x] Documentation-link checker regression tests.
 - [x] Smoke test covers critical local product paths.
 - [x] Compile step configured.
 - [x] Release metadata verifier configured.
+- [x] Repository-local Markdown link verifier configured.
 
 ## CI/package/release automation
 
@@ -187,7 +190,9 @@ Do not convert an evidence gap into a feature rewrite. Do not mark an evidence i
 - [x] Installed Doctor route verification.
 - [x] Installed standalone Doctor route verification.
 - [x] Smoke test in package matrices.
+- [x] Documentation-link gate in normal CI.
 - [x] Tagged release quality gate.
+- [x] Documentation-link gate in tagged release verification.
 - [x] Tagged release artifact build.
 - [ ] Obtain successful final-head CI conclusions for the v1.5 release candidate.
 - [ ] Obtain successful final-head Security checks conclusion for the v1.5 release candidate.
@@ -214,6 +219,7 @@ Configured workflows are not equivalent to passed workflows. The unchecked items
 - [x] Dependency-update configuration.
 - [x] Funding configuration.
 - [x] GitHub repository operations/branch-protection guidance.
+- [x] Offline local documentation-link integrity automation.
 - [x] Real-media provenance procedure.
 - [ ] Capture real release screenshots/demo from the exact signed-off build after automated/manual release evidence is complete.
 
