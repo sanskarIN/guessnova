@@ -6,11 +6,12 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from .domain import DIFFICULTIES, GameMode, GameSummary, GuessFeedback, GuessOutcome
+from .domain import DIFFICULTIES, Difficulty, GameMode, GameSummary, GuessFeedback, GuessOutcome
 from .hints import smart_hint
 from .rng import RandomSource
 
 Clock = Callable[[], float]
+HINT_PENALTY_XP = 10
 
 
 @dataclass(slots=True)
@@ -24,6 +25,8 @@ class GuessGame:
     _guesses: list[int] = field(default_factory=list, init=False)
     _finished: bool = field(default=False, init=False)
     _won: bool = field(default=False, init=False)
+    _hints_used: int = field(default=0, init=False)
+    _hint_penalty: int = field(default=0, init=False)
 
     def __post_init__(self) -> None:
         if self.difficulty_name not in DIFFICULTIES:
@@ -36,7 +39,7 @@ class GuessGame:
         self._started_at = self.clock()
 
     @property
-    def difficulty(self):  # type: ignore[no-untyped-def]
+    def difficulty(self) -> Difficulty:
         return DIFFICULTIES[self.difficulty_name]
 
     @property
@@ -59,8 +62,36 @@ class GuessGame:
     def won(self) -> bool:
         return self._won
 
+    @property
+    def hints_used(self) -> int:
+        return self._hints_used
+
+    @property
+    def hint_penalty(self) -> int:
+        return self._hint_penalty
+
     def _is_timed_out(self) -> bool:
         return self.mode == GameMode.TIMED and self.elapsed_seconds >= self.difficulty.timed_seconds
+
+    def request_hint(self, *, penalize: bool = True) -> str:
+        """Return a deterministic narrowed-range clue without consuming an attempt."""
+        if self._finished:
+            raise RuntimeError("game is already finished")
+        if self._is_timed_out():
+            self._finished = True
+            raise RuntimeError("time expired")
+        target = int(self.target)
+        radius = max(2, self.difficulty.span // 10)
+        lower = max(self.difficulty.minimum, target - radius)
+        upper = min(self.difficulty.maximum, target + radius)
+        if lower == upper:
+            lower = max(self.difficulty.minimum, lower - 1)
+            upper = min(self.difficulty.maximum, upper + 1)
+        self._hints_used += 1
+        if penalize:
+            self._hint_penalty += HINT_PENALTY_XP
+        suffix = f" Using it costs {HINT_PENALTY_XP} XP from a winning reward." if penalize else ""
+        return f"Range hint: the target is between {lower} and {upper}.{suffix}"
 
     def guess(self, value: int) -> GuessFeedback:
         if self._finished:
@@ -87,7 +118,7 @@ class GuessGame:
             outcome,
             self.attempts_used,
             self.attempts_left,
-            smart_hint(self.target, value, self.difficulty),
+            smart_hint(int(self.target), value, self.difficulty),
         )
 
     def summary(self) -> GameSummary:
@@ -100,6 +131,8 @@ class GuessGame:
             elapsed_seconds=self.elapsed_seconds,
             guesses=tuple(self._guesses),
             seed=self.seed,
+            hints_used=self._hints_used,
+            hint_penalty=self._hint_penalty,
         )
 
 
