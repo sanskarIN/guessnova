@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Vertical
 from textual.widgets import Button, Footer, Header, Input, Label, Static
 
@@ -24,8 +25,8 @@ class GuessNovaApp(App[None]):
     Button { width: 100%; margin-top: 1; }
     """
     BINDINGS = [
-        ("q", "quit", text("tui.binding.quit")),
-        ("r", "reset", text("tui.binding.new_game")),
+        Binding("q", "quit", text("tui.binding.quit"), priority=True),
+        Binding("r", "reset", text("tui.binding.new_game"), priority=True),
     ]
 
     def __init__(
