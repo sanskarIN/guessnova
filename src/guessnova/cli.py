@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 
@@ -27,7 +28,7 @@ from .constants import (
 from .daily import daily_game
 from .domain import DIFFICULTIES, GameMode, GuessOutcome
 from .engine import GuessGame, ReverseGuesser
-from .history import filter_history, group_history
+from .history import HistoryEntry, filter_history, group_history
 from .i18n import available_locales, text
 from .import_export import export_state, import_state
 from .leaderboard import LeaderboardEntry
@@ -285,17 +286,14 @@ def stats(args: argparse.Namespace) -> int:
 def _render_history_rows(
     args: argparse.Namespace,
     profile_name: str,
-    entries: list[object],
+    entries: Sequence[HistoryEntry],
     *,
     group_label: str | None = None,
 ) -> None:
-    from .history import HistoryEntry
-
-    typed_entries = [entry for entry in entries if isinstance(entry, HistoryEntry)]
     if args.compact:
         if group_label is not None:
             console.print(f"[{group_label}]")
-        for entry in typed_entries:
+        for entry in entries:
             result = (
                 text("history.win", locale=args.locale)
                 if entry.won
@@ -317,7 +315,7 @@ def _render_history_rows(
     table.add_column(text("history.result", locale=args.locale))
     table.add_column(text("history.attempts", locale=args.locale), justify="right")
     table.add_column(text("history.time", locale=args.locale), justify="right")
-    for entry in typed_entries:
+    for entry in entries:
         table.add_row(
             entry.played_at,
             entry.mode,
@@ -347,10 +345,10 @@ def history_cmd(args: argparse.Namespace) -> int:
         console.print(text("history.empty", locale=args.locale))
         return 0
     if args.group_by is None:
-        _render_history_rows(args, profile.name, list(selected))
+        _render_history_rows(args, profile.name, selected)
         return 0
     for label, entries in group_history(selected, by=args.group_by).items():
-        _render_history_rows(args, profile.name, list(entries), group_label=label)
+        _render_history_rows(args, profile.name, entries, group_label=label)
     return 0
 
 
@@ -417,9 +415,7 @@ def settings_cmd(args: argparse.Namespace) -> int:
     if args.compact:
         console.print(" · ".join(f"{key}={value}" for key, value in values.items()))
     else:
-        table = Table(
-            title=text("settings.title", locale=args.locale, profile=profile.name)
-        )
+        table = Table(title=text("settings.title", locale=args.locale, profile=profile.name))
         table.add_column(text("settings.setting", locale=args.locale))
         table.add_column(text("settings.value", locale=args.locale))
         for key, value in values.items():
@@ -529,9 +525,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     history_parser.add_argument("--difficulty", choices=sorted(DIFFICULTIES))
     history_parser.add_argument("--result", choices=("win", "loss"))
-    history_parser.add_argument("--search", help="match mode, difficulty, result, date, attempts, or seed")
-    history_parser.add_argument("--since", type=date.fromisoformat, help="include entries on/after YYYY-MM-DD")
-    history_parser.add_argument("--until", type=date.fromisoformat, help="include entries on/before YYYY-MM-DD")
+    history_parser.add_argument(
+        "--search",
+        help="match mode, difficulty, result, date, attempts, or seed",
+    )
+    history_parser.add_argument(
+        "--since",
+        type=date.fromisoformat,
+        help="include entries on/after YYYY-MM-DD",
+    )
+    history_parser.add_argument(
+        "--until",
+        type=date.fromisoformat,
+        help="include entries on/before YYYY-MM-DD",
+    )
     history_parser.add_argument(
         "--group-by",
         choices=("day", "mode", "difficulty", "result"),
