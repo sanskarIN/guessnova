@@ -194,6 +194,31 @@ Coverage includes:
 - Package/runtime/citation metadata is prepared at `1.5.0`.
 - `CHANGELOG.md` includes the `1.5.0` release section.
 
+### Final dependency/toolchain maintenance pass
+
+The final continuation audit found current Dependabot updates that were still absent from the v1.5 branch. They were incorporated without changing product/runtime compatibility identifiers:
+
+- development coverage compatibility widened from `pytest-cov>=6.2,<7` to `pytest-cov>=6.2,<8`, allowing the current 7.x line;
+- `actions/checkout` updated from v4 to v7 across CI, CodeQL, Security, and Release workflows;
+- `actions/setup-python` updated from v5 to v7 across CI, Security, and Release workflows;
+- `github/codeql-action` updated from v3 to v4 for init/analyze;
+- `softprops/action-gh-release` updated from v2 to v3.
+
+Focused maintenance commits added in this continuation:
+
+- `1ed5b25` — `build(deps-dev): allow pytest-cov 7`
+- `dfd42b7` — `ci(deps): update checkout action to v7`
+- `a7ccef0` — `ci(deps): update setup-python action to v7`
+- `034dedd` — `ci(deps): update CodeQL checkout to v7`
+- `fe3f9eb` — `ci(deps): update CodeQL action to v4`
+- `bec4026` — `ci(deps): update security checkout to v7`
+- `5379fb9` — `ci(deps): update security setup-python to v7`
+- `013f9e2` — `ci(deps): update release checkout to v7`
+- `18f82fe` — `ci(deps): update release setup-python to v7`
+- `56848e7` — `ci(deps): update release action to v3`
+
+These changes mirror the repository's open Dependabot updates instead of inventing unrelated release churn. The Dependabot PRs target `main`, so they are intentionally not closed from this release branch; GitHub/Dependabot can reconcile them after the v1.5 branch is merged.
+
 The release workflow has not been tagged or published from this branch. A tag must not be created until exact-head automated and manual release gates pass.
 
 ## Documentation completed/updated
@@ -229,6 +254,7 @@ Updated:
 - `docs/accessibility_evidence_template.md`
 - `docs/game_modes.md`
 - `docs/performance.md`
+- `what_changed.md` (this final maintenance/evidence handoff)
 
 The documentation explicitly separates implementation completion from release evidence.
 
@@ -236,16 +262,16 @@ The documentation explicitly separates implementation completion from release ev
 
 PR #11 is open and mergeable at the GitHub repository level.
 
-Immediately before this final handoff-only commit, PR #11 reported:
+Immediately before this final maintenance handoff commit, PR #11 reported:
 
-- head: `1ee30d6a422077a2e3a55f56c050e14cb0bcf0c2`
-- commits: `59`
-- changed files: `50`
-- additions: `3078`
-- deletions: `624`
+- head: `56848e7deb118769e51c335d0864d42ab7267d84`
+- commits: `70`
+- changed files: `52`
+- additions: `3113`
+- deletions: `638`
 - base: `main` at `3b0ae5ba92087e7286b77711d8dfb5df7f132c43`
 
-This handoff update is the 60th focused branch commit after the v1.4 base and is intended to be the **final branch mutation before hosted verification**. Do not edit documentation merely to record later workflow status because doing so would create a new unverified head.
+This handoff update becomes the 71st focused branch commit after the v1.4 base and is intended to be the **final branch mutation before hosted verification**. Do not edit documentation merely to record later workflow status because doing so would create a new unverified head.
 
 The history intentionally uses many small Conventional Commits instead of one monolithic or squashed feature commit.
 
@@ -268,7 +294,7 @@ No compatibility identifier above should change merely to create activity.
 
 The available continuation environment cannot resolve GitHub/package-index hosts for a normal local clone/dependency installation. Therefore this continuation does **not** claim a local Ruff, format, mypy, pytest, build, Twine, pip-audit, or dependency-backed smoke pass.
 
-Static review and committed deterministic regression coverage have been performed through the GitHub repository interface.
+Static review and committed deterministic regression coverage have been performed through the GitHub repository interface. The dependency/toolchain edits above were additionally checked against the repository's current Dependabot-generated patches before being applied.
 
 ### Hosted verification
 
@@ -278,13 +304,9 @@ PR #11 triggers three exact-head workflow families:
 - Security checks;
 - CodeQL.
 
-The immediately previous head `1ee30d6a422077a2e3a55f56c050e14cb0bcf0c2` had newly triggered runs:
+All workflow results from heads before this maintenance handoff are superseded release evidence, including the earlier `dfb947e910b526ea9a900ed6a7756f0e0483219b` run set. The final handoff commit necessarily creates a new exact head and therefore new workflow runs.
 
-- CI `32238952893` — queued when last inspected;
-- Security checks `32238952815` — queued when last inspected;
-- CodeQL `32238952817` — pending when last inspected.
-
-This handoff commit necessarily supersedes that head. New workflow runs for the final handoff SHA must be treated as the release-candidate automated evidence. A queued/pending/superseded run is not a pass.
+A queued/pending/superseded run is not a pass. Only conclusions attached to the final handoff SHA count as automated release-candidate evidence.
 
 Required evidence before release verification can be claimed:
 
@@ -301,12 +323,14 @@ Required evidence before release verification can be claimed:
 
 See `docs/completion_audit.md` for the requirement-by-requirement audit.
 
-Implementation/repository capability is prepared. Remaining release blockers are evidence gates rather than invented feature work:
+Implementation/repository capability is prepared. The final audit found no open ordinary GitHub issues, no repository code-search matches for `TODO`, `FIXME`, `XXX`, `NotImplemented`, or placeholder `pass`, and no additional concrete product defect was identified through the available repository interface. The remaining blockers are evidence gates rather than invented feature work:
 
 1. run/fix exact final-head PR workflows;
 2. complete manual v1.5 accessibility evidence;
 3. capture real release media only after sign-off if desired;
 4. tag/release only after all required gates are satisfied.
+
+Optional candidates listed in `docs/completion_audit.md` remain optional and are not definition-of-done blockers. They should not be added merely to inflate feature or commit count.
 
 ## Next exact actions
 
