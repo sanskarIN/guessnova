@@ -47,6 +47,11 @@ def test_replay_round_trip() -> None:
     assert decode_replay(code) == summary
 
 
+def test_negative_seed_round_trip() -> None:
+    summary = GameSummary(GameMode.CLASSIC, "normal", 42, True, 1, 1.0, (42,), -7)
+    assert decode_replay(encode_replay(summary)) == summary
+
+
 def test_replay_detects_tamper() -> None:
     summary = GameSummary(GameMode.CLASSIC, "normal", 42, True, 1, 1.0, (42,))
     code = encode_replay(summary)
