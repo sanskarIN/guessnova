@@ -81,6 +81,14 @@ def test_import_rejects_future_schema_in_legacy_backup(tmp_path: Path) -> None:
         import_state(target)
 
 
+def test_export_rejects_future_payload_schema(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="newer schema"):
+        export_state(
+            {"schema_version": SCHEMA_VERSION + 1},
+            tmp_path / "future-export.json",
+        )
+
+
 def test_import_rejects_tampered_version2_payload(tmp_path: Path) -> None:
     target = tmp_path / "backup.json"
     export_state({"schema_version": SCHEMA_VERSION, "profiles": {}}, target)
@@ -115,6 +123,35 @@ def test_import_rejects_missing_integrity_metadata(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     with pytest.raises(ValueError, match="integrity"):
+        import_state(target)
+
+
+@pytest.mark.parametrize(
+    ("integrity", "message"),
+    [
+        ({"algorithm": "md5", "payload_sha256": "0" * 64}, "algorithm"),
+        ({"algorithm": "sha256", "payload_sha256": "short"}, "digest"),
+        ({"algorithm": "sha256", "payload_sha256": 7}, "digest"),
+    ],
+)
+def test_import_rejects_invalid_integrity_metadata(
+    tmp_path: Path, integrity: object, message: str
+) -> None:
+    payload = {"schema_version": SCHEMA_VERSION}
+    target = tmp_path / "bad-integrity.json"
+    target.write_text(
+        json.dumps(
+            {
+                "format": EXPORT_FORMAT,
+                "version": EXPORT_VERSION,
+                "schema_version": SCHEMA_VERSION,
+                "integrity": integrity,
+                "payload": payload,
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match=message):
         import_state(target)
 
 
