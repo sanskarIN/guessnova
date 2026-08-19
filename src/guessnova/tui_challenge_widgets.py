@@ -53,12 +53,14 @@ class ChallengeSetup(Vertical):
         difficulty: str,
         seed: int | None,
         locale: str,
+        status: str = "",
     ) -> None:
         super().__init__(id="challenge-setup")
         self.initial_mode = mode if mode != GameMode.REVERSE else GameMode.CLASSIC
         self.initial_difficulty = difficulty if difficulty in DIFFICULTIES else "normal"
         self.initial_seed = None if self.initial_mode == GameMode.DAILY else seed
         self.locale = locale
+        self.initial_status = status
 
     def compose(self) -> ComposeResult:
         yield Label(f"[b]{text('tui.challenge.title', locale=self.locale)}[/b]")
@@ -98,7 +100,7 @@ class ChallengeSetup(Vertical):
             text("tui.challenge.help", locale=self.locale),
             id="challenge-help",
         )
-        yield Static("", id="challenge-status")
+        yield Static(self.initial_status, id="challenge-status")
 
     def on_mount(self) -> None:
         self._sync_mode_fields()
