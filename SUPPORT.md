@@ -11,13 +11,50 @@ For a `guessnova-tui` problem, first record the non-sensitive basics:
 - Python version;
 - GuessNova version/commit;
 - active pane (Play, Profiles, History, Leaderboard, Settings, or Recovery);
+- whether the problem involves v1.5 Challenge Setup;
+- selected challenge mode/difficulty when relevant;
+- whether a seed or Daily date was entered, without sharing it if you consider it private;
 - keyboard/mouse action that triggered the problem;
+- control that had focus before/after the action when focus is relevant;
 - whether the issue reproduces with a temporary `GUESSNOVA_HOME`;
 - whether high contrast or Hindi locale is enabled.
 
-Do not publish screenshots or recordings before reviewing them. The Textual workspace can visibly contain profile names, history, leaderboard names, local paths, settings, and backup-path metadata.
+Do not publish screenshots or recordings before reviewing them. The Textual workspace can visibly contain profile names, history, leaderboard names, challenge seeds/dates, local paths, settings, and backup-path metadata.
 
-The canonical workspace guide is `docs/tui_workspace.md`.
+Canonical guides:
+
+- `docs/tui_workspace.md`
+- `docs/tui_challenges.md`
+- `docs/troubleshooting.md`
+
+## Challenge Setup problems
+
+Before reporting a Challenge Setup issue, identify which category reproduces:
+
+- mode selection;
+- difficulty selection;
+- seed validation;
+- Daily date validation;
+- mode-aware enabled/disabled fields;
+- Start Challenge behavior;
+- active challenge identity/status;
+- reset determinism;
+- keyboard focus/navigation;
+- plain `Q/R` behavior inside a text field.
+
+Expected validation behavior:
+
+- Classic/Timed/Streak accept an optional whole-number seed;
+- Daily accepts `YYYY-MM-DD` or blank for local current date;
+- Daily disables manual seed;
+- non-Daily modes disable the Daily date field;
+- Reverse is not part of ordinary numeric Challenge Setup;
+- invalid configuration leaves the active round/attempt state intact;
+- successful configuration returns focus to Guess;
+- configured seeded/Daily reset reconstructs the deterministic challenge;
+- challenge identity should not expose the hidden target.
+
+If possible, reproduce with a temporary local state directory and a non-sensitive seed/date. Do not publish a real state file merely to report a challenge-form bug.
 
 ## Local-state problems
 
@@ -68,7 +105,7 @@ guessnova profiles trash
 
 or the TUI Profiles trash select before assuming the data was permanently deleted.
 
-Changing the active profile resets an unfinished TUI round by design so a partially played result cannot be saved under a different profile.
+Changing the active profile resets an unfinished TUI round by design so a partially played result cannot be saved under a different profile. A validated v1.5 challenge configuration may remain selected, but attempt state is reset before later persistence.
 
 ## What to include in a public issue
 
@@ -78,6 +115,7 @@ Prefer non-sensitive details:
 - Python version;
 - GuessNova version/commit;
 - command or TUI pane/action that failed;
+- challenge mode/difficulty and validation category when relevant;
 - exit code when a CLI/Doctor command is involved;
 - Doctor `report_version`;
 - Doctor result `kind`;
@@ -88,7 +126,7 @@ Prefer non-sensitive details:
 - whether the issue reproduces with isolated local state;
 - for TUI focus issues, the pane and control that had focus before/after the action.
 
-Review diagnostic JSON and terminal/TUI captures before sharing them. Doctor/TUI output can contain profile names, selected local paths, local history/leaderboard data, and aggregate counts.
+Review diagnostic JSON and terminal/TUI captures before sharing them. Doctor/TUI output can contain profile names, challenge seeds/dates, selected local paths, local history/leaderboard data, and aggregate counts.
 
 Do **not** publicly upload `state.json`, exported backups, pre-repair backups, private Doctor reports, credentials, private terminal history, or other files you have not reviewed.
 
@@ -116,5 +154,7 @@ Support development: `https://buymeacoffee.com/sanskarIN`
 Full recovery guide: `docs/doctor.md`
 
 Full Textual workspace guide: `docs/tui_workspace.md`
+
+Full Challenge Setup guide: `docs/tui_challenges.md`
 
 **Made by the Sanskar**
