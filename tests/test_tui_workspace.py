@@ -1,17 +1,65 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
 from guessnova.history import HistoryEntry
 from guessnova.leaderboard import LeaderboardEntry
 from guessnova.profile import Profile
 from guessnova.storage import Storage
 from guessnova.tui_workspace import (
+    build_workspace_game,
     load_workspace_snapshot,
     profile_summary,
     save_workspace_settings,
     select_history,
     select_leaderboard,
 )
+
+
+def test_workspace_challenge_builder_supports_seeded_modes() -> None:
+    first = build_workspace_game(
+        mode="timed",
+        difficulty="hard",
+        seed_text="20260819",
+    )
+    second = build_workspace_game(
+        mode="timed",
+        difficulty="hard",
+        seed_text="20260819",
+    )
+
+    assert first.mode.value == "timed"
+    assert first.difficulty_name == "hard"
+    assert first.seed == 20260819
+    assert first.target_value == second.target_value
+
+
+def test_workspace_challenge_builder_supports_reproducible_daily_date() -> None:
+    first = build_workspace_game(
+        mode="daily",
+        difficulty="normal",
+        day_text="2026-08-19",
+    )
+    second = build_workspace_game(
+        mode="daily",
+        difficulty="normal",
+        day_text="2026-08-19",
+    )
+
+    assert first.mode.value == "daily"
+    assert first.seed is not None
+    assert first.seed == second.seed
+    assert first.target_value == second.target_value
+
+
+def test_workspace_challenge_builder_rejects_invalid_configuration() -> None:
+    with pytest.raises(ValueError, match="whole number"):
+        build_workspace_game(mode="classic", difficulty="normal", seed_text="nova")
+    with pytest.raises(ValueError, match="YYYY-MM-DD"):
+        build_workspace_game(mode="daily", difficulty="normal", day_text="19-08-2026")
+    with pytest.raises(ValueError, match="dedicated reverse"):
+        build_workspace_game(mode="reverse", difficulty="normal")
 
 
 def test_workspace_snapshot_uses_local_profile_trash_leaderboard_and_diagnostics(
