@@ -1,7 +1,10 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from guessnova.constants import SCHEMA_VERSION
+from guessnova.doctor_protocol import DOCTOR_REPORT_VERSION
 from guessnova.entrypoint import main
 from guessnova.import_export import export_state
 
@@ -11,6 +14,7 @@ def test_primary_entrypoint_routes_doctor_json_to_explicit_data_dir(
 ) -> None:
     assert main(["doctor", "--json", "--data-dir", str(tmp_path)]) == 0
     payload = json.loads(capsys.readouterr().out)
+    assert payload["report_version"] == DOCTOR_REPORT_VERSION
     assert payload["kind"] == "state"
     assert payload["state_exists"] is False
 
@@ -38,11 +42,14 @@ def test_primary_entrypoint_routes_backup_verification(tmp_path: Path, capsys) -
 
     assert main(["doctor", "--json", "--verify-backup", str(backup)]) == 0
     payload = json.loads(capsys.readouterr().out)
+    assert payload["report_version"] == DOCTOR_REPORT_VERSION
     assert payload["kind"] == "backup"
     assert payload["valid"] is True
 
 
 def test_primary_help_mentions_recovery_command(capsys) -> None:
-    assert main(["--help"]) == 0
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--help"])
+    assert exc_info.value.code == 0
     output = capsys.readouterr().out
     assert "guessnova doctor --help" in output
