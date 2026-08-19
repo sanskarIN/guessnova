@@ -8,7 +8,7 @@ The application may save profile names, settings, gameplay statistics, achieveme
 
 ## Network behavior
 
-The installed Python application does not require network access for gameplay, diagnostics, repair, backup import/export, or local profile management. It contains no telemetry, analytics, advertising, cloud-sync, or remote-account code.
+The installed Python application does not require network access for gameplay, diagnostics, backup verification, repair, backup import/export, or local profile management. It contains no telemetry, analytics, advertising, cloud-sync, or remote-account code.
 
 GitHub Actions, repository pages, package registries, or other development/distribution services are separate from the installed GuessNova runtime and have their own policies when a developer chooses to use them.
 
@@ -20,15 +20,41 @@ Legacy GuessNova version-1 backup wrappers remain readable when their embedded s
 
 A backup can include live profiles, leaderboard rows, session history, settings, and recoverable deleted-profile records. Treat exported backups as personal local data if profile names or gameplay history are personally meaningful.
 
+## Read-only backup verification
+
+```bash
+guessnova doctor --verify-backup PATH
+```
+
+Backup preflight reads the selected backup locally, validates the wrapper/integrity rules, and passes the embedded state through current normalization in memory. It does not import or rewrite application state.
+
+The resulting report contains structural metadata such as file path, file size, wrapper/schema versions, integrity status, normalization-change status, and normalized counts. It does not print the backup payload itself. The path and counts can still be sensitive in some environments, so review Doctor output before publishing it.
+
 ## Local diagnostics
 
-`guessnova-doctor` reads local GuessNova state and reports schema/normalization status plus aggregate counts. It does not upload state, contact a server, or enable telemetry. JSON diagnostic output can include the active local profile name and local counts; scripts that capture or publish that output are outside GuessNova's control.
+Recommended route:
+
+```bash
+guessnova doctor
+```
+
+Compatibility route:
+
+```bash
+guessnova-doctor
+```
+
+Doctor reads local GuessNova state and reports schema/normalization status plus aggregate counts. It does not upload state, contact a server, or enable telemetry. JSON diagnostic output can include the active local profile name, selected paths, and local counts; scripts that capture, transmit, or publish that output are outside GuessNova's control.
+
+`--data-dir PATH` selects a local directory explicitly and does not send that path anywhere.
 
 ## Repair backups
 
-`guessnova-doctor --repair` is intentionally conservative. It refuses state it cannot safely decode/normalize. When a repairable state file needs rewriting, GuessNova first creates an integrity-protected backup containing the original payload, then writes normalized state.
+`guessnova doctor --repair` is intentionally conservative. It refuses state it cannot safely decode/normalize. When a repairable state file needs rewriting, GuessNova first creates an integrity-protected backup containing the original payload, then writes normalized state.
 
 Pre-repair backups may contain the same personal local data as ordinary exports. They are not automatically deleted because they are the user's recovery copy. Use `--backup-dir` to choose their location, and delete them manually when no longer needed.
+
+JSON repair requires `--yes` so an interactive prompt cannot be mixed into machine-readable output. This changes scripting behavior only; it does not send data anywhere.
 
 ## Profile deletion and recovery
 
@@ -39,3 +65,5 @@ Use `guessnova profiles trash` to see recoverable profile names. Deleting the en
 ## Complete local deletion
 
 Users can delete their local GuessNova data directory at any time to remove saved application data, including profile trash. User-created export files and pre-repair backups are separate files and must also be deleted wherever the user chose to save or copy them.
+
+If Doctor reports or shell logs were deliberately saved elsewhere, those copies are separate local files and should also be removed if the user wants to delete them.
