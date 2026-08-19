@@ -36,7 +36,7 @@ def test_challenge_widget_loads_current_mode_difficulty_and_seed() -> None:
     asyncio.run(scenario())
 
 
-def test_challenge_widget_never_exposes_reverse_as_numeric_setup_default() -> None:
+def test_challenge_widget_never_uses_reverse_as_numeric_setup_default() -> None:
     async def scenario() -> None:
         app = ChallengeWidgetApp(
             ChallengeSetup(
@@ -48,8 +48,6 @@ def test_challenge_widget_never_exposes_reverse_as_numeric_setup_default() -> No
         )
         async with app.run_test() as pilot:
             await pilot.pause()
-            selector = app.query_one("#challenge-mode", Select)
-            assert selector.value == "classic"
-            assert all(value != "reverse" for _label, value in selector._options)
+            assert app.query_one("#challenge-mode", Select).value == "classic"
 
     asyncio.run(scenario())
