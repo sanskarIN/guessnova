@@ -1,19 +1,22 @@
-# GuessNova — Complete Work Continuity through v1.4 Full Textual Workspace
+# GuessNova — v1.4 Merged Full Textual Workspace Checkpoint
 
 ## Current milestone
 
-**GuessNova `v1.4.0` full Textual local-workspace implementation is complete on its release branch and is under pull request review.**
+**GuessNova `v1.4.0` full Textual local-workspace implementation is merged into `main`.**
 
-Current release work:
+Merged release work:
 
 - Repository: `https://github.com/sanskarIN/guessnova`
 - Branch: `release/v1.4.0-tui-workspace-20260819`
-- Pull request: `#10` — `feat: build GuessNova 1.4 full Textual workspace`
-- Base branch: `main`
+- Pull request: `#10` — `feat: ship GuessNova 1.4 full Textual workspace`
 - Base commit: `c45b163b48353aa307d73ecc6095732803cd5503`
-- Pre-handoff branch head: `2afc650a1d453122058963692aeb87f6165e3da2`
-- Granular v1.4 commits before this handoff commit: **51**
-- This `what_changed.md` update is intentionally the next focused commit and becomes the final PR verification head unless a concrete current-head audit/CI failure requires another fix.
+- Final PR head: `149fa6ff3dcfbb523386f732feb188a7503991d3`
+- v1.4 PR commits preserved: **52 granular commits**
+- Merge method: **normal merge**, not squash
+- Merge commit: `b118bdb8903230e1cddc3865b1cfbd3e7b038132`
+- Merge commit author: `Sanskar <sanskarin@outlook.in>`
+- GitHub merge verification: **valid signed merge commit**
+- Post-merge continuity archive commit before this file update: `80ce8eec78d3832dccc443545b09078f534cd083`
 - Package version: `1.4.0`
 - Runtime version: `1.4.0`
 - Citation version: `1.4.0`
@@ -24,321 +27,120 @@ Current release work:
 - Doctor machine report protocol: `1`
 - Python requirement: `>=3.13`
 - License: MIT
-- Requested Git commit identity email: `sanskarin@outlook.in`
 
-The v1.4 scope is a **presentation/application-layer expansion**. It intentionally does **not** invent schema 3, backup wrapper 3, replay version 2, Doctor report version 2, a third locale, signing credentials, or a new testing dependency merely to create activity.
-
-The pull request must be merged with a **normal merge**, not squash, so the granular implementation/fix/test/docs/build/CI history remains visible.
+The v1.4 merge preserves the full implementation/fix/test/docs/build/CI history. It intentionally does **not** invent schema 3, backup wrapper 3, replay version 2, Doctor report version 2, a third locale, package-signing claims, or a new property-testing dependency without a concrete prerequisite.
 
 ---
 
-# 1. Continuity preservation
+# 1. Continuity archives
 
-The complete previous active continuity document was preserved **byte-for-byte** before replacing the live handoff with this v1.4-focused record.
+Detailed pre-merge implementation history is preserved in-repository rather than being deleted from the active handoff.
 
-Archived previous checkpoint:
+## v1.4 complete PR checkpoint
+
+- `docs/continuity/v1_4_pr_checkpoint.md`
+- Exact former v1.4 pre-merge `what_changed.md` blob: `440abbc2ac4fd3a0dfdf32897e4dc1aa541f2446`
+- Archive commit: `80ce8eec78d3832dccc443545b09078f534cd083`
+
+That archive contains the full v1.4 source-level architecture, every pane, helper/widget design, tests, smoke/CI changes, documentation map, static-audit findings, local execution limitation, manual gates, and continuation instructions.
+
+## v1.3 and older complete checkpoint
 
 - `docs/continuity/v1_3_merged_checkpoint.md`
-- The archive points to the exact former `what_changed.md` blob and contains the full v1.3/v1.2/v1.1/v1.0 continuity record.
+- Former v1.3 active continuity blob: `014cba52fbe736f33380ce3d8ede5161001eef63`
 
-Important previous release checkpoints retained in Git history:
+That archive preserves the detailed v1.3/v1.2/v1.1/v1.0 history.
+
+Important prior milestones:
 
 - v1.0 audit merge: `3cc6fec1945c97605506de7d004d7ef4436f48f3`
-- v1.0 post-audit checkpoint: `c20b1dc9737ea215f8b4d5262c36eeea90907c68`
-- v1.1 normal merge: `b303b764c83dbbca5183ee5b974bd280e7fca0cd`
-- v1.1 post-merge checkpoint: `9a511102efc3b11bdf68a8ce7f7ca1692874df40`
-- v1.2 normal merge: `f17594b16426513850c9a1c118d8fcec225702cd`
-- v1.2 post-merge checkpoint: `86ac8754ad07daaa40706c20a8e61fb4024a95e0`
-- v1.3 normal merge: `e57cac65b20e6351200ac3ab25a3cf2a07ed9308`
-- v1.3 post-merge checkpoint / v1.4 base: `c45b163b48353aa307d73ecc6095732803cd5503`
-
-No previous implementation record was discarded to make this file shorter.
+- v1.1 merge: `b303b764c83dbbca5183ee5b974bd280e7fca0cd`
+- v1.2 merge: `f17594b16426513850c9a1c118d8fcec225702cd`
+- v1.3 merge: `e57cac65b20e6351200ac3ab25a3cf2a07ed9308`
+- v1.3 post-merge / v1.4 base: `c45b163b48353aa307d73ecc6095732803cd5503`
 
 ---
 
-# 2. v1.4 product goal
+# 2. v1.4 shipped implementation
 
-Before v1.4, the Rich CLI had mature local-data workflows while `guessnova-tui` was still primarily one gameplay card.
+`guessnova-tui` is no longer only a single gameplay card. It is now a six-pane keyboard-first local workspace:
 
-The real product gap was therefore not another storage schema or another game rule. The gap was an app-like local terminal workspace that exposes the already-proven product capabilities without duplicating persistence or creating network services.
+1. Play
+2. Profiles
+3. History
+4. Leaderboard
+5. Settings
+6. Recovery
 
-v1.4 turns `guessnova-tui` into a six-pane keyboard-first workspace:
+The workspace reuses the existing local product boundaries rather than introducing a second storage/database/network layer.
 
-1. **Play**
-2. **Profiles**
-3. **History**
-4. **Leaderboard**
-5. **Settings**
-6. **Recovery**
+## Play
 
-The workspace continues to use the same local `Storage`, `GameService`, history, leaderboard, settings, diagnostics, and backup-preflight boundaries as the CLI/Doctor implementation.
+Retains:
 
----
-
-# 3. Textual workspace architecture
-
-## 3.1 `src/guessnova/tui_workspace.py`
-
-A reusable Textual-independent helper layer was added so domain/application behavior can be tested without rendering widgets.
-
-Current helpers include:
-
-### `WorkspaceSnapshot`
-
-Captures a read-only local workspace view:
-
-- active/selected profile;
-- live profile names;
-- recoverable deleted-profile names;
-- leaderboard count;
-- local diagnostic report.
-
-### `ProfileSummary`
-
-Derives:
-
-- games played;
-- games won;
-- win rate;
-- average guesses;
-- current streak;
-- best streak;
-- XP;
-- achievement count;
-- history count.
-
-### `build_workspace_game(...)`
-
-Builds deterministic non-Reverse challenges from TUI-friendly string values.
-
-Supported behavior:
-
-- validates known `GameMode` values;
-- validates known difficulties;
-- accepts optional integer seed text;
-- produces deterministic seeded games;
-- accepts ISO `YYYY-MM-DD` daily dates;
-- creates reproducible daily games;
-- refuses Reverse because Reverse retains its dedicated interaction model;
-- returns clear validation errors for invalid seed/date/mode/difficulty input.
-
-This helper is intentionally reusable even though the v1.4 mounted Play pane keeps the established game flow rather than adding a large challenge-configuration form into the same release.
-
-### `select_history(...)`
-
-Returns newest-first bounded active-profile history with filters for:
-
-- mode;
-- difficulty;
-- win/loss result;
-- free-text query;
-- since date;
-- until date;
-- positive limit.
-
-### `select_leaderboard(...)`
-
-Filters the already-ranked local leaderboard by:
-
-- mode;
-- difficulty;
-- case-insensitive player substring;
-- positive limit.
-
-The helper **does not re-rank** filtered data; it preserves `Storage` / leaderboard ordering.
-
-### `save_workspace_settings(...)`
-
-Persists validated settings through `Settings.from_dict(...)` and `Storage.save_profile(...)` while preserving the existing `onboarding_complete` state.
-
-## 3.2 `src/guessnova/tui_widgets.py`
-
-A focused widget layer was added for keyboard responsibilities that should not be global to the whole application.
-
-### `GuessInput`
-
-`GuessInput` subclasses Textual `Input` and owns the legacy Play-only single-letter shortcuts:
-
-- `R` → request a new round;
-- `Q` → quit.
-
-A custom `GuessInput.NewRoundRequested` message is posted for reset rather than coupling the input widget to GuessNova game construction.
-
-Why this exists:
-
-- the original one-card TUI could safely make `R/Q` global/priority because its main text field was integer-only;
-- v1.4 adds profile names, history search, leaderboard player filter, dates, and backup paths;
-- globally stealing `r` or `q` from those fields would make ordinary text entry unusable;
-- making app-level single-letter bindings merely non-priority introduced a regression risk that the numeric Input might consume the keys instead of resetting/quitting;
-- the final solution scopes `R/Q` to the numeric Play widget and keeps global `Ctrl+R/Ctrl+Q` available everywhere.
-
-This was a concrete static-audit issue found and fixed before final handoff.
-
-## 3.3 `src/guessnova/tui.py`
-
-The main Textual app now owns:
-
-- widget composition;
-- pane navigation;
-- focus orchestration;
-- button/input events;
-- table refresh;
-- active-profile transition orchestration;
-- high-contrast screen state;
-- read-only diagnostics rendering;
-- read-only backup-preflight rendering.
-
-It does **not** implement a second local database or duplicate storage normalization.
-
----
-
-# 4. Play pane
-
-The Play pane preserves the original TUI contract:
-
-- starts as the initial pane;
-- initial focus lands on `#guess`;
-- numeric whole-number input;
-- Submit button;
-- Range Hint button;
-- attempts/range display;
-- automatic smart hints when enabled;
-- explicit hint requests;
-- out-of-range feedback;
-- win/loss feedback;
-- completed-round persistence through `GameService`;
-- exactly-once `_result_saved` guard;
+- deterministic initial guess-input focus;
+- numeric guessing;
+- Submit and Range Hint controls;
+- automatic smart hints;
+- explicit range hints;
+- attempts/range state;
+- result persistence through `GameService`;
+- exactly-once completed-round guard;
 - deterministic seeded reset behavior.
 
-Keyboard behavior:
+Final shortcut model:
 
-- focused Play input: plain `R` resets;
-- focused Play input: plain `Q` quits;
-- anywhere: `Ctrl+R` resets and returns to Play;
-- anywhere: `Ctrl+Q` quits.
+- focused numeric `GuessInput`: plain `R` = new round;
+- focused numeric `GuessInput`: plain `Q` = quit;
+- anywhere: `Ctrl+R` = reset and return to Play;
+- anywhere: `Ctrl+Q` = quit.
 
-Completed results refresh:
+Plain `R/Q` are intentionally **not** application-global, so ordinary profile/search/player/path text inputs can type `r` and `q` normally.
 
-- profile summary;
-- History table/status;
-- Leaderboard table/status;
-- Recovery diagnostic counts.
+## Profiles
 
----
+Adds TUI flows for:
 
-# 5. Profiles pane
+- active profile summary;
+- unlocked achievement labels;
+- profile selection/use;
+- create;
+- rename;
+- recoverable delete;
+- recoverable-trash visibility;
+- restore;
+- refresh.
 
-The Profiles pane reuses the existing `Storage` lifecycle APIs.
+Delete requires the selected profile name to be typed exactly before the action succeeds.
 
-Supported UI operations:
+Active-profile ownership changes reset any unfinished game before later persistence so a partially played round cannot silently move between profiles.
 
-- view active-profile statistics summary;
-- view unlocked achievement labels;
-- choose a saved profile;
-- activate a profile;
-- create a profile;
-- rename a selected profile;
-- refresh profile/trash state;
-- delete a selected profile into recoverable trash;
-- restore a selected deleted profile.
+## History
 
-## 5.1 Exact-name deletion confirmation
+Adds newest-first bounded table/filter UX for:
 
-The TUI does not expose a one-click destructive delete.
-
-Before Delete succeeds:
-
-1. a saved profile must be selected;
-2. the profile-name field must contain the selected profile name **exactly**;
-3. only then does the TUI call the existing recoverable `Storage.delete_profile(...)` path.
-
-The profile and matching local leaderboard rows therefore use the existing bounded recoverable-trash model.
-
-## 5.2 Active-profile round ownership
-
-A real interaction-risk was addressed during v1.4 review:
-
-- a player could begin a round under profile A;
-- switch to profile B;
-- then finish the same in-memory round;
-- without an ownership rule, the result could be persisted under B even though part of the round occurred under A.
-
-Final behavior:
-
-- activating another profile resets unfinished gameplay;
-- creating and activating a new profile resets unfinished gameplay;
-- restoring and activating a deleted profile resets unfinished gameplay;
-- deleting the active profile and falling back to the canonical active profile resets unfinished gameplay;
-- renaming the active profile does not reset because identity continuity is intentionally preserved by `Storage.rename_profile(...)`.
-
-This is covered by Textual pilot regression tests.
-
----
-
-# 6. History pane
-
-The History pane presents up to the newest 100 matching local sessions for the active profile.
-
-Filters:
-
-- result: All / Win / Loss;
+- result;
 - mode;
 - difficulty;
 - free-text search;
 - since date;
 - until date.
 
-Date format:
+Invalid ISO-date input reports an error without erasing the last valid table data.
 
-```text
-YYYY-MM-DD
-```
+## Leaderboard
 
-Invalid-date behavior:
-
-- reports a clear error;
-- does not destroy the last valid table contents.
-
-Columns:
-
-- timestamp;
-- mode;
-- difficulty;
-- result;
-- attempts;
-- elapsed time.
-
-The TUI uses existing validated `HistoryEntry` values and does not create a second history store.
-
----
-
-# 7. Leaderboard pane
-
-The Leaderboard pane exposes the existing ranked local winning-result data.
-
-Filters:
+Adds local ranked table/filter UX for:
 
 - mode;
 - difficulty;
-- case-insensitive player-name substring.
+- case-insensitive player substring.
 
-Columns:
+Filtering preserves the existing validated leaderboard rank order.
 
-- rank;
-- player;
-- mode;
-- difficulty;
-- attempts;
-- elapsed time;
-- timestamp.
+## Settings
 
-Profile rename/delete/restore coherence remains owned by `Storage`; the TUI simply refreshes the validated local leaderboard.
-
----
-
-# 8. Settings pane
-
-The Settings pane edits the active profile's established settings model:
+Adds TUI controls for existing per-profile settings:
 
 - theme;
 - locale;
@@ -347,549 +149,295 @@ The Settings pane edits the active profile's established settings model:
 - sound preference;
 - automatic smart hints.
 
-Settings persistence continues through `Settings.from_dict(...)` plus `Storage.save_profile(...)`.
+Smart-hint and high-contrast changes apply immediately. Locale is persisted immediately but the already-mounted TUI keeps its launch language until restart, preventing a partially translated interface.
 
-## 8.1 Immediate behavior
+Textual Switch controls use `animate=False`.
 
-- smart-hint preference updates the current TUI gameplay behavior immediately;
-- high-contrast preference updates the mounted Textual screen immediately.
+## Recovery
 
-## 8.2 High contrast
+The TUI Recovery pane is intentionally read-only.
 
-The TUI applies a `high-contrast` screen class with stronger:
+It can:
 
-- card/section borders;
-- focus outlines for Buttons;
-- focus outlines for Inputs;
-- focus outlines for Selects;
-- focus outlines for Switches.
+- display local state health;
+- display data directory;
+- display source/current schema;
+- display profile/history/leaderboard/trash counts;
+- refresh diagnostics;
+- verify a selected backup using existing `inspect_backup(...)` preflight.
 
-Status meaning is still textual; high contrast is not used as the only information channel.
+It cannot:
 
-## 8.3 Reduced motion
-
-Textual Switch controls use:
-
-```text
-animate=False
-```
-
-The workspace adds no fake delays or decorative motion.
-
-## 8.4 Locale consistency
-
-A second real interaction concern was addressed:
-
-- mounted Textual tab/button labels are created during composition;
-- changing only dynamically refreshed labels after a profile switch would produce a mixed-language UI.
-
-Final v1.4 behavior:
-
-- the TUI selects its display locale when launched;
-- switching profiles loads the selected profile's settings values;
-- saved smart-hint/high-contrast preferences can apply immediately;
-- the mounted display locale remains stable for the process lifetime;
-- the newly selected locale takes full effect on the next TUI launch.
-
-This avoids partial relabeling and is covered by a pilot regression.
-
----
-
-# 9. Recovery pane
-
-The Recovery pane is intentionally **read-only**.
-
-It displays:
-
-- state health;
-- data directory;
-- source schema;
-- current schema;
-- live profile count;
-- history count;
-- leaderboard count;
-- deleted-profile count.
-
-It also accepts a selected local backup path for read-only verification.
-
-Backup verification reuses `inspect_backup(...)`, which already includes:
-
-- bounded file input;
-- supported wrapper-version checks;
-- schema validation;
-- wrapper/payload schema agreement;
-- SHA-256 integrity check for wrapper v2;
-- legacy wrapper-v1 handling;
-- current state normalization/importability proof;
-- normalized structural metadata.
-
-The pane does **not**:
-
-- invoke `repair(...)`;
-- import the backup;
+- call repair;
+- import the selected backup;
 - overwrite state;
 - delete state;
-- upload the backup/report.
+- upload data.
 
-Repair remains centralized in:
+Repair remains explicit through:
 
 ```bash
 guessnova doctor --repair
 ```
 
-This preserves Doctor's explicit confirmation and backup-before-write guarantees.
-
 ---
 
-# 10. Keyboard and focus model
+# 3. v1.4 architecture
 
-Global application shortcuts:
+New/expanded source boundaries:
 
-```text
-Ctrl+1  Play
-Ctrl+2  Profiles
-Ctrl+3  History
-Ctrl+4  Leaderboard
-Ctrl+5  Settings
-Ctrl+6  Recovery
-Ctrl+R  New round
-Ctrl+Q  Quit
-```
+- `src/guessnova/tui_workspace.py` — Textual-independent workspace helpers.
+- `src/guessnova/tui_widgets.py` — focused widget behavior, especially Play-only `GuessInput` shortcuts.
+- `src/guessnova/tui.py` — pane composition, focus, widget events, refresh/orchestration.
 
-Pane shortcut focus targets:
+`tui_workspace.py` includes reusable helpers for:
 
-- Play → guess input;
-- Profiles → profile-name input;
-- History → history-search input;
-- Leaderboard → player-filter input;
-- Settings → theme Select;
-- Recovery → backup-path input.
-
-Play-local single-letter commands:
-
-- `R` → new round;
-- `Q` → quit.
-
-Other text fields receive ordinary `r` and `q` characters normally.
-
-The final binding/message approach follows Textual's supported widget binding/custom message model rather than monkeypatching framework internals.
-
----
-
-# 11. Localization
-
-The existing offline `en` and `hi` catalogs were expanded for the complete normal workspace presentation.
-
-New catalog-backed areas include:
-
-- pane labels;
-- profile controls/status;
-- profile deletion guidance;
-- history controls/status;
-- settings labels/status;
-- Recovery labels/status;
-- backup verification status.
-
-The existing completeness contract remains:
-
-```text
-catalog_missing_keys("hi") == set()
-```
-
-Representative formatted v1.4 messages are tested in both English and Hindi, including:
-
-- profile summary;
-- backup-verification status.
-
-Stable machine identifiers remain untranslated:
-
-- mode IDs;
-- difficulty IDs;
-- schema keys;
-- backup markers;
-- replay fields;
-- Doctor JSON keys/kinds;
-- commands/environment variables;
-- achievement IDs.
-
----
-
-# 12. v1.4 test architecture
-
-## 12.1 `tests/test_tui_workspace.py`
-
-Covers reusable non-Textual logic:
-
-- seeded challenge construction;
-- deterministic target reproduction;
-- daily-date challenge reproduction;
-- invalid seed rejection;
-- invalid daily-date rejection;
-- dedicated-Reverse separation;
+- deterministic seeded/daily challenge construction;
 - workspace snapshots;
-- profile statistics derivation;
-- newest-first History filtering;
-- Leaderboard filtering while preserving rank order;
+- profile statistics;
+- newest-first history filtering;
+- rank-preserving leaderboard filtering;
+- validated settings persistence.
+
+The v1.4 mounted TUI continues using:
+
+- `Storage` for profile/settings/history/leaderboard state;
+- `GameService` for completed results;
+- `diagnose(...)` for state diagnostics;
+- `inspect_backup(...)` for read-only backup verification.
+
+No parallel database, cloud sync, remote leaderboard, or hidden persistence model was introduced.
+
+---
+
+# 4. v1.4 regression coverage added
+
+Focused test surfaces now include:
+
+- `tests/test_tui_workspace.py`
+- `tests/test_tui_workspace_app.py`
+- `tests/test_tui_workspace_data.py`
+- `tests/test_tui_workspace_leaderboard.py`
+- `tests/test_tui_workspace_accessibility.py`
+- expanded `tests/test_tui.py`
+- expanded `tests/test_i18n.py`
+
+Coverage added for:
+
+- deterministic workspace challenge construction;
+- reproducible daily date;
+- invalid seed/date and Reverse separation;
+- workspace snapshots;
+- profile statistics;
+- history filtering/order;
+- leaderboard filtering/order;
 - settings persistence;
-- onboarding-setting preservation.
+- pane shortcuts;
+- normal `q/r` input outside Play;
+- Play-local `R` reset;
+- Play-local `Q` quit;
+- profile create/use/rename/delete/restore;
+- exact-name delete confirmation;
+- active-profile round isolation;
+- invalid History dates;
+- leaderboard filters;
+- settings persistence;
+- launch-locale consistency;
+- high contrast at launch/after save;
+- read-only backup verification.
 
-## 12.2 `tests/test_tui.py`
-
-Retains and expands core Play regressions:
-
-- deterministic initial focus;
-- guess → submit → hint tab order;
-- Enter submission;
-- winning-result persistence;
-- hint attempt behavior;
-- Play-local plain `R` reset;
-- Play-local plain `Q` quit;
-- saved smart-hint preference;
-- deterministic seeded reset.
-
-## 12.3 `tests/test_tui_workspace_app.py`
-
-Covers:
-
-- direct pane shortcuts;
-- profile text fields accepting ordinary `q/r`;
-- profile create;
-- profile rename;
-- incorrect delete confirmation refusing deletion;
-- exact-name deletion;
-- recoverable trash;
-- restore.
-
-## 12.4 `tests/test_tui_workspace_data.py`
-
-Covers:
-
-- History filter combinations;
-- invalid-date behavior;
-- History Clear;
-- Settings persistence;
-- smart-hint update;
-- Recovery backup verification;
-- Recovery verification not importing/mutating application state.
-
-## 12.5 `tests/test_tui_workspace_leaderboard.py`
-
-Covers:
-
-- Leaderboard pane navigation;
-- initial ranked rows;
-- mode/difficulty/player filtering;
-- Clear restoring full view.
-
-## 12.6 `tests/test_tui_workspace_accessibility.py`
-
-Covers:
-
-- unfinished gameplay before profile switch;
-- active-profile switch resetting the round;
-- remaining on the Profiles pane after switch;
-- launch-locale stability after selecting a differently localized profile;
-- selected profile's saved locale visible in Settings;
-- high contrast loaded at startup;
-- high contrast applied immediately after settings save;
-- high-contrast persistence.
-
-## 12.7 `tests/test_i18n.py`
-
-Adds representative workspace formatting checks while retaining full Hindi-key completeness.
+`scripts/smoke_test.py` also exercises the reusable workspace helper layer in addition to retained gameplay/profile/replay/backup/Doctor/repair/reverse checks.
 
 ---
 
-# 13. Smoke coverage
+# 5. Cross-platform package/release gates
 
-`scripts/smoke_test.py` retains previous end-to-end engine/profile/replay/backup/Doctor/repair/reverse checks and now additionally covers workspace-helper behavior:
+Normal CI and tagged-release package matrices now install the built wheel on:
 
-- workspace snapshot;
-- active-profile name;
-- live/deleted profile lists;
-- leaderboard count;
-- healthy diagnostics;
-- active-profile winning History selection;
-- local Leaderboard player filter;
-- deterministic seeded workspace challenge;
-- repeated seeded target equality;
-- deterministic daily-date workspace challenge;
-- repeated daily seed/target equality;
-- workspace settings persistence;
-- Hindi locale persistence;
-- high-contrast persistence;
-- smart-hint disable persistence.
+- Ubuntu;
+- Windows;
+- macOS.
 
-The smoke flow remains noninteractive; Textual pilot tests cover mounted-widget behavior.
+Each package path includes explicit Textual-workspace import verification:
 
----
+```bash
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+```
 
-# 14. CI and package verification
+and retains game/Doctor/smoke verification.
 
-## 14.1 Strict CI job
+Strict CI/release gates remain configured for:
 
-Retained gates:
-
-- Python 3.13;
-- development extras;
 - Ruff lint;
 - Ruff format check;
 - strict mypy;
-- pytest + coverage;
+- pytest/coverage;
 - compileall;
 - release metadata verification;
-- smoke test.
-
-## 14.2 Cross-platform package matrix
-
-Ubuntu, Windows, and macOS built-wheel jobs now verify:
-
-```bash
-python -m guessnova --help
-python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
-guessnova doctor --help
-guessnova-doctor --help
-guessnova-doctor --version
-python scripts/smoke_test.py
-```
-
-The explicit Textual import ensures the built wheel contains/imports the expanded workspace on all supported desktop OS families.
-
-## 14.3 Tagged-release matrix
-
-The tagged-release package matrix applies the same Textual workspace import check before final publication is eligible to proceed.
-
-The strict release job still includes:
-
-- tag/package version equality;
-- Ruff;
-- strict mypy;
-- pytest;
-- compile;
-- release metadata;
-- smoke;
-- dependency audit.
+- smoke test;
+- dependency audit on release/security paths;
+- CodeQL and Security workflows.
 
 ---
 
-# 15. Version and compatibility metadata
+# 6. Exact final-head hosted verification state at merge
 
-Synchronized release metadata:
+Final PR head:
 
 ```text
-pyproject.toml              1.4.0
-src/guessnova/__init__.py   1.4.0
-CITATION.cff                1.4.0
-CHANGELOG.md                [1.4.0] - 2026-08-19
+149fa6ff3dcfbb523386f732feb188a7503991d3
 ```
 
-Unchanged compatibility identifiers:
+Immediately before and after the normal merge, GitHub reported:
 
-```text
-state schema                 2
-backup wrapper               2
-legacy backup wrapper        1
-replay format                 1
-Doctor report protocol        1
-```
+- CI run `32224689793`: `queued`, conclusion `null`.
+- Security checks run `32224689794`: `queued`, conclusion `null`.
+- CodeQL run `32224689833`: `queued`, conclusion `null`.
 
-Reason no schema change exists:
+CI job-level status for run `32224689793`:
 
-- no canonical stored-state field/model boundary changed;
-- Profiles, History, Leaderboard, Settings, diagnostics, and backups reuse existing storage formats;
-- v1.4 is an application/presentation expansion.
+- job `95981909116` — `test (3.13)`: `queued`, conclusion `null`.
+- job `95981909209` — `package (ubuntu-latest)`: `queued`, conclusion `null`.
+- job `95981909299` — `package (macos-latest)`: `queued`, conclusion `null`.
+- job `95981909370` — `package (windows-latest)`: `queued`, conclusion `null`.
 
----
+**These checks are not recorded as passed.**
 
-# 16. Documentation completed for v1.4
+No exact-final-head workflow produced an actionable failure conclusion before the merge. The repository continued the GitHub-hosted runner saturation pattern seen in prior release work.
 
-Added:
-
-- `docs/tui_workspace.md` — canonical workspace guide;
-- `docs/TUI_WORKSPACE.md` — concise workspace reference;
-- `docs/continuity/v1_3_merged_checkpoint.md` — byte-for-byte archive of the former active continuity record.
-
-Updated:
-
-- `README.md`;
-- `CHANGELOG.md`;
-- `ROADMAP.md`;
-- `CITATION.cff`;
-- `PRIVACY.md`;
-- `SECURITY.md`;
-- `SUPPORT.md`;
-- `CONTRIBUTING.md`;
-- `.github/pull_request_template.md`;
-- `.github/workflows/ci.yml`;
-- `.github/workflows/release.yml`;
-- `docs/accessibility.md`;
-- `docs/accessibility_evidence_template.md`;
-- `docs/architecture.md`;
-- `docs/development.md`;
-- `docs/localization.md`;
-- `docs/release.md`;
-- `docs/RELEASING.md`;
-- `docs/setup.md`;
-- `docs/testing.md`;
-- `docs/TESTING.md`;
-- `what_changed.md`.
-
-The manual accessibility template now requires actual evidence for every workspace pane rather than allowing v1.4 to reuse the old single-card TUI checklist.
+If these runs later execute and expose a reproducible failure, the next continuation must inspect the exact failed job/step/log and apply a focused fix/regression on a new branch/PR.
 
 ---
 
-# 17. Important implementation decisions
+# 7. Local execution limitation
 
-## 17.1 No parallel storage model
+The available execution/container environment could not resolve GitHub or package-index hosts.
 
-The TUI does not introduce SQLite, another JSON document, cloud sync, or a separate cache of user state.
-
-## 17.2 Recovery is read-only
-
-The app-like TUI cannot silently bypass Doctor's stronger repair safety model.
-
-## 17.3 Single-letter shortcuts are widget scoped
-
-The Play numeric field owns `R/Q`; text-editing fields remain text-editing fields.
-
-## 17.4 Profile ownership is explicit
-
-An unfinished game is reset before active-profile ownership changes.
-
-## 17.5 Mounted locale is stable
-
-A full locale change is deferred to the next TUI launch instead of creating a partially translated interface.
-
-## 17.6 No property-testing dependency added
-
-The new failure classes are directly covered with deterministic helper tests and Textual pilot tests. A new property-testing dependency is still gated on a demonstrated coverage gap.
-
-## 17.7 No artifact-signing claim invented
-
-Signing/provenance expansion remains gated until a real package-registry publishing workflow exists.
-
----
-
-# 18. Static audit findings fixed during v1.4
-
-Concrete issues/risks identified and addressed before final handoff:
-
-1. **Profile ownership drift risk** — an unfinished round could otherwise cross an active-profile switch. Active ownership changes now reset the round.
-2. **Partial live-localization risk** — profile switches with different locales could otherwise refresh some text but not mounted tab/button labels. One running TUI now keeps its launch locale; next launch fully applies the selected profile locale.
-3. **Global single-letter shortcut conflict** — profile/search/path fields need normal `q/r` text entry. Single-letter commands are no longer application-global.
-4. **Non-priority Play shortcut regression risk** — merely making app `R/Q` non-priority could let the numeric Input consume those keys instead of reset/quit. `GuessInput` now owns Play-local `R/Q` and communicates reset with a custom message.
-5. **Workspace verification depth** — helper behavior is covered independently from widget behavior, and package matrices explicitly import the built-wheel Textual module.
-6. **Manual accessibility gate staleness** — release evidence now covers all six panes, focus, filtering, destructive confirmation, Recovery, locale, high contrast, and normal text entry.
-
-The custom widget binding/message implementation was checked against current official Textual documentation for widget-local `BINDINGS`, `post_message(...)`, and namespaced message handlers.
-
----
-
-# 19. Local execution limitation
-
-The available execution/container environment for this continuation cannot resolve GitHub or package-index hosts.
-
-Observed failures include:
+Observed clone failure:
 
 ```text
 fatal: unable to access 'https://github.com/sanskarIN/guessnova.git/':
 Could not resolve host: github.com
 ```
 
-and package installation attempts failing on DNS/name resolution.
+Package installation attempts also failed on DNS/name resolution.
 
-Therefore this handoff does **not** invent claims that the following were executed locally:
+Therefore this checkpoint does **not** claim local execution of:
 
 - Ruff;
 - strict mypy;
 - pytest;
-- built-wheel import;
-- local Textual pilot execution;
-- dependency installation.
-
-Repository-side safeguards added/retained include:
-
-- focused deterministic tests;
 - Textual pilot suites;
-- smoke extensions;
-- strict CI;
-- three-OS package matrix;
-- built-wheel Textual import;
-- CodeQL;
-- Security checks;
-- static file-by-file audit.
+- built-wheel import;
+- dependency audit.
+
+The repository contains the corresponding tests/workflows, but no local pass is fabricated.
 
 ---
 
-# 20. Hosted workflow state before this final handoff commit
+# 8. Static audit issues fixed before merge
 
-The repository continues to show GitHub-hosted runner saturation similar to v1.1-v1.3.
+Concrete v1.4 interaction/design risks found and fixed during review:
 
-The pre-handoff head immediately before this `what_changed.md` update did not produce an actionable failed conclusion while audited. Runs on successive v1.4 heads were repeatedly queued/pending, and superseded runs can be cancelled by workflow concurrency.
+1. **Profile ownership drift** — unfinished gameplay now resets when active-profile ownership changes.
+2. **Partial live localization** — mounted TUI keeps its launch language; selected profile locale fully applies next launch.
+3. **Text-input shortcut conflict** — plain `Q/R` are not global across workspace text fields.
+4. **Play reset/quit regression risk** — dedicated `GuessInput` owns plain `R/Q` so Play preserves legacy keys while other inputs remain normal text editors.
+5. **Workspace testing separation** — non-widget behavior moved to independently testable helpers instead of being buried entirely in a large Textual class.
+6. **Built-wheel visibility** — package matrices explicitly import the Textual workspace on all three desktop OS families.
+7. **Stale manual evidence gate** — accessibility evidence now covers all six panes and their keyboard/safety flows.
 
-This file does **not** call queued/pending/cancelled-superseded runs successful.
-
-## Exact-final-head rule
-
-This handoff commit creates a new PR head.
-
-Only workflow status for that exact final head counts for merge-time verification.
-
-After this commit:
-
-1. fetch PR #10 metadata and exact final head SHA;
-2. fetch CI / CodeQL / Security runs for that exact SHA;
-3. if a concrete failure exists, inspect the exact failed job/step/log;
-4. fix the smallest reproducible issue;
-5. add/adjust regression coverage;
-6. update this handoff again only when necessary;
-7. if runs remain queued/pending with no actionable failure, record that exact state honestly during the post-merge checkpoint rather than claiming a pass.
+The widget-local binding/custom-message approach was checked against current official Textual documentation during the v1.4 audit.
 
 ---
 
-# 21. Manual release-candidate gates
+# 9. Documentation completed
 
-Do **not** create a `v1.4.0` tag solely because the source PR merges.
+Added:
 
-Before an actual release tag:
+- `docs/tui_workspace.md`
+- `docs/TUI_WORKSPACE.md`
+- `docs/continuity/v1_4_pr_checkpoint.md`
+- `docs/continuity/v1_3_merged_checkpoint.md`
 
-1. select an exact release commit;
-2. observe successful required automated checks for that exact commit;
-3. verify package/runtime/citation/changelog all remain `1.4.0`;
-4. verify schema-1 fixtures still migrate to schema 2;
-5. verify future-schema rejection;
-6. verify backup-v2 round trip;
-7. verify legacy wrapper-v1 compatibility;
-8. verify tampered backup rejection;
-9. verify checksum-valid but unimportable backup rejection;
-10. verify state/backup size bounds;
-11. verify Doctor report protocol/exit semantics;
-12. verify safe backup-before-write repair;
-13. install/build-wheel on supported release path;
-14. verify Textual workspace import from the built wheel;
-15. manually exercise Play, Profiles, History, Leaderboard, Settings, Recovery;
-16. verify Play-local plain `R/Q` and global Ctrl equivalents;
-17. verify normal `q/r` text input outside Play;
-18. verify profile deletion confirmation/restore;
-19. verify unfinished-round profile isolation;
-20. verify History/Leaderboard filters;
-21. verify high contrast and reduced motion;
-22. verify English workspace;
-23. verify Hindi workspace after relaunch;
-24. complete `docs/accessibility_evidence_template.md` on the exact candidate;
-25. capture desired screenshots/demo only from that exact signed-off build;
-26. record release-media provenance;
-27. tag immutably only after gates pass.
+Updated during v1.4:
 
-Automated tests are not substituted for manual accessibility evidence.
-
-Real screenshots/demo are not fabricated.
+- `README.md`
+- `CHANGELOG.md`
+- `ROADMAP.md`
+- `CITATION.cff`
+- `PRIVACY.md`
+- `SECURITY.md`
+- `SUPPORT.md`
+- `CONTRIBUTING.md`
+- `.github/pull_request_template.md`
+- `.github/workflows/ci.yml`
+- `.github/workflows/release.yml`
+- `docs/accessibility.md`
+- `docs/accessibility_evidence_template.md`
+- `docs/architecture.md`
+- `docs/development.md`
+- `docs/localization.md`
+- `docs/release.md`
+- `docs/RELEASING.md`
+- `docs/setup.md`
+- `docs/testing.md`
+- `docs/TESTING.md`
+- `what_changed.md`
 
 ---
 
-# 22. Repository settings state
+# 10. Release metadata / compatibility domains
 
-At the v1.4 base checkpoint, `main` repository metadata still reported:
+Current release metadata:
+
+```text
+project version       1.4.0
+runtime version       1.4.0
+citation version      1.4.0
+state schema          2
+backup wrapper        2
+legacy backup         1
+replay format         1
+Doctor report         1
+```
+
+v1.4 does not require stored-format migration because it changes the application/TUI layer over existing validated local formats.
+
+---
+
+# 11. Manual release gates still required
+
+The source merge does **not** automatically authorize a `v1.4.0` tag.
+
+Before a real v1.4 release tag:
+
+1. select the exact release candidate commit;
+2. require successful automated checks for that exact commit;
+3. verify package/runtime/citation/changelog metadata;
+4. verify schema migration/future-schema rejection;
+5. verify backup-v2/legacy/tamper/importability behavior;
+6. verify Doctor JSON/exit/repair behavior;
+7. install/verify the built wheel;
+8. manually exercise Play, Profiles, History, Leaderboard, Settings, Recovery;
+9. verify Play-local `R/Q` and global Ctrl equivalents;
+10. verify normal `q/r` input outside Play;
+11. verify profile deletion/restore and unfinished-round isolation;
+12. verify History/Leaderboard filters;
+13. verify high contrast/reduced motion;
+14. verify English and Hindi after relaunch;
+15. complete `docs/accessibility_evidence_template.md` on the exact candidate;
+16. capture real screenshots/demo only from that signed-off build;
+17. record media provenance;
+18. create an immutable tag only after gates pass.
+
+Do not fabricate accessibility evidence or release media.
+
+---
+
+# 12. Repository settings reality
+
+After the v1.4 merge, GitHub branch metadata for `main` still reports:
 
 ```text
 protected: false
@@ -897,29 +445,32 @@ branch protection enabled: false
 required status checks enforcement: off
 ```
 
-Source documentation recommends branch protection, but source code cannot truthfully claim the GitHub repository setting is enabled when repository metadata says otherwise.
-
-If branch protection is later enabled manually/repository-side, record the actual verified configuration rather than assuming it from documentation.
+Repository documentation recommends branch protection, but it is not currently enabled. Do not claim otherwise unless repository metadata later confirms a settings change.
 
 ---
 
-# 23. Gated future work after v1.4
+# 13. Next continuation priorities
 
-Not v1.4 blockers:
+If work continues:
 
-- real signed-off release screenshots/demo;
-- completed manual accessibility evidence for an exact release candidate;
-- schema 3 only after a concrete stored-format boundary exists;
-- a third locale only after complete/native-quality review;
-- full atomic in-process Textual relocalization only if every mounted presentation element can update coherently;
-- TUI repair/write actions only if explicit confirmation and pre-repair backup guarantees are preserved;
-- property-based testing only when a demonstrated defect justifies the dependency;
-- artifact signing/trusted publishing only with a real registry workflow;
-- optional TypeScript/PWA edition only if offline/privacy/determinism/accessibility/compatibility guarantees are preserved.
+1. inspect current `main` before branching;
+2. recheck the exact v1.4 PR-head workflow conclusions before claiming they passed/failed;
+3. if a concrete v1.4 failure appears, make the smallest focused patch release/fix branch and add a regression;
+4. do not create schema 3 unless a real stored-format boundary appears;
+5. do not add a third locale without complete/native-quality review;
+6. do not add TUI repair writes unless Doctor confirmation and backup-before-write guarantees are preserved;
+7. do not add property-testing dependency without a demonstrated coverage gap;
+8. do not claim package signing/trusted publishing without a real registry workflow;
+9. keep local-only/privacy/accessibility/determinism guarantees;
+10. keep using `sanskarin@outlook.in` for Git commits;
+11. preserve granular history with normal merges unless explicitly instructed otherwise;
+12. update this live handoff after meaningful continuation work.
+
+Potential future product directions remain gated, including atomic full in-process TUI relocalization, richer challenge configuration inside the mounted TUI, and an optional offline TypeScript/PWA edition that preserves compatibility/privacy/determinism/accessibility constraints.
 
 ---
 
-# 24. Project identity
+# 14. Project identity
 
 - Project: **GuessNova**
 - Repository: `https://github.com/sanskarIN/guessnova`
@@ -932,21 +483,3 @@ Not v1.4 blockers:
 - Buy Me a Coffee: `https://buymeacoffee.com/sanskarIN`
 
 GuessNova remains fully usable without donation, account creation, telemetry, analytics, cloud sync, remote leaderboard, or required runtime network access.
-
----
-
-# 25. Continuation instructions after v1.4
-
-If work continues after this checkpoint:
-
-1. inspect `main` first; do not assume no concurrent changes;
-2. read this `what_changed.md`;
-3. use `docs/continuity/v1_3_merged_checkpoint.md` when older v1.3/v1.2/v1.1/v1.0 detail is needed;
-4. recheck exact v1.4 final-head workflow conclusions before claiming success;
-5. inspect concrete failed logs rather than guessing at CI defects;
-6. avoid schema/version churn without a real compatibility need;
-7. preserve local-only/privacy/accessibility guarantees;
-8. keep recovery writes explicit and backup-before-write;
-9. continue focused conventional commits using `sanskarin@outlook.in`;
-10. preserve granular history with normal merges unless explicitly instructed otherwise;
-11. update `what_changed.md` after meaningful continuation work.
