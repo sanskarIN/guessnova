@@ -14,7 +14,7 @@
 
 > **Made by the Sanskar**
 
-**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, recoverable profiles, rich session history, achievements, XP, statistics, a leaderboard, integrity-protected backup/restore, local diagnostics/repair, bilingual presentation, first-run onboarding, semantic themes, and both Rich CLI and Textual TUI interfaces.
+**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, recoverable profiles, rich session history, achievements, XP, statistics, a leaderboard, integrity-protected backup/restore, read-only backup verification, local diagnostics/repair, bilingual presentation, first-run onboarding, semantic themes, and both Rich CLI and Textual TUI interfaces.
 
 ## Demo
 
@@ -46,7 +46,10 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - **Local leaderboard** — ranked winning results stored on your device; profile rename/delete/restore keeps related local data coherent.
 - **Schema-2 persistence** — explicit migration from older saves with committed migration fixtures and future-schema rejection.
 - **Integrity-protected backups** — backup wrapper v2 separates backup-format versioning from state schema and verifies SHA-256 payload integrity while retaining legacy backup compatibility.
-- **Local doctor** — `guessnova-doctor` inspects schema/profile/history/leaderboard/trash health and can safely normalize repairable state after creating a pre-repair backup.
+- **Backup preflight** — `guessnova doctor --verify-backup PATH` validates wrapper integrity, schema metadata, and current importability without writing state.
+- **Local doctor** — `guessnova doctor` inspects schema/profile/history/leaderboard/trash health and can safely normalize repairable state after creating a pre-repair backup; `guessnova-doctor` remains a compatible standalone entry point.
+- **Bounded persistence I/O** — state and backup readers reject oversized input before unbounded JSON processing, and state saves are size checked before atomic replacement.
+- **Scriptable diagnostics** — Doctor JSON report protocol v1 plus stable exit codes for healthy/valid, cancelled, and attention/error states.
 - **Deterministic test mode** — use `--seed` or `GUESSNOVA_SEED` for reproducibility.
 - **Accessible terminal modes** — `--plain` disables color and `--compact` prefers concise text over panels/tables.
 - **Keyboard-first TUI** — predictable focus order, Enter submission, range-hint control, reliable reset/quit bindings, and persisted completed rounds.
@@ -60,7 +63,7 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - Current macOS releases with Python 3.13+
 - Modern Linux distributions with Python 3.13+
 
-A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain` remains available for reduced formatting. CI builds, validates, installs, launches the game and doctor entry points, and smoke-tests the package on Windows, macOS, and Linux runners.
+A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain` remains available for reduced formatting. CI builds, validates, installs, launches the game and both doctor routes, and smoke-tests the package on Windows, macOS, and Linux runners.
 
 ## Tech stack
 
@@ -149,20 +152,34 @@ guessnova settings --locale hi
 guessnova --plain --compact about
 ```
 
-### Backup, diagnostics, and TUI
+### Backup, diagnostics, and recovery
 
 ```bash
 guessnova export ./guessnova-backup.json
+guessnova doctor --verify-backup ./guessnova-backup.json
+guessnova doctor --json --verify-backup ./guessnova-backup.json
 guessnova import ./guessnova-backup.json
-guessnova-doctor
-guessnova-doctor --compact
-guessnova-doctor --json
-guessnova-doctor --repair
-guessnova-doctor --repair --yes --backup-dir ./guessnova-repair-backups
-guessnova-tui
+
+guessnova doctor
+guessnova doctor --compact
+guessnova doctor --json
+guessnova doctor --data-dir ./alternate-data
+guessnova doctor --repair
+guessnova doctor --repair --yes --backup-dir ./guessnova-repair-backups
+
+# Compatibility entry point
+guessnova-doctor --help
 ```
 
-`guessnova-doctor` is local-only. A normal run does not modify state. A repair requires confirmation unless `--yes` is provided, refuses unreadable state, and writes an integrity-protected backup before normalization when a repair is needed. `--json` is intended for scripts and emits one JSON document.
+A normal Doctor state run and `--verify-backup` are read-only. Repair requires confirmation unless `--yes` is provided, refuses unreadable/oversized/future-schema/un-normalizable state, and writes an integrity-protected backup before normalization when a rewrite is needed. `--json` emits one versioned JSON document; `--json --repair` requires `--yes` so an interactive prompt cannot corrupt machine-readable output.
+
+Doctor exit codes are stable: `0` success/healthy/valid, `1` repair cancelled, and `2` attention or validation failure. See [`docs/doctor.md`](docs/doctor.md).
+
+### Textual interface
+
+```bash
+guessnova-tui
+```
 
 For deterministic non-daily play you may also set:
 
@@ -172,9 +189,9 @@ GUESSNOVA_SEED=20260819 guessnova play --no-save
 
 ## Data, privacy, and security
 
-GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use schema-2 normalized JSON and atomic replacement. Backup wrapper v2 records the embedded source schema and verifies a canonical SHA-256 payload digest before import. Legacy version-1 GuessNova backups remain readable when their state schema is supported. Recoverable profile trash is bounded, and replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use. The runtime needs no account, API key, telemetry endpoint, cloud service, or network connection.
+GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use schema-2 normalized JSON and atomic replacement. Local state reads/writes are bounded; backup reads are separately bounded. Backup wrapper v2 records the embedded source schema and verifies a canonical SHA-256 payload digest before import. Legacy version-1 GuessNova backups remain readable when their state schema is supported. Doctor backup verification additionally proves the embedded state can pass current normalization before reporting the backup as valid. Recoverable profile trash is bounded, and replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use. The runtime needs no account, API key, telemetry endpoint, cloud service, or network connection.
 
-Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), and [`docs/data_format.md`](docs/data_format.md).
+Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), [`docs/data_format.md`](docs/data_format.md), and [`docs/doctor.md`](docs/doctor.md).
 
 ## Development and testing
 
@@ -187,25 +204,29 @@ pytest --cov=guessnova --cov-report=term-missing
 python -m compileall -q src tests scripts
 python scripts/verify_release_metadata.py
 python scripts/smoke_test.py
+python -m guessnova --help
+python -m guessnova doctor --help
 python -m build
 ```
 
-The repository CI runs linting, formatting, strict typing, tests, migration fixtures, backup-integrity regressions, doctor/repair regressions, Textual pilot coverage, coverage reporting, bytecode compilation, release-metadata verification, smoke testing, cross-platform package build/install/Twine validation, both packaged CLI entry-point checks, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries retain deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
+The repository CI runs linting, formatting, strict typing, tests, migration fixtures, backup-integrity/importability regressions, bounded state-I/O regressions, doctor/repair protocol regressions, Textual pilot coverage, coverage reporting, bytecode compilation, release-metadata verification, smoke testing, cross-platform package build/install/Twine validation, both doctor entry-path checks, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries retain deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
 
 ## Architecture
 
 GuessNova is a modular monolith with UI-independent game rules:
 
 ```text
-Rich CLI / Textual TUI / Doctor CLI
-                |
-        application services
-          /            \
-      domain        local adapters
+Top-level command dispatcher
+        /          \
+   Rich game CLI   Doctor CLI
+          \        /
+        application services       Textual TUI
+          /            \               |
+      domain        local adapters -----+
      (engine)  (storage/replay/backup/diagnostics)
 ```
 
-The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. State migration, backup integrity, diagnostics, and repair remain local adapter/application concerns rather than game-rule concerns. Presentation messages resolve through offline English/Hindi catalogs while serialized identifiers remain stable. See [`docs/architecture.md`](docs/architecture.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
+The dispatcher only routes command families; it does not duplicate game rules or recovery logic. The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. State migration, backup integrity, diagnostics, and repair remain local adapter/application concerns rather than game-rule concerns. Presentation messages resolve through offline English/Hindi catalogs while serialized identifiers remain stable. See [`docs/architecture.md`](docs/architecture.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
 
 ## Build and release
 
@@ -215,7 +236,7 @@ python -m build
 python -m twine check dist/*
 ```
 
-Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until strict verification and Windows/macOS/Linux package checks succeed. Built wheels must expose both the game and doctor entry points. Release candidates additionally require documented manual accessibility evidence. Real screenshot/demo media must be captured from the exact signed-off build rather than fabricated by automation.
+Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until strict verification and Windows/macOS/Linux package checks succeed. Built wheels must expose the game CLI, the `guessnova doctor` route, and the standalone doctor compatibility entry point. Release candidates additionally require documented manual accessibility evidence. Real screenshot/demo media must be captured from the exact signed-off build rather than fabricated by automation.
 
 See [`docs/release.md`](docs/release.md), [`docs/accessibility_evidence_template.md`](docs/accessibility_evidence_template.md), [`docs/media/README.md`](docs/media/README.md), and [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -226,6 +247,7 @@ See [`docs/release.md`](docs/release.md), [`docs/accessibility_evidence_template
 - [Architecture](docs/architecture.md)
 - [Game modes](docs/game_modes.md)
 - [Data format](docs/data_format.md)
+- [Doctor diagnostics and recovery](docs/doctor.md)
 - [v1.2 reliability plan](docs/v1_2_reliability_plan.md)
 - [Localization](docs/localization.md)
 - [Accessibility](docs/accessibility.md)
