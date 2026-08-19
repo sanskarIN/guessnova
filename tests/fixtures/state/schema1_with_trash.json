@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "active_profile": "Player",
+  "profiles": {},
+  "leaderboard": [],
+  "deleted_profiles": {
+    "Old": {
+      "deleted_at": "2026-08-19T04:00:00+00:00",
+      "profile": {
+        "name": "Old",
+        "stats": {
+          "games_played": 1,
+          "games_won": 1,
+          "current_streak": 1,
+          "best_streak": 1,
+          "total_guesses": 2,
+          "xp": 100,
+          "achievements": ["first_win"]
+        },
+        "settings": {},
+        "history": []
+      },
+      "leaderboard": []
+    }
+  }
+}
