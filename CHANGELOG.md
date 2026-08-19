@@ -2,6 +2,39 @@
 
 All notable GuessNova changes are recorded here. The project follows Semantic Versioning where practical.
 
+## [1.2.0] - 2026-08-19
+
+### Added
+
+- Formal schema-2 local-state migration with committed schema-1 fixtures covering legacy state with and without recoverable profile trash.
+- Version-2 backup wrapper with independent backup-format versioning, SHA-256 payload integrity metadata, and explicit source-schema provenance.
+- Backward-compatible import support for legacy GuessNova version-1 backup wrappers.
+- `guessnova-doctor` local diagnostic command with human-readable, compact, and machine-readable JSON output.
+- Local diagnostic reporting for source/current schema, profile/history/leaderboard/trash counts, active profile, normalization changes, and repairable issues.
+- Safe doctor repair flow that creates an integrity-protected pre-repair backup before writing normalized state.
+- Regression coverage for migration fixtures, legacy backups, backup tampering, schema metadata mismatches, diagnostics, repair confirmation, and JSON-mode repair output.
+
+### Changed
+
+- Local state schema advanced from version `1` to version `2`; schema 2 formally makes `deleted_profiles` a canonical top-level state container.
+- Package/runtime/citation version advanced to `1.2.0`.
+- Backup format version is now independent from local state schema version so future state migrations do not automatically invalidate older backup wrappers.
+- Backup exports record the payload's actual schema version rather than always reporting the running application's schema.
+
+### Security, privacy, and reliability
+
+- Backup v2 payloads are checked with constant-time SHA-256 digest comparison before import.
+- Backup wrapper schema metadata must match the embedded payload schema metadata.
+- Future backup-format and future state-schema versions are rejected explicitly.
+- Diagnostics and repair remain fully local; no account, telemetry, analytics, cloud sync, or network service is introduced.
+- Repair refuses unreadable/non-object state rather than overwriting data it cannot safely normalize.
+
+### Compatibility
+
+- Schema-0 and schema-1 state migrate forward to schema 2.
+- GuessNova <=1.1 version-1 backup wrappers remain importable and are migrated only when persisted through current storage.
+- Replay version remains unchanged; v1.2 does not change guessing rules or replay compatibility.
+
 ## [1.1.0] - 2026-08-19
 
 ### Added

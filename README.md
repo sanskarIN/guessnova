@@ -14,7 +14,7 @@
 
 > **Made by the Sanskar**
 
-**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, recoverable profiles, rich session history, achievements, XP, statistics, a leaderboard, backup/restore, bilingual presentation, first-run onboarding, semantic themes, and both Rich CLI and Textual TUI interfaces.
+**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, recoverable profiles, rich session history, achievements, XP, statistics, a leaderboard, integrity-protected backup/restore, local diagnostics/repair, bilingual presentation, first-run onboarding, semantic themes, and both Rich CLI and Textual TUI interfaces.
 
 ## Demo
 
@@ -44,13 +44,15 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - **First-run onboarding** — concise keyboard/privacy/settings guidance with no sign-in or network requirement.
 - **Replay codes** — checksum-protected, strictly validated portable summaries for completed challenges.
 - **Local leaderboard** — ranked winning results stored on your device; profile rename/delete/restore keeps related local data coherent.
-- **Import/export** — human-readable JSON backups with format/schema validation and state normalization.
+- **Schema-2 persistence** — explicit migration from older saves with committed migration fixtures and future-schema rejection.
+- **Integrity-protected backups** — backup wrapper v2 separates backup-format versioning from state schema and verifies SHA-256 payload integrity while retaining legacy backup compatibility.
+- **Local doctor** — `guessnova-doctor` inspects schema/profile/history/leaderboard/trash health and can safely normalize repairable state after creating a pre-repair backup.
 - **Deterministic test mode** — use `--seed` or `GUESSNOVA_SEED` for reproducibility.
 - **Accessible terminal modes** — `--plain` disables color and `--compact` prefers concise text over panels/tables.
 - **Keyboard-first TUI** — predictable focus order, Enter submission, range-hint control, reliable reset/quit bindings, and persisted completed rounds.
 - **Themes and contrast** — saved semantic Rich themes plus a dedicated high-contrast palette.
 - **English + Hindi** — complete offline `en` and `hi` message catalogs with English fallback and per-profile locale settings.
-- **Privacy-first** — no accounts, ads, analytics, telemetry, or application network calls.
+- **Privacy-first** — no accounts, ads, analytics, telemetry, cloud sync, or application network calls.
 
 ## Supported platforms
 
@@ -58,14 +60,15 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - Current macOS releases with Python 3.13+
 - Modern Linux distributions with Python 3.13+
 
-A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain` remains available for reduced formatting. CI builds, validates, installs, launches, and smoke-tests the package on Windows, macOS, and Linux runners.
+A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain` remains available for reduced formatting. CI builds, validates, installs, launches the game and doctor entry points, and smoke-tests the package on Windows, macOS, and Linux runners.
 
 ## Tech stack
 
 - **Python 3.13+** for domain/application code.
 - **Rich** for accessible terminal presentation.
 - **Textual** for the app-like TUI and deterministic pilot testing.
-- **JSON** for versioned local persistence, exports, and replay payloads.
+- **JSON** for versioned local persistence, backup wrappers, and replay payloads.
+- **SHA-256** from Python's standard library for backup/replay integrity checks.
 - **pytest / pytest-cov** for automated tests.
 - **Ruff**, **mypy**, **pip-audit**, **CodeQL**, and **GitHub Actions** for repository quality and security automation.
 
@@ -146,13 +149,20 @@ guessnova settings --locale hi
 guessnova --plain --compact about
 ```
 
-### Backup and TUI
+### Backup, diagnostics, and TUI
 
 ```bash
 guessnova export ./guessnova-backup.json
 guessnova import ./guessnova-backup.json
+guessnova-doctor
+guessnova-doctor --compact
+guessnova-doctor --json
+guessnova-doctor --repair
+guessnova-doctor --repair --yes --backup-dir ./guessnova-repair-backups
 guessnova-tui
 ```
+
+`guessnova-doctor` is local-only. A normal run does not modify state. A repair requires confirmation unless `--yes` is provided, refuses unreadable state, and writes an integrity-protected backup before normalization when a repair is needed. `--json` is intended for scripts and emits one JSON document.
 
 For deterministic non-daily play you may also set:
 
@@ -162,7 +172,7 @@ GUESSNOVA_SEED=20260819 guessnova play --no-save
 
 ## Data, privacy, and security
 
-GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use versioned JSON and atomic replacement. Export/import state is normalized before persistence, recoverable profile trash is bounded, and replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use. The runtime needs no account, API key, telemetry endpoint, or network connection.
+GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use schema-2 normalized JSON and atomic replacement. Backup wrapper v2 records the embedded source schema and verifies a canonical SHA-256 payload digest before import. Legacy version-1 GuessNova backups remain readable when their state schema is supported. Recoverable profile trash is bounded, and replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use. The runtime needs no account, API key, telemetry endpoint, cloud service, or network connection.
 
 Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), and [`docs/data_format.md`](docs/data_format.md).
 
@@ -175,26 +185,27 @@ ruff format --check .
 mypy src/guessnova
 pytest --cov=guessnova --cov-report=term-missing
 python -m compileall -q src tests scripts
+python scripts/verify_release_metadata.py
 python scripts/smoke_test.py
 python -m build
 ```
 
-The repository CI runs linting, formatting, strict typing, tests, Textual pilot coverage, coverage reporting, bytecode compilation, smoke testing, cross-platform package build/install/Twine validation, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries also have deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
+The repository CI runs linting, formatting, strict typing, tests, migration fixtures, backup-integrity regressions, doctor/repair regressions, Textual pilot coverage, coverage reporting, bytecode compilation, release-metadata verification, smoke testing, cross-platform package build/install/Twine validation, both packaged CLI entry-point checks, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries retain deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
 
 ## Architecture
 
 GuessNova is a modular monolith with UI-independent game rules:
 
 ```text
-Rich CLI / Textual TUI
-          |
-  application service
-     /          \
- domain       local adapters
-(engine)   (storage/replay/export)
+Rich CLI / Textual TUI / Doctor CLI
+                |
+        application services
+          /            \
+      domain        local adapters
+     (engine)  (storage/replay/backup/diagnostics)
 ```
 
-The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. Presentation messages resolve through offline English/Hindi catalogs while serialized identifiers remain stable. See [`docs/architecture.md`](docs/architecture.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
+The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. State migration, backup integrity, diagnostics, and repair remain local adapter/application concerns rather than game-rule concerns. Presentation messages resolve through offline English/Hindi catalogs while serialized identifiers remain stable. See [`docs/architecture.md`](docs/architecture.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
 
 ## Build and release
 
@@ -204,7 +215,7 @@ python -m build
 python -m twine check dist/*
 ```
 
-Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until the full verification suite succeeds. Release candidates additionally require documented manual accessibility evidence. Real screenshot/demo media must be captured from the exact signed-off build rather than fabricated by automation.
+Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until strict verification and Windows/macOS/Linux package checks succeed. Built wheels must expose both the game and doctor entry points. Release candidates additionally require documented manual accessibility evidence. Real screenshot/demo media must be captured from the exact signed-off build rather than fabricated by automation.
 
 See [`docs/release.md`](docs/release.md), [`docs/accessibility_evidence_template.md`](docs/accessibility_evidence_template.md), [`docs/media/README.md`](docs/media/README.md), and [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -215,6 +226,7 @@ See [`docs/release.md`](docs/release.md), [`docs/accessibility_evidence_template
 - [Architecture](docs/architecture.md)
 - [Game modes](docs/game_modes.md)
 - [Data format](docs/data_format.md)
+- [v1.2 reliability plan](docs/v1_2_reliability_plan.md)
 - [Localization](docs/localization.md)
 - [Accessibility](docs/accessibility.md)
 - [Accessibility evidence template](docs/accessibility_evidence_template.md)

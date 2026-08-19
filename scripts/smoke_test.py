@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from guessnova.constants import SCHEMA_VERSION
+from guessnova.diagnostics import diagnose, repair
 from guessnova.engine import GuessGame, ReverseGuesser
 from guessnova.history import filter_history
 from guessnova.i18n import catalog_missing_keys, text
-from guessnova.import_export import export_state, import_state
+from guessnova.import_export import EXPORT_VERSION, export_state, import_state
 from guessnova.replay import decode_replay, encode_replay
 from guessnova.service import GameService
 from guessnova.storage import Storage
@@ -30,6 +33,8 @@ def main() -> int:
         assert "first_win" in unlocked
         assert storage.load_leaderboard()
         assert len(filter_history(profile.history, result="win")) == 1
+        assert storage.load_raw()["schema_version"] == SCHEMA_VERSION == 2
+        assert diagnose(storage).healthy
 
         replay = encode_replay(summary)
         assert decode_replay(replay) == summary
@@ -49,8 +54,35 @@ def main() -> int:
         assert "7" in text("reverse.solved", locale="hi", attempts=7)
 
         backup = export_state(storage.load_raw(), root / "backup.json")
+        wrapped = json.loads(backup.read_text(encoding="utf-8"))
+        assert wrapped["version"] == EXPORT_VERSION == 2
+        assert wrapped["schema_version"] == SCHEMA_VERSION
+        assert len(wrapped["integrity"]["payload_sha256"]) == 64
         imported = import_state(backup)
         assert imported["active_profile"] == "Smoke Nova"
+
+        legacy = Storage(root / "legacy-data")
+        legacy.data_dir.mkdir(parents=True, exist_ok=True)
+        legacy.path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "active_profile": "Legacy",
+                    "profiles": {
+                        "Legacy": {"name": "Legacy", "stats": {}, "settings": {}}
+                    },
+                    "leaderboard": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+        before = diagnose(legacy)
+        assert not before.healthy and before.source_schema_version == 1
+        repair_backup = repair(legacy, backup_dir=root / "repair-backups")
+        assert repair_backup is not None and repair_backup.exists()
+        assert import_state(repair_backup)["schema_version"] == 1
+        assert legacy.load_raw()["schema_version"] == SCHEMA_VERSION
+        assert diagnose(legacy).healthy
 
         reverse = ReverseGuesser(1, 100)
         secret = 73

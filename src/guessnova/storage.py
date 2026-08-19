@@ -36,13 +36,25 @@ def _migrate(payload: dict[str, object]) -> dict[str, object]:
     version = raw_version
     if version < 0:
         raise ValueError("state schema_version cannot be negative")
+    if version > SCHEMA_VERSION:
+        raise ValueError("save data was created by a newer GuessNova version")
+
     if version == 0:
         payload.setdefault("profiles", {})
         payload.setdefault("active_profile", DEFAULT_PROFILE)
         payload["schema_version"] = 1
         version = 1
-    if version > SCHEMA_VERSION:
-        raise ValueError("save data was created by a newer GuessNova version")
+
+    if version == 1:
+        # Schema 2 formalizes recoverable profile trash as a canonical top-level
+        # container. GuessNova 1.1 wrote the field additively, so migration is
+        # intentionally idempotent for schema-1 saves that already contain it.
+        payload.setdefault("deleted_profiles", {})
+        payload["schema_version"] = 2
+        version = 2
+
+    if version != SCHEMA_VERSION:
+        raise ValueError("state schema migration did not reach the current version")
     return payload
 
 

@@ -1,7 +1,7 @@
 """Project-wide constants."""
 
 APP_NAME = "GuessNova"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DEFAULT_PROFILE = "Player"
 MAX_PROFILE_NAME_LENGTH = 32
 MAX_DELETED_PROFILES = 20
