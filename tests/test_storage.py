@@ -3,8 +3,17 @@ from pathlib import Path
 
 import pytest
 
+from guessnova.constants import SCHEMA_VERSION
 from guessnova.profile import Profile
 from guessnova.storage import Storage, normalize_state
+
+FIXTURES = Path(__file__).parent / "fixtures" / "state"
+
+
+def _fixture(name: str) -> dict[str, object]:
+    payload = json.loads((FIXTURES / name).read_text(encoding="utf-8"))
+    assert isinstance(payload, dict)
+    return payload
 
 
 def test_storage_save_and_load_profile(tmp_path: Path) -> None:
@@ -17,13 +26,35 @@ def test_storage_save_and_load_profile(tmp_path: Path) -> None:
     assert restored.stats.xp == 99
 
 
-def test_storage_migrates_v0(tmp_path: Path) -> None:
+def test_storage_migrates_v0_to_current_schema(tmp_path: Path) -> None:
     path = tmp_path / "state.json"
     path.write_text(json.dumps({}), encoding="utf-8")
     payload = Storage(tmp_path).load_raw()
-    assert payload["schema_version"] == 1
+    assert payload["schema_version"] == SCHEMA_VERSION == 2
     assert "profiles" in payload
     assert payload["deleted_profiles"] == {}
+
+
+def test_storage_migrates_schema1_fixture_without_trash() -> None:
+    normalized = normalize_state(_fixture("schema1_legacy.json"))
+    assert normalized["schema_version"] == 2
+    assert normalized["active_profile"] == "Legacy"
+    assert normalized["deleted_profiles"] == {}
+    profiles = normalized["profiles"]
+    assert isinstance(profiles, dict)
+    legacy = profiles["Legacy"]
+    assert isinstance(legacy, dict)
+    stats = legacy["stats"]
+    assert isinstance(stats, dict)
+    assert stats["xp"] == 120
+
+
+def test_storage_migrates_schema1_fixture_with_existing_trash() -> None:
+    normalized = normalize_state(_fixture("schema1_with_trash.json"))
+    assert normalized["schema_version"] == 2
+    deleted = normalized["deleted_profiles"]
+    assert isinstance(deleted, dict)
+    assert set(deleted) == {"Old"}
 
 
 def test_storage_rejects_future_version(tmp_path: Path) -> None:
