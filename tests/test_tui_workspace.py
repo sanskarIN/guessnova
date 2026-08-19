@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from guessnova.history import HistoryEntry
+from guessnova.leaderboard import LeaderboardEntry
 from guessnova.profile import Profile
 from guessnova.storage import Storage
 from guessnova.tui_workspace import (
@@ -9,6 +10,7 @@ from guessnova.tui_workspace import (
     profile_summary,
     save_workspace_settings,
     select_history,
+    select_leaderboard,
 )
 
 
@@ -91,6 +93,20 @@ def test_select_history_filters_and_returns_newest_first() -> None:
 
     assert [entry.seed for entry in selected] == [3]
     assert select_history(profile, result="win", limit=1)[0].seed == 3
+
+
+def test_select_leaderboard_preserves_rank_order_after_filters() -> None:
+    entries = [
+        LeaderboardEntry("Alpha", "hard", "classic", 2, 5.0, "2026-08-19T00:00:00Z"),
+        LeaderboardEntry("Beta", "hard", "classic", 3, 6.0, "2026-08-19T00:01:00Z"),
+        LeaderboardEntry("Gamma", "easy", "timed", 4, 7.0, "2026-08-19T00:02:00Z"),
+    ]
+
+    selected = select_leaderboard(entries, mode="classic", difficulty="hard")
+
+    assert [entry.player for entry in selected] == ["Alpha", "Beta"]
+    assert select_leaderboard(entries, player="bet")[0].player == "Beta"
+    assert select_leaderboard(entries, limit=1)[0].player == "Alpha"
 
 
 def test_save_workspace_settings_preserves_onboarding_state(tmp_path: Path) -> None:
