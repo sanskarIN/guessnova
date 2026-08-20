@@ -8,6 +8,7 @@ from .history import append_history, entry_from_summary as history_entry_from_su
 from .leaderboard import entry_from_summary
 from .profile import Profile
 from .storage import Storage
+from .summary_validation import validate_game_summary
 
 
 class GameService:
@@ -15,6 +16,7 @@ class GameService:
         self.storage = storage or Storage()
 
     def record(self, summary: GameSummary, profile_name: str | None = None) -> tuple[Profile, set[str]]:
+        validate_game_summary(summary)
         profile = self.storage.load_profile(profile_name)
         unlocked = apply_summary(profile.stats, summary)
         profile.history = append_history(profile.history, history_entry_from_summary(summary))
