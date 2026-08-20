@@ -46,6 +46,8 @@ jobs:
           node --check src/guessnova/web/browser-state.mjs
           node --check src/guessnova/web/game-engine.mjs
           node --check src/guessnova/web/sw.js
+      - name: Verify PWA package contract
+        run: python scripts/verify_web_package.py
       - name: Compile
         run: python -m compileall -q src tests scripts
       - name: Release metadata
@@ -90,7 +92,7 @@ jobs:
         run: |
           guessnova web --help
           guessnova-web --help
-      - name: Verify bundled PWA assets
-        run: python -c "from guessnova.web_server import WEB_ROOT; required=('index.html','app.js','browser-state.mjs','game-engine.mjs','sw.js','manifest.webmanifest','icon-192.png','icon-512.png'); assert all(WEB_ROOT.joinpath(name).is_file() for name in required); print('PWA assets OK')"
+      - name: Verify installed PWA package
+        run: python scripts/verify_web_package.py
       - name: Run smoke test
         run: python scripts/smoke_test.py
