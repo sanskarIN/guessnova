@@ -1,6 +1,6 @@
 from guessnova.domain import GameMode, GameSummary
 from guessnova.history import entry_from_summary
-from guessnova.profile import Profile
+from guessnova.profile import MAX_PROFILE_COUNTER, Profile
 
 
 def test_profile_round_trip() -> None:
@@ -57,3 +57,27 @@ def test_profile_normalizes_untrusted_stat_values() -> None:
     assert restored.stats.total_guesses == 0
     assert restored.stats.xp == 0
     assert restored.stats.achievements == {"first_win"}
+
+
+def test_profile_bounds_extreme_imported_counters() -> None:
+    huge = 10**100
+    restored = Profile.from_dict(
+        {
+            "name": "Huge",
+            "stats": {
+                "games_played": huge,
+                "games_won": huge,
+                "current_streak": huge,
+                "best_streak": huge,
+                "total_guesses": str(huge),
+                "xp": huge,
+            },
+        }
+    )
+
+    assert restored.stats.games_played == MAX_PROFILE_COUNTER
+    assert restored.stats.games_won == MAX_PROFILE_COUNTER
+    assert restored.stats.current_streak == MAX_PROFILE_COUNTER
+    assert restored.stats.best_streak == MAX_PROFILE_COUNTER
+    assert restored.stats.total_guesses == MAX_PROFILE_COUNTER
+    assert restored.stats.xp == MAX_PROFILE_COUNTER
