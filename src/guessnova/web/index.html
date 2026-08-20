@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="GuessNova — an offline-first privacy-friendly number guessing game.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./app.css">
+  <title>GuessNova</title>
+</head>
+<body>
+  <a class="skip-link" href="#game">Skip to game</a>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Made by the Sanskar</p>
+      <h1>GuessNova</h1>
+      <p class="subtitle">Offline-first · private · cross-platform</p>
+    </div>
+    <button id="installButton" class="secondary" type="button" hidden>Install app</button>
+  </header>
+
+  <main id="game" class="layout">
+    <section class="panel controls" aria-labelledby="setupTitle">
+      <h2 id="setupTitle">New round</h2>
+      <label for="mode">Mode</label>
+      <select id="mode">
+        <option value="classic">Classic</option>
+        <option value="timed">Timed</option>
+        <option value="streak">Streak</option>
+        <option value="daily">Daily challenge</option>
+        <option value="reverse">Reverse</option>
+      </select>
+
+      <label for="difficulty">Difficulty</label>
+      <select id="difficulty">
+        <option value="easy">Easy · 1–50</option>
+        <option value="normal" selected>Normal · 1–100</option>
+        <option value="hard">Hard · 1–500</option>
+        <option value="expert">Expert · 1–1000</option>
+      </select>
+
+      <button id="newGame" type="button">Start new round</button>
+      <button id="hintButton" class="secondary" type="button">Range hint</button>
+      <button id="resetData" class="danger" type="button">Reset local data</button>
+
+      <p class="privacy-note">No account, telemetry, ads, or cloud sync. Progress stays in this browser.</p>
+    </section>
+
+    <section class="panel play" aria-labelledby="playTitle">
+      <div class="play-heading">
+        <div>
+          <p id="modeBadge" class="badge">Classic · Normal</p>
+          <h2 id="playTitle">Find the hidden number</h2>
+        </div>
+        <div id="timer" class="timer" aria-live="polite" hidden>45s</div>
+      </div>
+
+      <div id="standardPlay">
+        <p id="rangeText">Choose a number from 1 to 100.</p>
+        <form id="guessForm" autocomplete="off">
+          <label for="guessInput">Your guess</label>
+          <div class="guess-row">
+            <input id="guessInput" type="number" inputmode="numeric" min="1" max="100" required>
+            <button type="submit">Guess</button>
+          </div>
+        </form>
+        <div class="metrics" aria-label="Round status">
+          <div><span>Attempts</span><strong id="attempts">0 / 9</strong></div>
+          <div><span>Hints</span><strong id="hints">0</strong></div>
+          <div><span>Streak</span><strong id="streak">0</strong></div>
+        </div>
+      </div>
+
+      <div id="reversePlay" hidden>
+        <p>Think of a number in the selected range. I’ll find it using binary search.</p>
+        <div class="reverse-card">
+          <span>My guess</span>
+          <strong id="reverseGuess">—</strong>
+        </div>
+        <div class="reverse-actions">
+          <button id="lowerButton" class="secondary" type="button">Lower</button>
+          <button id="correctButton" type="button">Correct</button>
+          <button id="higherButton" class="secondary" type="button">Higher</button>
+        </div>
+      </div>
+
+      <div id="message" class="message" role="status" aria-live="polite">Start guessing.</div>
+    </section>
+
+    <section class="panel stats" aria-labelledby="statsTitle">
+      <h2 id="statsTitle">Local statistics</h2>
+      <div class="stat-grid">
+        <div><span>Played</span><strong id="gamesPlayed">0</strong></div>
+        <div><span>Won</span><strong id="gamesWon">0</strong></div>
+        <div><span>Win rate</span><strong id="winRate">0%</strong></div>
+        <div><span>Best streak</span><strong id="bestStreak">0</strong></div>
+      </div>
+      <h3>Recent rounds</h3>
+      <ol id="history" class="history"><li>No rounds yet.</li></ol>
+    </section>
+  </main>
+
+  <footer>
+    <p>GuessNova works on modern desktop and mobile browsers and can be installed as a PWA where supported.</p>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
