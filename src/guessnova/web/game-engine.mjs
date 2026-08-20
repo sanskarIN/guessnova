@@ -57,10 +57,15 @@ export class GuessGame {
     this.difficulty = DIFFICULTIES[difficultyName];
     this.now = now;
     this.target = target ?? randomTarget(difficultyName);
-    if (this.target < this.difficulty.minimum || this.target > this.difficulty.maximum) {
+    if (
+      !Number.isInteger(this.target)
+      || this.target < this.difficulty.minimum
+      || this.target > this.difficulty.maximum
+    ) {
       throw new Error("target is outside the difficulty range");
     }
     this.startedAt = this.now();
+    this.finishedAt = null;
     this.guesses = [];
     this.finished = false;
     this.won = false;
@@ -70,13 +75,28 @@ export class GuessGame {
 
   get attemptsUsed() { return this.guesses.length; }
   get attemptsLeft() { return Math.max(0, this.difficulty.maxAttempts - this.attemptsUsed); }
-  get elapsedSeconds() { return Math.max(0, (this.now() - this.startedAt) / 1000); }
+  get elapsedSeconds() {
+    const endpoint = this.finishedAt ?? this.now();
+    return Math.max(0, (endpoint - this.startedAt) / 1000);
+  }
   get timedOut() { return this.mode === "timed" && this.elapsedSeconds >= this.difficulty.timedSeconds; }
+
+  isTimedOutAt(timestamp) {
+    return this.mode === "timed"
+      && Math.max(0, (timestamp - this.startedAt) / 1000) >= this.difficulty.timedSeconds;
+  }
+
+  finish(timestamp, won = false) {
+    this.finished = true;
+    this.won = won;
+    this.finishedAt = timestamp;
+  }
 
   requestHint({ penalize = true } = {}) {
     if (this.finished) throw new Error("game is already finished");
-    if (this.timedOut) {
-      this.finished = true;
+    const now = this.now();
+    if (this.isTimedOutAt(now)) {
+      this.finish(now);
       throw new Error("time expired");
     }
     const span = this.difficulty.maximum - this.difficulty.minimum + 1;
@@ -95,8 +115,9 @@ export class GuessGame {
 
   guess(value) {
     if (this.finished) throw new Error("game is already finished");
-    if (this.timedOut) {
-      this.finished = true;
+    const now = this.now();
+    if (this.isTimedOutAt(now)) {
+      this.finish(now);
       return { guess: value, outcome: "timeout", attemptsUsed: this.attemptsUsed, attemptsLeft: this.attemptsLeft };
     }
     if (!Number.isInteger(value) || value < this.difficulty.minimum || value > this.difficulty.maximum) {
@@ -104,12 +125,11 @@ export class GuessGame {
     }
     this.guesses.push(value);
     if (value === this.target) {
-      this.finished = true;
-      this.won = true;
+      this.finish(now, true);
       return { guess: value, outcome: "correct", attemptsUsed: this.attemptsUsed, attemptsLeft: this.attemptsLeft };
     }
     if (this.attemptsLeft === 0) {
-      this.finished = true;
+      this.finish(now);
       return { guess: value, outcome: "exhausted", attemptsUsed: this.attemptsUsed, attemptsLeft: 0 };
     }
     const outcome = value < this.target ? "too_low" : "too_high";
