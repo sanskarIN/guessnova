@@ -1,7 +1,11 @@
 import { DIFFICULTIES, GuessGame, ReverseGuesser, portableDailyTarget } from "./game-engine.mjs";
-
-const STORAGE_KEY = "guessnova.web.v1";
-const HISTORY_LIMIT = 12;
+import {
+  HISTORY_LIMIT,
+  STORAGE_KEY,
+  defaultBrowserState,
+  parseBrowserState,
+  serializeBrowserState,
+} from "./browser-state.mjs";
 
 const byId = (id) => document.getElementById(id);
 const modeSelect = byId("mode");
@@ -33,30 +37,11 @@ let timerId = null;
 let installPrompt = null;
 let recordedCurrentRound = false;
 
-function defaultState() {
-  return {
-    gamesPlayed: 0,
-    gamesWon: 0,
-    currentStreak: 0,
-    bestStreak: 0,
-    history: [],
-    settings: { mode: "classic", difficulty: "normal" },
-  };
-}
-
 function loadState() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    if (!parsed || typeof parsed !== "object") return defaultState();
-    const base = defaultState();
-    return {
-      ...base,
-      ...parsed,
-      history: Array.isArray(parsed.history) ? parsed.history.slice(0, HISTORY_LIMIT) : [],
-      settings: { ...base.settings, ...(parsed.settings ?? {}) },
-    };
+    return parseBrowserState(localStorage.getItem(STORAGE_KEY));
   } catch {
-    return defaultState();
+    return defaultBrowserState();
   }
 }
 
@@ -64,7 +49,7 @@ let state = loadState();
 
 function saveState() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, serializeBrowserState(state));
   } catch {
     // Privacy settings can block persistence; gameplay continues in memory.
   }
@@ -303,7 +288,7 @@ resetDataButton.addEventListener("click", () => {
   const confirmed = globalThis.confirm("Reset all GuessNova progress stored in this browser?");
   if (!confirmed) return;
   clearSavedState();
-  state = defaultState();
+  state = defaultBrowserState();
   modeSelect.value = state.settings.mode;
   difficultySelect.value = state.settings.difficulty;
   renderStats();
