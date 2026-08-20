@@ -322,21 +322,24 @@ class Storage:
             payload["active_profile"] = profile.name
         self.save_raw(payload)
 
-    def save_profile_and_leaderboard(
+    def save_completed_round(
         self,
         profile: Profile,
-        entries: list[LeaderboardEntry],
+        leaderboard_entry: LeaderboardEntry | None,
         *,
         make_active: bool = True,
     ) -> None:
-        """Persist one completed-round profile/leaderboard update in one state write."""
+        """Persist a completed round against the latest leaderboard in one state write."""
         payload = self.load_raw()
         profiles = payload.setdefault("profiles", {})
         if not isinstance(profiles, dict):
             profiles = {}
             payload["profiles"] = profiles
         profiles[profile.name] = profile.to_dict()
-        payload["leaderboard"] = serialize(entries)
+        leaderboard = deserialize(payload.get("leaderboard", []))
+        if leaderboard_entry is not None:
+            leaderboard = add_entry(leaderboard, leaderboard_entry)
+        payload["leaderboard"] = serialize(leaderboard)
         if make_active:
             payload["active_profile"] = profile.name
         self.save_raw(payload)
