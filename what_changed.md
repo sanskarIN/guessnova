@@ -1,8 +1,8 @@
-# GuessNova — Cross-Platform Implementation Checkpoint
+# GuessNova — Cross-Platform Implementation Handoff
 
-## Current milestone
+## Status
 
-GuessNova `main` now contains a supported cross-platform delivery path spanning desktop Python interfaces and a responsive offline-first browser/PWA interface.
+GuessNova `main` now provides a supported interface path across the major desktop, mobile, Chromebook, and browser platform families.
 
 Repository:
 
@@ -10,58 +10,54 @@ Repository:
 https://github.com/sanskarIN/guessnova
 ```
 
-Current package/runtime release metadata remains `1.4.0`. This continuation deliberately does not invent a new release tag or stored-data schema merely because a new presentation surface was added.
+Current release metadata is intentionally still `1.4.0`; this continuation adds a new presentation/delivery surface but does not create a release tag or change stored-data formats by itself.
 
-Previous detailed v1.4 implementation history remains archived in:
+Previous detailed v1.4 history remains preserved in:
 
 - `docs/continuity/v1_4_pr_checkpoint.md`
 - `docs/continuity/v1_3_merged_checkpoint.md`
 
-This file is the active handoff for the cross-platform continuation after that archive.
-
 ---
 
-# 1. Supported platform model
+## Supported platform model
 
-GuessNova now has two supported presentation families:
+### Python desktop interfaces
 
-## Python desktop/terminal
-
-Supported on:
+Official desktop Python path:
 
 - Windows 10/11
-- current macOS releases with Python 3.13+
+- current macOS with Python 3.13+
 - modern Linux distributions with Python 3.13+
 
-Interfaces:
+Available interfaces:
 
 - Rich CLI
 - six-pane Textual TUI
-- Doctor diagnostics/recovery CLI
+- Doctor diagnostics/recovery
 - bundled local PWA server
 
-## Browser/PWA
+### Browser/PWA interfaces
 
-Supported through modern standards-based browsers on:
+Responsive PWA path:
 
-- Windows
-- macOS
-- Linux
+- Windows browsers
+- macOS browsers
+- Linux browsers
 - Android
 - iOS
 - iPadOS
 - ChromeOS
-- other modern desktop/mobile browser platforms
+- other modern standards-based desktop/mobile browsers
 
-The mobile strategy intentionally uses one responsive standards-based PWA rather than separate Android/iOS native codebases that would duplicate game rules and maintenance work.
+Android/iOS support is deliberately provided by one installable responsive PWA, not by unimplemented native APK/AAB/IPA claims.
 
-Detailed matrix: `docs/platforms.md`.
+Full matrix: `docs/platforms.md`.
 
 ---
 
-# 2. New PWA implementation
+## New browser/PWA implementation
 
-New bundled web application files:
+Bundled assets:
 
 ```text
 src/guessnova/web/
@@ -69,49 +65,78 @@ src/guessnova/web/
 ├── app.js
 ├── game-engine.mjs
 ├── icon.svg
+├── icon-192.png
+├── icon-512.png
 ├── index.html
 ├── manifest.webmanifest
 └── sw.js
 ```
 
-The PWA includes:
+Implemented browser features:
 
 - Classic mode
 - Timed mode
 - Streak mode
 - Daily Challenge
 - Reverse mode
-- Easy/Normal/Hard/Expert difficulties matching Python ranges and attempt/timer values
-- smart direction/temperature/parity hints
+- Easy / Normal / Hard / Expert difficulties
+- smart temperature/direction/parity hints
 - explicit range hints
-- local played/won/win-rate statistics
-- current/best streak tracking
+- local games played/won/win-rate statistics
+- current/best streak
 - bounded recent-round history
-- origin-scoped local browser persistence
-- responsive phone/tablet/laptop/desktop layout
-- minimum touch target sizing
+- browser-origin local persistence
+- responsive phone/tablet/desktop layout
+- touch-friendly minimum control sizing
 - keyboard focus indicators
-- live status announcements
+- live status output
 - light/dark color-scheme adaptation
-- reduced-motion handling
-- install prompting where supported
-- mobile/iOS web-app metadata
-- service-worker offline caching
+- reduced-motion support
+- install prompting where the browser supports it
+- iOS/iPadOS home-screen metadata
+- service-worker offline app-shell caching
 - no account, telemetry, ads, analytics, cloud sync, or gameplay backend
 
-Browser state intentionally remains sandboxed from the Python `state.json` profile/backup model.
+The browser state intentionally does not silently read/write the Python schema-2 `state.json` store.
 
 ---
 
-# 3. Local PWA server
+## Installability hardening
 
-New source:
+Current browser guidance was checked during this continuation.
+
+The PWA manifest now supplies real raster icons at:
+
+```text
+192x192  src/guessnova/web/icon-192.png
+512x512  src/guessnova/web/icon-512.png
+```
+
+The HTML uses the 192px raster image for `apple-touch-icon`, while SVG remains available as the normal scalable favicon.
+
+The service worker caches both raster icons and uses cache namespace `guessnova-web-v2` so existing installs can transition to the new app shell.
+
+A temporary text-only placeholder commit was created when the connector's normal text-file action was first used for a `.png` path. That was caught immediately. A follow-up Git object/blob/tree commit replaced it with actual PNG bytes and added the 512px image. Repository fetch verification confirms both current paths are binary PNG content.
+
+The corrective commit is:
+
+```text
+ec4877716ce3c5a6b3aecafe28b776039fd13dc1  fix(web): replace placeholder with real PWA raster icons
+```
+
+Do not treat the earlier placeholder commit as the current file state.
+
+---
+
+## Local PWA server
+
+New module:
 
 ```text
 src/guessnova/web_server.py
 ```
 
-Entry paths:
+Entry points:
 
 ```bash
 guessnova web
@@ -121,41 +146,40 @@ guessnova-web
 Defaults:
 
 ```text
-host: 127.0.0.1
-port: 8765
+127.0.0.1:8765
 ```
 
-Security/reliability properties:
+Properties:
 
-- standard-library HTTP server; no new runtime web-framework dependency
+- Python standard-library server; no runtime web-framework dependency
 - loopback-only binding by default
-- explicit `--host`, `--port`, and `--no-open`
-- normalized asset paths
-- `..` traversal rejection
-- read-only serving from packaged `guessnova/web` resources
-- no state mutation/API endpoints
+- `--host`, `--port`, `--no-open`
+- path normalization
+- traversal rejection
+- read-only package-resource serving
+- no gameplay/state mutation HTTP API
+- `GET` / `HEAD`
 - `X-Content-Type-Options: nosniff`
 - `Referrer-Policy: no-referrer`
 - restrictive same-origin Content Security Policy
-- `HEAD` and `GET` asset support
 
-An explicit `--host 0.0.0.0` is documented as trusted-LAN development only. Normal mobile/public deployment should use an HTTPS static host.
+`--host 0.0.0.0` is documented only for deliberate trusted-LAN development. Normal phone/tablet/public deployment should use an HTTPS static host.
 
 ---
 
-# 4. Cross-language Daily Challenge parity
+## Cross-language Daily Challenge parity
 
-The former Python-only deterministic daily mechanism depended on Python's PRNG after producing a SHA-256 seed. That is reproducible inside Python, but it is not a suitable language-independent target rule.
+Legacy `daily_seed()` remains available for compatibility.
 
-The continuation retains legacy `daily_seed()` for compatibility and adds a portable v2 rule shared by Python and JavaScript:
+New portable daily-v2 rule:
 
 ```text
 guessnova-daily-v2:<YYYY-MM-DD>:<difficulty>
 ```
 
-The string is hashed with unsigned FNV-1a 32-bit and mapped directly into the selected difficulty's inclusive target range.
+Python and JavaScript both use unsigned FNV-1a 32-bit and map the result directly into the selected difficulty's inclusive range.
 
-Fixed parity vector covered by both languages:
+Fixed parity vector:
 
 ```text
 Date:       2026-08-19
@@ -169,27 +193,27 @@ Updated Python files:
 - `src/guessnova/rng.py`
 - `src/guessnova/daily.py`
 
-Browser implementation:
+Browser file:
 
 - `src/guessnova/web/game-engine.mjs`
 
-This makes the same date+difficulty Daily Challenge resolve to the same target in Python and PWA clients.
+Tests in both languages protect the vector.
 
 ---
 
-# 5. Python CLI/package integration
+## CLI and package integration
 
 Updated:
 
 - `src/guessnova/entrypoint.py`
 - `pyproject.toml`
 
-`guessnova` now routes:
+Dispatcher behavior:
 
 ```text
 doctor -> Doctor CLI
-web    -> local PWA server
-other  -> existing Rich game CLI
+web    -> bundled local PWA server
+other  -> existing Rich gameplay/data CLI
 ```
 
 New installed script:
@@ -198,42 +222,31 @@ New installed script:
 guessnova-web = guessnova.web_server:main
 ```
 
-Packaging metadata now describes both terminal and browser environments and marks the project OS-independent at the Python package metadata level.
+The Python package metadata now reflects terminal + web environments and OS-independent packaging.
 
-The PWA lives inside the selected `src/guessnova` package tree so built-wheel verification can assert that web assets survived packaging.
+PWA assets live inside `src/guessnova` so wheel installation can be checked for asset preservation.
 
 ---
 
-# 6. Automated regression coverage
+## Tests added/updated
 
-New Python test:
+### Python
+
+New:
 
 ```text
 tests/test_web_server.py
 ```
 
-Coverage includes:
+Covers:
 
-- safe root asset mapping
+- root asset mapping
 - query stripping
 - traversal rejection
-- required bundled PWA assets
-- loopback HTTP serving
-- security headers
-
-New Node/browser-engine test:
-
-```text
-tests/web/test_game_engine.mjs
-```
-
-Coverage includes:
-
-- fixed Python/JavaScript Daily Challenge parity vector
-- difficulty configuration parity
-- Classic GuessGame result semantics
-- smart-hint behavior
-- ReverseGuesser convergence
+- required PWA asset presence
+- required 192px/512px raster icon presence
+- local HTTP serving
+- server security headers
 
 Updated:
 
@@ -242,15 +255,41 @@ tests/test_daily.py
 tests/test_entrypoint.py
 ```
 
-Additional coverage includes portable daily seeds/targets and `guessnova web --help` routing.
+Covers portable daily parity and web-command routing.
 
-During static review, a concrete browser bug was found and fixed: completing a Reverse round disabled its response controls, and a subsequent Reverse round originally inherited those disabled buttons. `startReverse()` now explicitly re-enables all three response controls.
+### Browser engine
+
+New:
+
+```text
+tests/web/test_game_engine.mjs
+```
+
+Covers:
+
+- Daily Challenge parity vector
+- difficulty configuration parity
+- GuessGame outcome behavior
+- smart-hint semantics
+- ReverseGuesser convergence
+
+### Static-review bug fixed
+
+A completed Reverse round disabled the three response controls, and a newly started Reverse round initially inherited those disabled controls.
+
+Fixed in:
+
+```text
+61a0d058b268e1c73f5133645101940d5a8b46c0  fix(web): re-enable reverse controls on new rounds
+```
+
+`startReverse()` now explicitly re-enables Lower / Correct / Higher.
 
 ---
 
-# 7. CI expansion
+## CI and release gates
 
-`.github/workflows/ci.yml` now adds Node.js 22 to the main verification job and runs:
+Normal CI now runs:
 
 ```bash
 node --test tests/web/*.test.mjs
@@ -259,26 +298,44 @@ node --check src/guessnova/web/game-engine.mjs
 node --check src/guessnova/web/sw.js
 ```
 
-The existing built-wheel matrix remains on:
+The existing Python checks remain configured:
+
+- Ruff lint
+- Ruff format check
+- strict mypy
+- pytest + coverage
+- compileall
+- release-metadata verification
+- smoke tests
+
+Built-wheel matrices remain on:
 
 - Ubuntu
 - Windows
 - macOS
 
-and now additionally verifies after wheel installation:
+and now verify:
 
 ```bash
 guessnova web --help
 guessnova-web --help
 ```
 
-plus required PWA asset presence inside the installed package.
+plus bundled:
 
-The pre-existing Python lint, format, strict typing, pytest/coverage, compile, release-metadata, smoke, Doctor, TUI import, security, and CodeQL paths remain configured.
+```text
+index.html
+sw.js
+manifest.webmanifest
+icon-192.png
+icon-512.png
+```
+
+The tagged `.github/workflows/release.yml` was also upgraded so release verification includes the same Node browser-engine/syntax checks and installed-wheel PWA entry/assets verification. A tag therefore cannot intentionally rely on only the Python surface while ignoring the browser client.
 
 ---
 
-# 8. Documentation updated
+## Documentation updated
 
 Added:
 
@@ -292,21 +349,19 @@ Updated:
 - `SECURITY.md`
 - `what_changed.md`
 
-The documentation now distinguishes:
+Documentation now clearly separates:
 
-- Python desktop state from browser origin storage
-- application gameplay data from ordinary hosted static-asset requests
-- local loopback serving from explicit LAN exposure
-- Python CLI/TUI requirements from mobile PWA requirements
-- PWA support from claims of native Android/iOS binaries
+- desktop Python requirements from mobile/browser requirements
+- Python `state.json` from browser origin storage
+- local loopback hosting from deliberate LAN exposure
+- gameplay-data privacy from ordinary static-asset HTTP requests on a remote host
+- PWA support from native mobile binary claims
 
 ---
 
-# 9. Granular commit sequence
+## Important cross-platform commits
 
-Cross-platform work was pushed directly to `main` as granular commits rather than one monolithic change.
-
-Implementation/test/docs commits through this checkpoint include:
+The continuation was intentionally granular. Key commits include:
 
 ```text
 0d702a7959abdfed518b366304e3cf14dbfb028f  feat(web): add local PWA server
@@ -334,54 +389,47 @@ b86984b1fb648db953c45c4df48f27d253f958c5  docs: publish cross-platform support a
 42dbd0f15445a9924c96a4272a7d0455d782b6ca  docs(privacy): cover browser and PWA data behavior
 360fc7f5682a51ad176e9bdab45be89a66f039fd  docs(security): define PWA and local server boundaries
 0cc60cb9e09c3e8d9a36e169365f86a4190ca4be  docs(setup): add desktop mobile and PWA setup
+66035db20ab2b8c158970aa6dc1ed32407d4dda9  docs: record cross-platform implementation checkpoint
+663013f47d611d0eb3f7d73f481363be59c7cd5b  feat(web): add 192px PWA raster icon (temporary text placeholder; superseded)
+ec4877716ce3c5a6b3aecafe28b776039fd13dc1  fix(web): replace placeholder with real PWA raster icons
+dfac717dcbf83a394f284fa9c1ce64195411a33f  fix(web): satisfy PWA raster icon requirements
+0b1f3bbe983050a4259d5e89b9df90a23715a3f7  fix(web): use raster iOS home screen icon
+f8e2a9b10134d2ee9bd627454d8ad549063d0da9  fix(web): cache installable PWA raster icons
+73fc58ba37fdf227889d251ffbd8bff378006bdc  test(web): require raster PWA install icons
+9a83505865df72ea2cf814cb1fbd2390e945351d  ci: verify installable PWA icon assets in wheels
+dfa210ad06d7d77c9e93259059015307d9fd8eaa  ci(release): gate releases on PWA browser checks
 ```
 
-This handoff update is the next granular commit after that sequence.
+This handoff update follows those commits.
 
 ---
 
-# 10. Validation state — no fabricated pass claims
+## Validation state
 
-The repository now contains automated checks for the cross-platform work, but this checkpoint does **not** claim those checks passed when their execution result was not observed.
+Do not infer unobserved passes.
 
-The available execution environment could not clone the repository because external DNS/network access from the local container failed previously with:
+The repository now contains the automated checks needed for the new platform surface, but this continuation does not claim successful Ruff/mypy/pytest/Node/device-matrix results unless an execution result was actually observed.
 
-```text
-fatal: unable to access 'https://github.com/sanskarIN/guessnova.git/':
-Could not resolve host: github.com
-```
+The available local execution environment previously failed to clone GitHub because external DNS/network resolution was unavailable, and it did not contain the complete project development toolchain. Therefore no local full-suite pass is fabricated.
 
-The local environment also did not have all repository development tools installed. Therefore this continuation does not fabricate local executions of:
+GitHub's combined commit-status connector also returned no status entries for an inspected cross-platform head during this work. An empty status set is not equivalent to pass or fail.
 
-- Ruff
-- Ruff format
-- strict mypy
-- full pytest suite
-- Node browser-engine tests
-- built-wheel installation
-- browser/device matrix testing
+Verified directly during this continuation:
 
-GitHub's combined commit-status connector also returned no status entries for the inspected cross-platform head at that time. That is not equivalent to a passing or failing GitHub Actions result.
+- repository file modifications and commit history
+- portable FNV-1a daily-v2 fixed vector calculation
+- current 192px icon path is a real PNG blob
+- current 512px icon path is a real PNG blob
+- source/static review of PWA/server paths
+- current browser installability documentation check
+- Reverse restart regression discovery and repair
+- documentation consistency review
 
-What *was* completed in this continuation:
-
-- source-level architecture review
-- direct repository file modifications
-- static code review of the new PWA/server paths
-- fixed-vector cross-language algorithm design
-- test definitions for Python and browser logic
-- CI definitions for Python/browser/package paths
-- packaging-layout review
-- documentation consistency audit
-- discovery and repair of the Reverse-round restart regression
-
-Before a release tag, the exact candidate commit should receive successful CI/security checks and manual real-browser/device verification.
+Release-candidate verification still needs actual CI conclusions and real browser/device checks on the exact candidate SHA.
 
 ---
 
-# 11. Release and compatibility boundaries
-
-Unchanged compatibility metadata:
+## Compatibility metadata unchanged
 
 ```text
 package/runtime version  1.4.0
@@ -394,55 +442,35 @@ Python requirement       >=3.13
 license                  MIT
 ```
 
-No storage-schema migration is required merely for the new PWA because browser-local state is a separate origin-scoped presentation-store and does not change Python schema-2 persistence.
-
-No native Android APK/AAB or iOS IPA is claimed. Android/iOS/iPadOS support is through the installable standards-based PWA.
+The new PWA does not require a Python state-schema migration because its browser-local storage is a separate presentation store.
 
 ---
 
-# 12. Recommended release verification
+## Release-candidate checklist
 
-Before calling a tagged build fully release-verified:
+Before tagging a release candidate:
 
-1. require all automated checks to pass on the exact candidate SHA;
-2. run Python package installation on Windows, macOS, and Linux;
-3. run CLI, TUI, Doctor, `guessnova web`, and `guessnova-web` entry checks;
-4. confirm built-wheel PWA assets are present;
-5. run Node browser-engine tests and syntax checks;
-6. test the hosted PWA on current Android Chrome/Chromium;
-7. test the hosted PWA on current iPhone Safari and Add to Home Screen;
-8. test the hosted PWA on iPad Safari;
-9. test the PWA on ChromeOS;
-10. test current Chrome/Edge/Firefox/Safari desktop browsers where available;
-11. verify first-load and offline cached-load behavior;
-12. verify install/uninstall and browser-storage reset behavior;
-13. verify touch, keyboard, light/dark scheme, reduced motion, and responsive breakpoints;
-14. verify the same Daily Challenge date+difficulty target between Python and browser;
-15. complete existing manual accessibility evidence on the exact release candidate;
-16. capture real screenshots/media only from the verified candidate.
+1. require CI/security checks to pass on the exact candidate SHA;
+2. install the wheel on Windows, macOS, and Linux;
+3. verify CLI, TUI, Doctor, `guessnova web`, and `guessnova-web`;
+4. verify PWA assets are present in the wheel;
+5. run Node browser-engine tests and JS syntax checks;
+6. host the PWA over HTTPS;
+7. test current Android Chromium installation/offline behavior;
+8. test iPhone Safari Add to Home Screen/offline behavior;
+9. test iPad Safari;
+10. test ChromeOS;
+11. test available current desktop Chrome/Edge/Firefox/Safari;
+12. verify touch, keyboard, responsive breakpoints, light/dark mode, and reduced motion;
+13. compare a Daily Challenge target between Python and browser for the same date+difficulty;
+14. complete the existing manual accessibility evidence on the candidate;
+15. capture real screenshots/media only from that verified candidate.
 
-Do not fabricate device screenshots, accessibility evidence, or CI conclusions.
-
----
-
-# 13. Current continuation priorities
-
-If work continues from this checkpoint:
-
-1. inspect the latest `main` SHA first;
-2. inspect exact GitHub Actions conclusions once available;
-3. fix only reproducible failures with focused regression coverage;
-4. consider a future release version only when preparing a real release candidate;
-5. keep the portable daily-v2 test vector synchronized across Python and JavaScript;
-6. keep mobile/browser data isolated unless a carefully designed explicit import/export bridge is introduced;
-7. do not expose the local Python web server publicly by default;
-8. do not claim native Android/iOS packages unless those artifacts are actually implemented and verified;
-9. preserve privacy-first/no-account/no-telemetry guarantees;
-10. preserve granular commit history.
+Do not fabricate CI results, device evidence, accessibility evidence, or screenshots.
 
 ---
 
-# 14. Project identity
+## Project identity
 
 - Project: **GuessNova**
 - Repository: `https://github.com/sanskarIN/guessnova`
@@ -454,4 +482,4 @@ If work continues from this checkpoint:
 - Support: `supportramsandesh@gmail.com`
 - Buy Me a Coffee: `https://buymeacoffee.com/sanskarIN`
 
-GuessNova remains usable without donation, account creation, telemetry, analytics, cloud sync, or a gameplay backend.
+GuessNova remains usable without donation, account creation, telemetry, analytics, cloud sync, remote leaderboard, or a gameplay backend.
