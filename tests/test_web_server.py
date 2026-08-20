@@ -18,6 +18,7 @@ def test_required_pwa_assets_are_bundled() -> None:
         "index.html",
         "app.css",
         "app.js",
+        "browser-state.mjs",
         "game-engine.mjs",
         "manifest.webmanifest",
         "sw.js",
