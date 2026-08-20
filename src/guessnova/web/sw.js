@@ -1,4 +1,4 @@
-const CACHE_NAME = "guessnova-web-v3";
+const CACHE_NAME = "guessnova-web-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -26,21 +26,32 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+async function cacheSuccessfulResponse(request, response) {
+  if (!response || response.status !== 200 || response.type === "opaque") return;
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(request, response.clone());
+}
+
+async function respondToRequest(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(request);
+    await cacheSuccessfulResponse(request, response);
+    return response;
+  } catch (error) {
+    if (request.mode === "navigate") {
+      const fallback = await caches.match("./index.html");
+      if (fallback) return fallback;
+    }
+    throw error;
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
-        .then((response) => {
-          if (!response || response.status !== 200 || response.type === "opaque") return response;
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => caches.match("./index.html"));
-    })
-  );
+  event.respondWith(respondToRequest(event.request));
 });
