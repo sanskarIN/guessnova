@@ -75,6 +75,28 @@ def test_timed_timeout() -> None:
     assert not game.won
 
 
+def test_finished_round_freezes_elapsed_time() -> None:
+    now = [0.0]
+    game = GuessGame(target=42, clock=lambda: now[0])
+    now[0] = 1.5
+    assert game.guess(42).outcome == GuessOutcome.CORRECT
+    assert game.elapsed_seconds == 1.5
+
+    now[0] = 500.0
+    assert game.elapsed_seconds == 1.5
+    assert game.summary().elapsed_seconds == 1.5
+
+
+def test_timeout_freezes_elapsed_time() -> None:
+    now = [0.0]
+    game = GuessGame(mode=GameMode.TIMED, target=42, clock=lambda: now[0])
+    now[0] = 45.0
+    assert game.guess(1).outcome == GuessOutcome.TIMEOUT
+
+    now[0] = 100.0
+    assert game.summary().elapsed_seconds == 45.0
+
+
 def test_explicit_range_hint_tracks_penalty_without_consuming_attempt() -> None:
     game = GuessGame(difficulty_name="easy", target=42)
     hint = game.request_hint()
