@@ -1,3 +1,5 @@
+import pytest
+
 from guessnova.domain import GameMode, GuessOutcome
 from guessnova.engine import HINT_PENALTY_XP, GuessGame
 
@@ -49,6 +51,19 @@ def test_invalid_difficulty() -> None:
         assert "unknown difficulty" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_reverse_mode_requires_reverse_guesser() -> None:
+    with pytest.raises(ValueError, match="ReverseGuesser"):
+        GuessGame(mode=GameMode.REVERSE)
+
+
+def test_runtime_mode_values_are_normalized_and_validated() -> None:
+    timed = GuessGame(mode="timed", target=42)  # type: ignore[arg-type]
+    assert timed.mode is GameMode.TIMED
+
+    with pytest.raises(ValueError, match="unknown game mode"):
+        GuessGame(mode="unknown", target=42)  # type: ignore[arg-type]
 
 
 def test_timed_timeout() -> None:
