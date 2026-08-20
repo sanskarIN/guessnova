@@ -20,7 +20,7 @@ function normalizeMode(value) {
 }
 
 function normalizeDifficulty(value) {
-  return typeof value === "string" && value in DIFFICULTIES ? value : "normal";
+  return typeof value === "string" && Object.hasOwn(DIFFICULTIES, value) ? value : "normal";
 }
 
 function normalizeCompletedAt(value) {
