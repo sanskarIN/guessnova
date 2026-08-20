@@ -10,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
 from pathlib import PurePosixPath
 from typing import Final
+from urllib.parse import unquote, urlsplit
 
 DEFAULT_HOST: Final = "127.0.0.1"
 DEFAULT_PORT: Final = 8765
@@ -36,11 +37,13 @@ CONTENT_SECURITY_POLICY: Final = (
 
 def _safe_asset_path(raw_path: str) -> str | None:
     """Return a normalized bundled asset path, rejecting traversal attempts."""
-    path = raw_path.split("?", 1)[0].split("#", 1)[0]
+    path = unquote(urlsplit(raw_path).path)
     if path in {"", "/"}:
         return "index.html"
+    if "\\" in path or "\x00" in path:
+        return None
     candidate = PurePosixPath(path.lstrip("/"))
-    if candidate.is_absolute() or ".." in candidate.parts:
+    if ".." in candidate.parts:
         return None
     return candidate.as_posix()
 
