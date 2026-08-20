@@ -1,7 +1,14 @@
 import pytest
 
 from guessnova.domain import GameMode, GameSummary
-from guessnova.leaderboard import LeaderboardEntry, add_entry, deserialize, entry_from_summary, serialize
+from guessnova.leaderboard import (
+    MAX_LEADERBOARD_ENTRIES,
+    LeaderboardEntry,
+    add_entry,
+    deserialize,
+    entry_from_summary,
+    serialize,
+)
 
 
 def test_only_wins_become_entries() -> None:
@@ -29,6 +36,24 @@ def test_deserializer_rejects_invalid_entry_fields() -> None:
         {"player": "A", "difficulty": "normal", "mode": "classic", "attempts": 1, "elapsed_seconds": float("inf"), "created_at": "now"},
     ]
     assert deserialize(invalid) == []
+
+
+def test_deserializer_canonicalizes_and_bounds_imported_entries() -> None:
+    items = [
+        {
+            "player": f"Player {index}",
+            "difficulty": "normal",
+            "mode": "classic",
+            "attempts": 9 - (index % 9),
+            "elapsed_seconds": float(MAX_LEADERBOARD_ENTRIES * 2 - index),
+            "created_at": f"2026-01-{(index % 28) + 1:02d}",
+        }
+        for index in range(MAX_LEADERBOARD_ENTRIES * 2)
+    ]
+
+    restored = deserialize(items)
+    assert len(restored) == MAX_LEADERBOARD_ENTRIES
+    assert restored == sorted(restored, key=lambda entry: entry.score_key)
 
 
 def test_leaderboard_limit_must_be_positive() -> None:
