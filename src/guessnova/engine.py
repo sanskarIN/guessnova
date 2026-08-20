@@ -29,6 +29,12 @@ class GuessGame:
     _hint_penalty: int = field(default=0, init=False)
 
     def __post_init__(self) -> None:
+        try:
+            self.mode = GameMode(self.mode)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"unknown game mode: {self.mode}") from exc
+        if self.mode == GameMode.REVERSE:
+            raise ValueError("reverse mode requires ReverseGuesser")
         if self.difficulty_name not in DIFFICULTIES:
             raise ValueError(f"unknown difficulty: {self.difficulty_name}")
         difficulty = self.difficulty
