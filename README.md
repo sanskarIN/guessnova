@@ -14,7 +14,7 @@
 
 > **Made by the Sanskar**
 
-**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals. It turns a familiar game into a polished local product with multiple modes, deterministic friend/daily challenges, replay codes, smart and explicit hints, recoverable profiles, rich session history, achievements, XP, statistics, a leaderboard, integrity-protected backup/restore, read-only backup verification, local diagnostics/repair, bilingual presentation, first-run onboarding, semantic themes, a full six-pane Textual workspace, and a Rich CLI.
+**GuessNova** is a production-minded, privacy-first number guessing game for Python terminals and standards-based browsers. It turns a familiar game into a polished local product with multiple modes, cross-platform daily challenges, replay codes, smart and explicit hints, recoverable profiles, rich session history, achievements, XP, statistics, a leaderboard, integrity-protected backup/restore, read-only backup verification, local diagnostics/repair, bilingual terminal presentation, first-run onboarding, semantic themes, a full six-pane Textual workspace, a Rich CLI, and an offline-first responsive PWA for phones, tablets, Chromebooks, and desktop browsers.
 
 ## Demo
 
@@ -35,7 +35,7 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - **Timed** — solve before the difficulty-specific timer expires.
 - **Streak** — play streak-tagged rounds and build persistent profile streaks.
 - **Reverse** — think of a number and let GuessNova find it with binary search.
-- **Daily Challenge** — date-seeded, reproducible challenges shared by players using the same rules version.
+- **Daily Challenge** — portable v2 daily targets are reproducible across the Python and browser clients for the same date and difficulty.
 - **Smart hints** — temperature, direction, and parity feedback after guesses.
 - **Explicit range hints** — type `hint` for a narrowed range clue, with optional XP penalty via `--hint-penalty` / `--no-hint-penalty`.
 - **Profiles** — local stats, average guesses, streaks, XP, settings, achievements, and bounded session history.
@@ -56,26 +56,41 @@ Range hint: the target is between 62 and 82. Using it costs 10 XP from a winning
 - **TUI profile safety** — create/use/rename/delete/restore locally, require exact-name delete confirmation, and reset unfinished rounds when profile ownership changes.
 - **TUI data views** — newest-first bounded history filters plus ranked local leaderboard filters without creating a second storage model.
 - **TUI settings and recovery** — active-profile settings, immediate high-contrast/smart-hint behavior, read-only diagnostics, and read-only backup verification.
+- **Offline-first PWA** — responsive browser gameplay with Classic, Timed, Streak, Daily, and Reverse modes, local statistics/history, service-worker caching, and install support where the browser provides it.
+- **Adaptive accessibility** — touch-friendly controls, keyboard focus indicators, live status announcements, responsive layouts, automatic light/dark color schemes, and reduced-motion support in the PWA.
 - **Themes and contrast** — saved semantic Rich themes plus dedicated CLI and Textual high-contrast behavior.
-- **English + Hindi** — complete offline `en` and `hi` message catalogs with English fallback and per-profile locale settings.
+- **English + Hindi** — complete offline `en` and `hi` terminal message catalogs with English fallback and per-profile locale settings.
 - **Privacy-first** — no accounts, ads, analytics, telemetry, cloud sync, remote leaderboard, or application network calls.
 
 ## Supported platforms
 
-- Windows 10/11
-- Current macOS releases with Python 3.13+
-- Modern Linux distributions with Python 3.13+
+GuessNova now provides a supported interface across the major desktop, mobile, Chromebook, and browser platform families:
 
-A Unicode/ANSI-capable terminal provides the richest presentation, but `--plain` remains available for reduced Rich formatting. CI builds, validates, installs, imports the Textual workspace, launches the game and both Doctor routes, and smoke-tests the package on Windows, macOS, and Linux runners.
+| Platform | Python CLI/TUI | Web/PWA |
+| --- | --- | --- |
+| Windows 10/11 | ✅ | ✅ |
+| macOS | ✅ | ✅ |
+| Modern Linux | ✅ | ✅ |
+| Android | — | ✅ |
+| iOS/iPadOS | — | ✅ |
+| ChromeOS | optional Linux environment | ✅ |
+| Modern desktop/mobile browsers | — | ✅ |
+
+Python 3.13+ is required for the CLI/TUI/Doctor/local web server. Mobile support is provided through the responsive standards-based PWA rather than separate Android and iOS codebases. See [`docs/platforms.md`](docs/platforms.md) for the detailed support matrix, installation guidance, security notes, and cross-platform daily-challenge rules.
+
+A Unicode/ANSI-capable terminal provides the richest terminal presentation, but `--plain` remains available for reduced Rich formatting. CI builds and installs the package on Windows, macOS, and Linux runners, verifies the bundled PWA after wheel installation, and runs dedicated browser-engine/syntax checks with Node.js.
 
 ## Tech stack
 
-- **Python 3.13+** for domain/application code.
+- **Python 3.13+** for domain/application code, desktop interfaces, diagnostics, persistence, and the local PWA server.
 - **Rich** for accessible terminal presentation.
 - **Textual** for the six-pane local workspace and deterministic pilot testing.
+- **HTML/CSS/JavaScript** for the dependency-light responsive PWA.
+- **Service Worker + Web App Manifest** for offline caching and installable browser behavior.
 - **JSON** for versioned local persistence, backup wrappers, and replay payloads.
+- **Browser localStorage** for lightweight origin-scoped PWA statistics/history.
 - **SHA-256** from Python's standard library for backup/replay integrity checks.
-- **pytest / pytest-cov** for automated tests.
+- **pytest / pytest-cov** for Python automated tests and **Node.js test runner** for browser-engine parity checks.
 - **Ruff**, **mypy**, **pip-audit**, **CodeQL**, and **GitHub Actions** for repository quality and security automation.
 
 ## Quick start
@@ -94,6 +109,7 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 guessnova play
 guessnova-tui
+guessnova web
 ```
 
 macOS/Linux:
@@ -104,9 +120,34 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 guessnova play
 guessnova-tui
+guessnova web
 ```
 
-See [`docs/setup.md`](docs/setup.md) for full setup details.
+The standalone browser entry point is also available:
+
+```bash
+guessnova-web
+```
+
+Both web commands bind to `127.0.0.1:8765` by default and open the responsive local PWA. See [`docs/setup.md`](docs/setup.md) and [`docs/platforms.md`](docs/platforms.md) for full setup and deployment details.
+
+### Browser/PWA deployment
+
+The static web application is bundled under:
+
+```text
+src/guessnova/web/
+```
+
+It can be deployed to any normal HTTPS static host. HTTPS is recommended for production because service workers and installability require a secure context outside `localhost`. Android, iOS/iPadOS, ChromeOS, and browser-first desktops can use this hosted PWA without requiring Python on the client device.
+
+For intentional LAN development only:
+
+```bash
+guessnova web --host 0.0.0.0 --port 8765 --no-open
+```
+
+Binding to `0.0.0.0` exposes the development server to reachable network interfaces, so use it only on trusted networks.
 
 ## Play and manage local data
 
@@ -213,9 +254,11 @@ GUESSNOVA_SEED=20260819 guessnova play --no-save
 
 ## Data, privacy, and security
 
-GuessNova stores data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use schema-2 normalized JSON and atomic replacement. Local state reads/writes are bounded; backup reads are separately bounded. Backup wrapper v2 records the embedded source schema and verifies a canonical SHA-256 payload digest before import. Legacy version-1 GuessNova backups remain readable when their state schema is supported. Doctor/TUI backup verification additionally proves the embedded state can pass current normalization before reporting the backup as valid. Recoverable profile trash is bounded, and replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use. The runtime needs no account, API key, telemetry endpoint, cloud service, remote leaderboard, or network connection.
+GuessNova's Python interfaces store data only in a local application-data directory; set `GUESSNOVA_HOME` to choose a custom location. Saves use schema-2 normalized JSON and atomic replacement. Local state reads/writes are bounded; backup reads are separately bounded. Backup wrapper v2 records the embedded source schema and verifies a canonical SHA-256 payload digest before import. Legacy version-1 GuessNova backups remain readable when their state schema is supported. Doctor/TUI backup verification additionally proves the embedded state can pass current normalization before reporting the backup as valid. Recoverable profile trash is bounded, and replay text is length-bounded, checksum checked, field-allowlisted, and range validated before use.
 
-Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), [`docs/data_format.md`](docs/data_format.md), [`docs/doctor.md`](docs/doctor.md), and [`docs/tui_workspace.md`](docs/tui_workspace.md).
+The PWA uses only origin-scoped browser storage for local game statistics and recent history. It does not create an account or silently bridge browser data into the Python data directory. Neither interface requires an API key, telemetry endpoint, cloud service, remote leaderboard, or application network connection for gameplay.
+
+Read [`PRIVACY.md`](PRIVACY.md), [`SECURITY.md`](SECURITY.md), [`docs/data_format.md`](docs/data_format.md), [`docs/doctor.md`](docs/doctor.md), [`docs/platforms.md`](docs/platforms.md), and [`docs/tui_workspace.md`](docs/tui_workspace.md).
 
 ## Development and testing
 
@@ -225,33 +268,50 @@ ruff check .
 ruff format --check .
 mypy src/guessnova
 pytest --cov=guessnova --cov-report=term-missing
+node --test tests/web/*.test.mjs
+node --check src/guessnova/web/app.js
+node --check src/guessnova/web/game-engine.mjs
+node --check src/guessnova/web/sw.js
 python -m compileall -q src tests scripts
 python scripts/verify_release_metadata.py
 python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
+python -m guessnova web --help
 python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 python -m build
 ```
 
-The repository CI runs linting, formatting, strict typing, tests, migration fixtures, backup-integrity/importability regressions, bounded state-I/O regressions, Doctor/repair protocol regressions, reusable TUI-workspace helper tests, focused Textual pilot suites, coverage reporting, bytecode compilation, release-metadata verification, smoke testing, cross-platform package build/install/Twine validation, built-wheel Textual-workspace import, both Doctor entry-path checks, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries retain deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
+The repository CI runs linting, formatting, strict typing, Python tests, browser-engine tests, JavaScript syntax validation, migration fixtures, backup-integrity/importability regressions, bounded state-I/O regressions, Doctor/repair protocol regressions, reusable TUI-workspace helper tests, focused Textual pilot suites, coverage reporting, bytecode compilation, release-metadata verification, smoke testing, cross-platform package build/install/Twine validation, built-wheel Textual-workspace import, Doctor entry-path checks, PWA asset/entry-point checks, dependency auditing, secret-material checks, and CodeQL analysis. Replay/import boundaries retain deterministic malformed-input/fuzz-style regression coverage. See [`docs/development.md`](docs/development.md) and [`docs/testing.md`](docs/testing.md).
 
 ## Architecture
 
-GuessNova is a modular monolith with UI-independent game rules and shared local adapters:
+GuessNova is a modular monolith with a UI-independent Python game core plus a small standards-based browser engine that mirrors portable game rules and carries fixed parity tests:
 
 ```text
-Top-level command dispatcher
-        /          \
-   Rich game CLI   Doctor CLI
-          \        /
-        application services         Textual workspace
-          /            \              /          \
-      domain        local adapters --+-- tui_workspace helpers
-     (engine)  (storage/replay/backup/diagnostics)
+                           Top-level command dispatcher
+                         /            |              \
+                Rich game CLI     Doctor CLI     Local PWA server
+                         \            |              /
+                            application services
+                           /                    \
+                      domain/core          local adapters
+                  (Python game engine)  (storage/replay/backup/diagnostics)
+                         |
+                  Textual workspace
+
+Browser / mobile / ChromeOS
+          |
+   responsive PWA
+          |
+ portable JS game engine
+          |
+ parity vectors (difficulty + daily-v2 rules)
 ```
 
-The dispatcher only routes command families; it does not duplicate game rules or recovery logic. The core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. `tui_workspace.py` keeps workspace query/configuration logic independent from Textual widgets, while `tui.py` owns composition/focus/events. State migration, backup integrity, diagnostics, and repair remain local adapter/application concerns rather than game-rule concerns. Presentation messages resolve through offline English/Hindi catalogs while serialized identifiers remain stable. See [`docs/architecture.md`](docs/architecture.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
+The dispatcher routes command families without duplicating Python recovery/storage logic. The Python core engine has no Rich/Textual or filesystem dependency, making seeded gameplay deterministic and directly testable. `tui_workspace.py` keeps workspace query/configuration logic independent from Textual widgets, while `tui.py` owns composition/focus/events. State migration, backup integrity, diagnostics, and repair remain local adapter/application concerns rather than game-rule concerns.
+
+The PWA intentionally remains sandboxed from Python persistence and implements lightweight browser-local statistics/history. Cross-platform rules that must agree across languages—difficulty definitions and daily-v2 target vectors—are covered by both Python and Node tests. See [`docs/architecture.md`](docs/architecture.md), [`docs/platforms.md`](docs/platforms.md), [`docs/localization.md`](docs/localization.md), and [`docs/adr/`](docs/adr/).
 
 ## Build and release
 
@@ -261,13 +321,14 @@ python -m build
 python -m twine check dist/*
 ```
 
-Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until strict verification and Windows/macOS/Linux package checks succeed. Built wheels must expose the game CLI, import the Textual workspace, expose the `guessnova doctor` route, and retain the standalone Doctor compatibility entry point. Release candidates additionally require documented manual accessibility evidence covering all six TUI panes. Real screenshot/demo media must be captured from the exact signed-off build rather than fabricated by automation.
+Semantic tags are handled by a quality-gated GitHub release workflow. The tag must match the package version, and release artifacts are blocked until strict verification and Windows/macOS/Linux package checks succeed. Built wheels must expose the game CLI, import the Textual workspace, expose the `guessnova doctor` route, retain the standalone Doctor compatibility entry point, expose both web entry paths, and contain the bundled PWA assets. Release candidates additionally require documented manual accessibility evidence covering all six TUI panes. Real screenshot/demo media must be captured from the exact signed-off build rather than fabricated by automation.
 
 See [`docs/release.md`](docs/release.md), [`docs/accessibility_evidence_template.md`](docs/accessibility_evidence_template.md), [`docs/media/README.md`](docs/media/README.md), and [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Documentation
 
 - [Setup](docs/setup.md)
+- [Cross-platform support](docs/platforms.md)
 - [Development](docs/development.md)
 - [Architecture](docs/architecture.md)
 - [Game modes](docs/game_modes.md)
