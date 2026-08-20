@@ -3,6 +3,7 @@ import { DIFFICULTIES, MODES } from "./game-engine.mjs";
 export const STORAGE_KEY = "guessnova.web.v1";
 export const HISTORY_LIMIT = 12;
 export const BROWSER_STATE_SCHEMA = 1;
+export const MAX_SERIALIZED_STATE_CHARS = 262_144;
 
 const MAX_COUNTER = 1_000_000_000;
 
@@ -24,7 +25,7 @@ function normalizeDifficulty(value) {
 }
 
 function normalizeCompletedAt(value) {
-  if (typeof value !== "string" || value.length === 0) return null;
+  if (typeof value !== "string" || value.length === 0 || value.length > 64) return null;
   return Number.isNaN(Date.parse(value)) ? null : value;
 }
 
@@ -97,7 +98,13 @@ export function normalizeBrowserState(value) {
 }
 
 export function parseBrowserState(serialized) {
-  if (typeof serialized !== "string" || serialized.length === 0) return defaultBrowserState();
+  if (
+    typeof serialized !== "string"
+    || serialized.length === 0
+    || serialized.length > MAX_SERIALIZED_STATE_CHARS
+  ) {
+    return defaultBrowserState();
+  }
   try {
     return normalizeBrowserState(JSON.parse(serialized));
   } catch {
