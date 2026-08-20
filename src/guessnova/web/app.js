@@ -63,7 +63,19 @@ function loadState() {
 let state = loadState();
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Privacy settings can block persistence; gameplay continues in memory.
+  }
+}
+
+function clearSavedState() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // A blocked storage backend is already effectively cleared for this app session.
+  }
 }
 
 function localDay() {
@@ -290,7 +302,7 @@ higherButton.addEventListener("click", () => reverseResponse("higher"));
 resetDataButton.addEventListener("click", () => {
   const confirmed = globalThis.confirm("Reset all GuessNova progress stored in this browser?");
   if (!confirmed) return;
-  localStorage.removeItem(STORAGE_KEY);
+  clearSavedState();
   state = defaultState();
   modeSelect.value = state.settings.mode;
   difficultySelect.value = state.settings.difficulty;
