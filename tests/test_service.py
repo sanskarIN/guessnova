@@ -5,6 +5,16 @@ from guessnova.service import GameService
 from guessnova.storage import Storage
 
 
+class CountingStorage(Storage):
+    def __init__(self, data_dir: Path) -> None:
+        super().__init__(data_dir)
+        self.save_calls = 0
+
+    def save_raw(self, payload: dict[str, object]) -> None:
+        self.save_calls += 1
+        super().save_raw(payload)
+
+
 def test_service_records_result_and_history(tmp_path: Path) -> None:
     storage = Storage(tmp_path)
     service = GameService(storage)
@@ -34,3 +44,24 @@ def test_service_records_loss_in_history_without_leaderboard_entry(tmp_path: Pat
     profile, _ = GameService(storage).record(summary, "Tester")
     assert profile.history[-1].won is False
     assert storage.load_leaderboard() == []
+
+
+def test_service_persists_completed_round_with_one_state_write(tmp_path: Path) -> None:
+    storage = CountingStorage(tmp_path)
+    summary = GameSummary(GameMode.CLASSIC, "normal", 42, True, 2, 1.0, (20, 42), 7)
+
+    profile, _ = GameService(storage).record(summary, "Tester")
+
+    assert storage.save_calls == 1
+    persisted = storage.load_raw()
+    profiles = persisted["profiles"]
+    assert isinstance(profiles, dict)
+    tester = profiles["Tester"]
+    assert isinstance(tester, dict)
+    history = tester["history"]
+    assert isinstance(history, list)
+    assert len(history) == 1
+    leaderboard = persisted["leaderboard"]
+    assert isinstance(leaderboard, list)
+    assert len(leaderboard) == 1
+    assert profile.stats.games_won == 1
