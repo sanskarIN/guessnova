@@ -321,3 +321,22 @@ class Storage:
         if make_active:
             payload["active_profile"] = profile.name
         self.save_raw(payload)
+
+    def save_profile_and_leaderboard(
+        self,
+        profile: Profile,
+        entries: list[LeaderboardEntry],
+        *,
+        make_active: bool = True,
+    ) -> None:
+        """Persist one completed-round profile/leaderboard update in one state write."""
+        payload = self.load_raw()
+        profiles = payload.setdefault("profiles", {})
+        if not isinstance(profiles, dict):
+            profiles = {}
+            payload["profiles"] = profiles
+        profiles[profile.name] = profile.to_dict()
+        payload["leaderboard"] = serialize(entries)
+        if make_active:
+            payload["active_profile"] = profile.name
+        self.save_raw(payload)
