@@ -15,10 +15,21 @@ test("service worker precaches all JavaScript modules", () => {
 
 test("offline HTML fallback is limited to navigations", () => {
   assert.match(source, /request\.mode\s*===\s*["']navigate["']/);
-  assert.match(source, /caches\.match\(\s*["']\.\/index\.html["']\s*\)/);
+  assert.match(source, /safeCacheMatch\(\s*["']\.\/index\.html["']\s*\)/);
   assert.doesNotMatch(
     source,
     /\.catch\(\s*\(\)\s*=>\s*caches\.match\(\s*["']\.\/index\.html["']\s*\)\s*\)/,
+  );
+});
+
+test("cache storage failures are isolated from network responses", () => {
+  assert.match(source, /async function safeCacheMatch\(/);
+  assert.match(source, /return await caches\.match\(request\)/);
+  assert.match(source, /async function cacheSuccessfulResponse\(/);
+  assert.match(source, /await cache\.put\(request, response\.clone\(\)\)/);
+  assert.match(
+    source,
+    /catch\s*\{\s*\/\/ Cache Storage can be blocked or full;/,
   );
 });
 
