@@ -37,6 +37,26 @@ test("browser GuessGame follows classic outcome semantics", () => {
   assert.equal(game.summary().won, true);
   assert.equal(game.summary().attempts, 2);
   assert.equal(game.summary().elapsedSeconds, 1.5);
+
+  now = 999_000;
+  assert.equal(game.summary().elapsedSeconds, 1.5);
+});
+
+test("timed browser rounds freeze timeout duration", () => {
+  let now = 0;
+  const game = new GuessGame({ difficultyName: "normal", mode: "timed", target: 35, now: () => now });
+  now = 45_000;
+  assert.equal(game.guess(20).outcome, "timeout");
+
+  now = 90_000;
+  assert.equal(game.summary().elapsedSeconds, 45);
+});
+
+test("browser GuessGame rejects non-integer explicit targets", () => {
+  assert.throws(
+    () => new GuessGame({ difficultyName: "normal", target: 35.5 }),
+    /outside the difficulty range/,
+  );
 });
 
 test("smart hints preserve Python thresholds and parity", () => {
