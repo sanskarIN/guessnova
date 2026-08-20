@@ -17,6 +17,9 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Install quality dependencies
         run: python -m pip install -e '.[dev]' pip-audit build twine
       - name: Verify tag matches package version
@@ -31,8 +34,15 @@ jobs:
         run: ruff format --check .
       - name: Mypy
         run: mypy src/guessnova
-      - name: Tests
+      - name: Python tests
         run: pytest --cov=guessnova --cov-report=term-missing
+      - name: Browser engine tests
+        run: node --test tests/web/*.test.mjs
+      - name: Browser JavaScript syntax
+        run: |
+          node --check src/guessnova/web/app.js
+          node --check src/guessnova/web/game-engine.mjs
+          node --check src/guessnova/web/sw.js
       - name: Compile
         run: python -m compileall -q src tests scripts
       - name: Verify release metadata
@@ -75,6 +85,12 @@ jobs:
         run: guessnova-doctor --help
       - name: Verify doctor version
         run: guessnova-doctor --version
+      - name: Verify web entry points
+        run: |
+          guessnova web --help
+          guessnova-web --help
+      - name: Verify bundled PWA assets
+        run: python -c "from guessnova.web_server import WEB_ROOT; required=('index.html','sw.js','manifest.webmanifest','icon-192.png','icon-512.png'); assert all(WEB_ROOT.joinpath(name).is_file() for name in required); print('PWA assets OK')"
       - name: Run smoke test
         run: python scripts/smoke_test.py
 
