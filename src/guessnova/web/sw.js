@@ -26,14 +26,26 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+async function safeCacheMatch(request) {
+  try {
+    return await caches.match(request);
+  } catch {
+    return undefined;
+  }
+}
+
 async function cacheSuccessfulResponse(request, response) {
   if (!response || response.status !== 200 || response.type === "opaque") return;
-  const cache = await caches.open(CACHE_NAME);
-  await cache.put(request, response.clone());
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response.clone());
+  } catch {
+    // Cache Storage can be blocked or full; a successful network response still wins.
+  }
 }
 
 async function respondToRequest(request) {
-  const cached = await caches.match(request);
+  const cached = await safeCacheMatch(request);
   if (cached) return cached;
 
   try {
@@ -42,7 +54,7 @@ async function respondToRequest(request) {
     return response;
   } catch (error) {
     if (request.mode === "navigate") {
-      const fallback = await caches.match("./index.html");
+      const fallback = await safeCacheMatch("./index.html");
       if (fallback) return fallback;
     }
     throw error;
