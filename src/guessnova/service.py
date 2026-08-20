@@ -5,7 +5,7 @@ from __future__ import annotations
 from .achievements import apply_summary
 from .domain import GameSummary
 from .history import append_history, entry_from_summary as history_entry_from_summary
-from .leaderboard import add_entry, entry_from_summary
+from .leaderboard import entry_from_summary
 from .profile import Profile
 from .storage import Storage
 
@@ -16,11 +16,8 @@ class GameService:
 
     def record(self, summary: GameSummary, profile_name: str | None = None) -> tuple[Profile, set[str]]:
         profile = self.storage.load_profile(profile_name)
-        leaderboard = self.storage.load_leaderboard()
         unlocked = apply_summary(profile.stats, summary)
         profile.history = append_history(profile.history, history_entry_from_summary(summary))
-        entry = entry_from_summary(profile.name, summary)
-        if entry is not None:
-            leaderboard = add_entry(leaderboard, entry)
-        self.storage.save_profile_and_leaderboard(profile, leaderboard)
+        leaderboard_entry = entry_from_summary(profile.name, summary)
+        self.storage.save_completed_round(profile, leaderboard_entry)
         return profile, unlocked
