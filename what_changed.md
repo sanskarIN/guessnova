@@ -10,7 +10,7 @@ Repository:
 https://github.com/sanskarIN/guessnova
 ```
 
-Current release metadata is intentionally still `1.4.0`; this continuation adds a new presentation/delivery surface but does not create a release tag or change stored-data formats by itself.
+Current release metadata is intentionally still `1.4.0`; the browser/PWA work remains unreleased until an intentional version/tag decision is made. Python state schema, backup wrapper, replay format, and Doctor report protocol are unchanged.
 
 Previous detailed v1.4 history remains preserved in:
 
@@ -55,7 +55,7 @@ Full matrix: `docs/platforms.md`.
 
 ---
 
-## New browser/PWA implementation
+## Browser/PWA implementation
 
 Bundled assets:
 
@@ -63,6 +63,7 @@ Bundled assets:
 src/guessnova/web/
 ├── app.css
 ├── app.js
+├── browser-state.mjs
 ├── game-engine.mjs
 ├── icon.svg
 ├── icon-192.png
@@ -101,11 +102,62 @@ The browser state intentionally does not silently read/write the Python schema-2
 
 ---
 
+## Browser state reliability hardening
+
+New module:
+
+```text
+src/guessnova/web/browser-state.mjs
+```
+
+Browser persistence continues to use:
+
+```text
+localStorage key: guessnova.web.v1
+browser state marker: 1
+history limit: 12
+```
+
+The new normalization boundary prevents stale/corrupted localStorage values from being trusted directly by rendering/gameplay code.
+
+Normalization now:
+
+- falls back safely for invalid/non-object JSON;
+- discards unknown top-level persisted fields;
+- rejects negative/non-integer/non-finite counters;
+- bounds counters to a finite safe application limit;
+- keeps games-won/streak values internally consistent with games-played;
+- bounds history to the configured recent-round limit;
+- discards non-object history entries;
+- normalizes mode and difficulty identifiers;
+- validates stored targets against the selected difficulty range;
+- converts invalid completion timestamps to `null`;
+- preserves legacy unversioned `guessnova.web.v1` values by normalizing them into the current shape;
+- uses `Object.hasOwn()` for difficulty membership so inherited names such as `toString` cannot become fake difficulty identifiers.
+
+`app.js` now parses and serializes through this boundary. If localStorage access itself is blocked by browser privacy settings, gameplay still falls back to in-memory state rather than failing startup.
+
+Deterministic tests are in:
+
+```text
+tests/web/test_browser_state.mjs
+```
+
+Observed scratch validation for the current normalization logic:
+
+```text
+7 tests
+7 pass
+0 fail
+```
+
+This observed scratch run covers the browser-state module with equivalent current difficulty constants; it is not a claim that the complete repository CI suite has passed.
+
+---
+
 ## Installability hardening
 
-Current browser guidance was checked during this continuation.
-
-The PWA manifest now supplies real raster icons at:
+The PWA manifest supplies real raster icons at:
 
 ```text
 192x192  src/guessnova/web/icon-192.png
@@ -114,9 +166,15 @@ The PWA manifest now supplies real raster icons at:
 
 The HTML uses the 192px raster image for `apple-touch-icon`, while SVG remains available as the normal scalable favicon.
 
-The service worker caches both raster icons and uses cache namespace `guessnova-web-v2` so existing installs can transition to the new app shell.
+The service worker caches both raster icons, all primary JavaScript modules including `browser-state.mjs`, and uses cache namespace:
 
-A temporary text-only placeholder commit was created when the connector's normal text-file action was first used for a `.png` path. That was caught immediately. A follow-up Git object/blob/tree commit replaced it with actual PNG bytes and added the 512px image. Repository fetch verification confirms both current paths are binary PNG content.
+```text
+guessnova-web-v3
+```
+
+The namespace advanced so existing installations can transition to the state-normalized app shell.
+
+A temporary text-only placeholder commit was created earlier when a normal text-file action was first used for a `.png` path. That was caught immediately. A follow-up Git object/blob/tree commit replaced it with actual PNG bytes and added the 512px image. Repository fetch verification confirmed both current paths are binary PNG content.
 
 The corrective commit is:
 
@@ -130,7 +188,7 @@ Do not treat the earlier placeholder commit as the current file state.
 
 ## Local PWA server
 
-New module:
+Module:
 
 ```text
 src/guessnova/web_server.py
@@ -171,7 +229,7 @@ Properties:
 
 Legacy `daily_seed()` remains available for compatibility.
 
-New portable daily-v2 rule:
+Portable daily-v2 rule:
 
 ```text
 guessnova-daily-v2:<YYYY-MM-DD>:<difficulty>
@@ -216,13 +274,13 @@ web    -> bundled local PWA server
 other  -> existing Rich gameplay/data CLI
 ```
 
-New installed script:
+Installed script:
 
 ```text
 guessnova-web = guessnova.web_server:main
 ```
 
-The Python package metadata now reflects terminal + web environments and OS-independent packaging.
+The Python package metadata reflects terminal + web environments and OS-independent packaging.
 
 PWA assets live inside `src/guessnova` so wheel installation can be checked for asset preservation.
 
@@ -231,8 +289,6 @@ PWA assets live inside `src/guessnova` so wheel installation can be checked for 
 ## Tests added/updated
 
 ### Python
-
-New:
 
 ```text
 tests/test_web_server.py
@@ -243,7 +299,7 @@ Covers:
 - root asset mapping
 - query stripping
 - traversal rejection
-- required PWA asset presence
+- required PWA asset presence, including `browser-state.mjs`
 - required 192px/512px raster icon presence
 - local HTTP serving
 - server security headers
@@ -259,8 +315,6 @@ Covers portable daily parity and web-command routing.
 
 ### Browser engine
 
-New:
-
 ```text
 tests/web/test_game_engine.mjs
 ```
@@ -273,7 +327,25 @@ Covers:
 - smart-hint semantics
 - ReverseGuesser convergence
 
-### Static-review bug fixed
+### Browser state
+
+```text
+tests/web/test_browser_state.mjs
+```
+
+Covers:
+
+- isolated/versioned default browser state
+- malformed persisted-value recovery
+- internally consistent bounded counters
+- malformed/oversized history normalization
+- invalid target/timestamp normalization
+- legacy unversioned state readability
+- corrupt JSON recovery
+- normalized serialization round-trip
+- rejection of inherited/prototype-key difficulty identifiers
+
+### Static-review bug fixed earlier
 
 A completed Reverse round disabled the three response controls, and a newly started Reverse round initially inherited those disabled controls.
 
@@ -283,17 +355,38 @@ Fixed in:
 61a0d058b268e1c73f5133645101940d5a8b46c0  fix(web): re-enable reverse controls on new rounds
 ```
 
-`startReverse()` now explicitly re-enables Lower / Correct / Higher.
+`startReverse()` explicitly re-enables Lower / Correct / Higher.
 
 ---
 
 ## CI and release gates
 
-Normal CI now runs:
+A browser-test glob defect was found during this continuation.
+
+The workflows previously used:
 
 ```bash
 node --test tests/web/*.test.mjs
+```
+
+but the committed engine test is named:
+
+```text
+tests/web/test_game_engine.mjs
+```
+
+The test glob is now correctly:
+
+```bash
+node --test tests/web/*.mjs
+```
+
+Normal CI now runs:
+
+```bash
+node --test tests/web/*.mjs
 node --check src/guessnova/web/app.js
+node --check src/guessnova/web/browser-state.mjs
 node --check src/guessnova/web/game-engine.mjs
 node --check src/guessnova/web/sw.js
 ```
@@ -314,54 +407,60 @@ Built-wheel matrices remain on:
 - Windows
 - macOS
 
-and now verify:
+and verify:
 
 ```bash
 guessnova web --help
 guessnova-web --help
 ```
 
-plus bundled:
+plus required bundled modules/assets including:
 
 ```text
 index.html
+app.js
+browser-state.mjs
+game-engine.mjs
 sw.js
 manifest.webmanifest
 icon-192.png
 icon-512.png
 ```
 
-The tagged `.github/workflows/release.yml` was also upgraded so release verification includes the same Node browser-engine/syntax checks and installed-wheel PWA entry/assets verification. A tag therefore cannot intentionally rely on only the Python surface while ignoring the browser client.
+Tagged `.github/workflows/release.yml` includes the same browser tests, JavaScript syntax checks, installed-wheel PWA entry-point checks, and PWA asset verification. A release tag therefore cannot intentionally rely only on the Python surface while ignoring the browser client.
 
 ---
 
 ## Documentation updated
 
-Added:
+Added previously:
 
 - `docs/platforms.md`
 
-Updated:
+Updated across the cross-platform continuation:
 
 - `README.md`
 - `docs/setup.md`
 - `PRIVACY.md`
 - `SECURITY.md`
+- `ROADMAP.md`
+- `CHANGELOG.md`
 - `what_changed.md`
 
 Documentation now clearly separates:
 
 - desktop Python requirements from mobile/browser requirements
-- Python `state.json` from browser origin storage
+- Python `state.json` from browser-origin storage
 - local loopback hosting from deliberate LAN exposure
 - gameplay-data privacy from ordinary static-asset HTTP requests on a remote host
 - PWA support from native mobile binary claims
+- shipped PWA work from still-gated native wrapper/interchange candidates
 
 ---
 
 ## Important cross-platform commits
 
-The continuation was intentionally granular. Key commits include:
+The continuation was intentionally granular. Earlier key commits include:
 
 ```text
 0d702a7959abdfed518b366304e3cf14dbfb028f  feat(web): add local PWA server
@@ -400,7 +499,23 @@ f8e2a9b10134d2ee9bd627454d8ad549063d0da9  fix(web): cache installable PWA raster
 dfa210ad06d7d77c9e93259059015307d9fd8eaa  ci(release): gate releases on PWA browser checks
 ```
 
-This handoff update follows those commits.
+Reliability/quality continuation commits include:
+
+```text
+8db75504017ebab17d3b95d7441d408c4a48234c  fix(ci): run the committed browser test suite
+6a247b8c942099ec46dcbb126d1717fb9b1cd49d  fix(release): execute browser tests before publishing
+a2728eb5a2f9b1594c2e13b83297215dbd1df0e1  feat(web): add defensive browser state normalization
+02b40bcd3d8b3b2525d12cb336ba8caf90a40fa3  test(web): cover corrupt browser state recovery
+e3a8fc290cf5e37730a6bf35180cefd80defa338  fix(web): normalize persisted state before rendering
+9f38e3a796afffe7e4a019d91026dbbe73e755af  fix(web): cache browser state module for offline PWA
+806d429909eebee29c94a0c23035068f9374208d  test(web): require browser state module in package assets
+d32d5e7fc1f307245af24c1ae6b815a460c0dc61  ci(web): verify state module syntax and wheel inclusion
+1ab994de1e9f2674a68b40f9d0eae41a393a5d82  ci(release): validate browser state module in artifacts
+dee40c6fddad7634b54beca2e421e99672282cc8  docs(roadmap): promote shipped PWA from future candidate
+67404c4af29183e20142330461209c6c822ad33f  docs(changelog): record PWA reliability and CI hardening
+594a6fc934fa4ad1adcf974fed389da662584f42  fix(web): reject inherited difficulty keys
+8fab003a95b4975a981dbb3725dd86f4ecbe8e11  test(web): reject prototype-key difficulty values
+```
 
 ---
 
@@ -408,41 +523,48 @@ This handoff update follows those commits.
 
 Do not infer unobserved passes.
 
-The repository now contains the automated checks needed for the new platform surface, but this continuation does not claim successful Ruff/mypy/pytest/Node/device-matrix results unless an execution result was actually observed.
-
-The available local execution environment previously failed to clone GitHub because external DNS/network resolution was unavailable, and it did not contain the complete project development toolchain. Therefore no local full-suite pass is fabricated.
-
-GitHub's combined commit-status connector also returned no status entries for an inspected cross-platform head during this work. An empty status set is not equivalent to pass or fail.
-
-Verified directly during this continuation:
+Verified directly during the cross-platform work:
 
 - repository file modifications and commit history
 - portable FNV-1a daily-v2 fixed vector calculation
 - current 192px icon path is a real PNG blob
 - current 512px icon path is a real PNG blob
 - source/static review of PWA/server paths
-- current browser installability documentation check
 - Reverse restart regression discovery and repair
+- browser state normalization logic and prototype-key hardening
+- local scratch Node execution of the current browser-state regression set: 7/7 pass
 - documentation consistency review
 
-Release-candidate verification still needs actual CI conclusions and real browser/device checks on the exact candidate SHA.
+Not claimed:
+
+- a complete local Ruff/mypy/pytest/Node full-suite pass;
+- successful GitHub Actions conclusions when no conclusion was exposed by the available status connector;
+- real Android/iOS/ChromeOS device evidence;
+- release-candidate accessibility evidence;
+- signed release artifacts.
+
+The available local execution environment cannot clone GitHub because external DNS/network resolution is unavailable. The GitHub combined-status connector returned an empty status set when inspected; an empty set is not equivalent to pass or fail.
+
+Release-candidate verification still requires actual CI conclusions and real browser/device checks on the exact candidate SHA.
 
 ---
 
-## Compatibility metadata unchanged
+## Compatibility metadata
 
 ```text
 package/runtime version  1.4.0
-state schema             2
-backup wrapper           2
-legacy backup wrapper    1
-replay format            1
-Doctor report protocol   1
-Python requirement       >=3.13
-license                  MIT
+Python state schema       2
+backup wrapper            2
+legacy backup wrapper     1
+replay format             1
+Doctor report protocol    1
+browser state marker      1
+browser localStorage key  guessnova.web.v1
+Python requirement        >=3.13
+license                   MIT
 ```
 
-The new PWA does not require a Python state-schema migration because its browser-local storage is a separate presentation store.
+The PWA does not require a Python state-schema migration because its browser-local storage is a separate presentation store.
 
 ---
 
@@ -453,18 +575,19 @@ Before tagging a release candidate:
 1. require CI/security checks to pass on the exact candidate SHA;
 2. install the wheel on Windows, macOS, and Linux;
 3. verify CLI, TUI, Doctor, `guessnova web`, and `guessnova-web`;
-4. verify PWA assets are present in the wheel;
-5. run Node browser-engine tests and JS syntax checks;
+4. verify the complete PWA asset/module set is present in the wheel;
+5. run `node --test tests/web/*.mjs` and all configured JavaScript syntax checks;
 6. host the PWA over HTTPS;
 7. test current Android Chromium installation/offline behavior;
 8. test iPhone Safari Add to Home Screen/offline behavior;
 9. test iPad Safari;
 10. test ChromeOS;
 11. test available current desktop Chrome/Edge/Firefox/Safari;
-12. verify touch, keyboard, responsive breakpoints, light/dark mode, and reduced motion;
-13. compare a Daily Challenge target between Python and browser for the same date+difficulty;
-14. complete the existing manual accessibility evidence on the candidate;
-15. capture real screenshots/media only from that verified candidate.
+12. verify corrupt/stale browser storage falls back or normalizes without breaking startup;
+13. verify touch, keyboard, responsive breakpoints, light/dark mode, and reduced motion;
+14. compare a Daily Challenge target between Python and browser for the same date+difficulty;
+15. complete the existing manual accessibility evidence on the candidate;
+16. capture real screenshots/media only from that verified candidate.
 
 Do not fabricate CI results, device evidence, accessibility evidence, or screenshots.
 
