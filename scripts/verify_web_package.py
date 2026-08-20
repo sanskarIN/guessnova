@@ -19,6 +19,18 @@ REQUIRED_ASSETS: Final = (
     "icon-192.png",
     "icon-512.png",
 )
+APP_SHELL_REFERENCES: Final = (
+    "./",
+    "./index.html",
+    "./app.css",
+    "./app.js",
+    "./browser-state.mjs",
+    "./game-engine.mjs",
+    "./manifest.webmanifest",
+    "./icon.svg",
+    "./icon-192.png",
+    "./icon-512.png",
+)
 PNG_SIGNATURE: Final = b"\x89PNG\r\n\x1a\n"
 EXPECTED_ICONS: Final = {
     "./icon-192.png": 192,
@@ -93,10 +105,7 @@ def _verify_references() -> None:
         if marker not in html:
             raise RuntimeError(f"index.html is missing required reference: {marker}")
 
-    for asset in REQUIRED_ASSETS:
-        if asset == "sw.js":
-            continue
-        reference = "./" if asset == "index.html" else f"./{asset}"
+    for reference in APP_SHELL_REFERENCES:
         if reference not in service_worker:
             raise RuntimeError(f"sw.js app shell is missing {reference}")
 
