@@ -37,7 +37,10 @@ CONTENT_SECURITY_POLICY: Final = (
 
 def _safe_asset_path(raw_path: str) -> str | None:
     """Return a normalized bundled asset path, rejecting traversal attempts."""
-    path = unquote(urlsplit(raw_path).path)
+    try:
+        path = unquote(urlsplit(raw_path).path)
+    except ValueError:
+        return None
     if path in {"", "/"}:
         return "index.html"
     if "\\" in path or "\x00" in path:
