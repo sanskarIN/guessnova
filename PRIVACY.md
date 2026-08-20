@@ -1,18 +1,39 @@
 # Privacy Policy
 
-GuessNova is designed to work without an account and without sending gameplay data to a server.
+GuessNova is designed to work without an account and without sending gameplay data to an application backend.
 
 ## Data stored locally
 
-The application may save profile names, settings, gameplay statistics, achievements, XP, streak values, bounded session history, leaderboard entries, and recoverable deleted-profile records in `state.json` under the local GuessNova data directory.
+The Python application may save profile names, settings, gameplay statistics, achievements, XP, streak values, bounded session history, leaderboard entries, and recoverable deleted-profile records in `state.json` under the local GuessNova data directory.
 
 The Rich CLI, Textual workspace, and Doctor all operate on the same local state model. The Textual workspace does not create a second database or hidden cache of profile/history/leaderboard information.
 
+The browser/PWA interface uses origin-scoped browser storage for lightweight statistics, current/best streak values, recent-round history, and the last selected mode/difficulty. It does not silently read or write the Python `state.json` data directory.
+
 ## Network behavior
 
-The installed Python application does not require network access for gameplay, the Textual workspace, diagnostics, backup verification, repair, backup import/export, or local profile management. It contains no telemetry, analytics, advertising, cloud-sync, remote leaderboard, or remote-account code.
+The installed Python CLI, Textual workspace, and Doctor do not require network access for gameplay, diagnostics, backup verification, repair, backup import/export, or local profile management. They contain no telemetry, analytics, advertising, cloud-sync, remote leaderboard, or remote-account code.
+
+`guessnova web` / `guessnova-web` starts a local static-file server that binds to `127.0.0.1` by default. The bundled PWA can also be deployed to a normal HTTPS static host. When hosted remotely, a browser necessarily requests the application files from that chosen host and the service worker may fetch/cache same-origin application assets. GuessNova still does not send gameplay history, guesses, statistics, profile data, or analytics to an application backend.
+
+A hosting provider, browser vendor, operating-system service, DNS provider, reverse proxy, CDN, or network administrator may independently observe ordinary web-request metadata according to its own policies. That transport metadata is outside GuessNova's local gameplay-storage model.
 
 GitHub Actions, repository pages, package registries, or other development/distribution services are separate from the installed GuessNova runtime and have their own policies when a developer chooses to use them.
+
+## Browser/PWA interface
+
+The PWA is designed for Android, iOS/iPadOS, ChromeOS, and modern desktop/mobile browsers. It can be installed where the browser exposes PWA/home-screen installation support and can use its cached app shell offline after a successful load/install.
+
+Browser-local data can include:
+
+- games played/won;
+- current and best streak;
+- recent round mode, difficulty, result, attempts, target, and completion timestamp;
+- the most recently selected mode and difficulty.
+
+This information is stored under the web origin controlled by the browser. Clearing that site's storage or using **Reset local data** removes GuessNova's browser-local state for that origin. Browser backup/sync features, if enabled by the user or operating system, are controlled by those platforms rather than GuessNova.
+
+The current PWA does not synchronize browser-local state with Python profiles, Doctor, backups, or the Textual workspace.
 
 ## Textual workspace
 
@@ -61,6 +82,8 @@ Legacy GuessNova version-1 backup wrappers remain readable when their embedded s
 
 A backup can include live profiles, leaderboard rows, session history, settings, and recoverable deleted-profile records. Treat exported backups as personal local data if profile names or gameplay history are personally meaningful.
 
+The browser/PWA's lightweight localStorage state is not automatically included in Python backup files.
+
 ## Read-only backup verification
 
 CLI/Doctor route:
@@ -89,7 +112,7 @@ Compatibility route:
 guessnova-doctor
 ```
 
-Doctor reads local GuessNova state and reports schema/normalization status plus aggregate counts. It does not upload state, contact a server, or enable telemetry. JSON diagnostic output can include the active local profile name, selected paths, and local counts; scripts that capture, transmit, or publish that output are outside GuessNova's control.
+Doctor reads local GuessNova state and reports schema/normalization status plus aggregate counts. It does not upload state, contact an application server, or enable telemetry. JSON diagnostic output can include the active local profile name, selected paths, and local counts; scripts that capture, transmit, or publish that output are outside GuessNova's control.
 
 `--data-dir PATH` selects a local directory explicitly and does not send that path anywhere.
 
@@ -116,16 +139,18 @@ guessnova profiles restore NAME
 
 or the TUI Profiles trash/Restore controls to view/undo local deletion.
 
-Deleting the entire GuessNova local data directory removes both live and recoverable application state from that directory.
+Deleting the entire GuessNova local data directory removes both live and recoverable Python application state from that directory. It does not clear browser-origin storage; clear the site data separately when using the PWA.
 
 ## Settings and locale
 
 The TUI Settings pane edits the same local per-profile settings as the CLI. A locale change is saved locally; the running TUI keeps its launch language until restart so the mounted interface does not become partially translated.
 
-No setting is synchronized to a server.
+No Python profile setting is synchronized to a server. The PWA currently maintains its own lightweight browser-local mode/difficulty preference rather than sharing the Python profile settings model.
 
 ## Complete local deletion
 
-Users can delete their local GuessNova data directory at any time to remove saved application data, including profile trash. User-created export files and pre-repair backups are separate files and must also be deleted wherever the user chose to save or copy them.
+Users can delete their local GuessNova data directory at any time to remove saved Python application data, including profile trash. User-created export files and pre-repair backups are separate files and must also be deleted wherever the user chose to save or copy them.
 
-If Doctor reports, terminal logs, screenshots, or screen recordings were deliberately saved elsewhere, those copies are separate files and should also be removed if the user wants to delete them.
+For the PWA, clear the GuessNova site's browser storage (or use **Reset local data**) for each origin on which it was used. An installed PWA may also need to be uninstalled separately from the browser/operating system.
+
+If Doctor reports, terminal logs, screenshots, browser exports/captures, or screen recordings were deliberately saved elsewhere, those copies are separate files and should also be removed if the user wants to delete them.
