@@ -27,15 +27,23 @@ def validate_game_summary(summary: GameSummary) -> None:
         raise ValueError("summary attempts are invalid")
     if summary.won and summary.attempts < 1:
         raise ValueError("winning summary must use at least one attempt")
-    if not summary.won and summary.mode != GameMode.TIMED and summary.attempts != rules.max_attempts:
-        raise ValueError("non-timed losing summary must exhaust its attempts")
 
     if isinstance(summary.elapsed_seconds, bool) or not isinstance(
         summary.elapsed_seconds, (int, float)
     ):
         raise ValueError("summary elapsed time is invalid")
-    if summary.elapsed_seconds < 0 or not math.isfinite(float(summary.elapsed_seconds)):
+    elapsed = float(summary.elapsed_seconds)
+    if elapsed < 0 or not math.isfinite(elapsed):
         raise ValueError("summary elapsed time is invalid")
+
+    if not summary.won:
+        if summary.mode == GameMode.TIMED:
+            timed_out = elapsed >= rules.timed_seconds
+            exhausted = summary.attempts == rules.max_attempts
+            if not timed_out and not exhausted:
+                raise ValueError("timed losing summary is not complete")
+        elif summary.attempts != rules.max_attempts:
+            raise ValueError("non-timed losing summary must exhaust its attempts")
 
     if not isinstance(summary.guesses, tuple) or len(summary.guesses) != summary.attempts:
         raise ValueError("summary guesses do not match attempts")
