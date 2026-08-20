@@ -14,12 +14,15 @@ test("service worker precaches all JavaScript modules", () => {
 });
 
 test("offline HTML fallback is limited to navigations", () => {
-  assert.match(source, /request\.mode === ["']navigate["']/);
-  assert.match(source, /caches\.match\(["']\.\/index\.html["']\)/);
-  assert.doesNotMatch(source, /\.catch\(\(\) => caches\.match\(["']\.\/index\.html["']\)\)/);
+  assert.match(source, /request\.mode\s*===\s*["']navigate["']/);
+  assert.match(source, /caches\.match\(\s*["']\.\/index\.html["']\s*\)/);
+  assert.doesNotMatch(
+    source,
+    /\.catch\(\s*\(\)\s*=>\s*caches\.match\(\s*["']\.\/index\.html["']\s*\)\s*\)/,
+  );
 });
 
 test("service worker ignores non-GET and cross-origin traffic", () => {
-  assert.match(source, /event\.request\.method !== ["']GET["']/);
-  assert.match(source, /url\.origin !== self\.location\.origin/);
+  assert.match(source, /event\.request\.method\s*!==\s*["']GET["']/);
+  assert.match(source, /url\.origin\s*!==\s*self\.location\.origin/);
 });
