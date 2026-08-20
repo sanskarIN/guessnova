@@ -34,6 +34,23 @@ test("malformed persisted values normalize to safe defaults", () => {
   assert.equal("injected" in state, false);
 });
 
+test("inherited object keys cannot become difficulties", () => {
+  const state = normalizeBrowserState({
+    history: [{
+      mode: "classic",
+      difficulty: "toString",
+      won: true,
+      attempts: 1,
+      target: 35,
+      completedAt: "2026-08-20T00:00:00.000Z",
+    }],
+    settings: { mode: "classic", difficulty: "toString" },
+  });
+
+  assert.equal(state.settings.difficulty, "normal");
+  assert.equal(state.history[0].difficulty, "normal");
+});
+
 test("statistics are bounded and internally consistent", () => {
   const state = normalizeBrowserState({
     gamesPlayed: 4,
