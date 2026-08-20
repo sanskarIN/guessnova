@@ -1,11 +1,18 @@
 # Setup
 
-## Requirements
+GuessNova supports two delivery families:
+
+- **Python CLI/TUI** for Windows, macOS, and Linux.
+- **Responsive PWA** for Android, iOS/iPadOS, ChromeOS, and modern desktop/mobile browsers.
+
+See [`platforms.md`](platforms.md) for the complete platform matrix.
+
+## Desktop Python requirements
 
 - Python 3.13+
 - Git
 - Windows 10/11, current macOS, or a modern Linux distribution
-- UTF-8 terminal recommended
+- UTF-8 terminal recommended for the richest CLI/TUI presentation
 
 ## Windows PowerShell
 
@@ -20,6 +27,8 @@ guessnova play
 guessnova-tui
 guessnova doctor --help
 guessnova-doctor --help
+guessnova web --help
+guessnova-web --help
 ```
 
 ## macOS / Linux
@@ -35,6 +44,8 @@ guessnova play
 guessnova-tui
 guessnova doctor --help
 guessnova-doctor --help
+guessnova web --help
+guessnova-web --help
 ```
 
 ## Installed entry points
@@ -42,12 +53,74 @@ guessnova-doctor --help
 A normal installation provides:
 
 ```text
-guessnova          primary CLI dispatcher for gameplay/data commands and `doctor`
+guessnova          primary CLI dispatcher for gameplay/data, `doctor`, and `web`
 guessnova-tui      six-pane Textual local workspace
 guessnova-doctor   standalone Doctor compatibility entry point
+guessnova-web      standalone local PWA server entry point
 ```
 
 `python -m guessnova` uses the same top-level dispatcher as the installed `guessnova` script.
+
+## Launch the responsive web/PWA interface locally
+
+After installing the Python package:
+
+```bash
+guessnova web
+```
+
+or:
+
+```bash
+guessnova-web
+```
+
+The server defaults to:
+
+```text
+http://127.0.0.1:8765/
+```
+
+and opens the default browser unless `--no-open` is supplied. Loopback binding is intentional: it does not expose the server to other devices by default.
+
+Options:
+
+```bash
+guessnova web --host 127.0.0.1 --port 8765 --no-open
+```
+
+For deliberate trusted-LAN development only:
+
+```bash
+guessnova web --host 0.0.0.0 --port 8765 --no-open
+```
+
+A `0.0.0.0` bind can be reachable from other devices on the network. Do not use the small development server as a public Internet deployment.
+
+## Android, iOS/iPadOS, and ChromeOS
+
+The supported mobile/Chromebook interface is the PWA under:
+
+```text
+src/guessnova/web/
+```
+
+Deploy that directory to a normal HTTPS static host. The application uses only static HTML/CSS/JavaScript assets, a Web App Manifest, and a service worker; it does not require a GuessNova application backend.
+
+Typical use:
+
+- **Android:** open the HTTPS PWA in a modern browser and use the browser's install/add-to-home-screen action where available.
+- **iOS/iPadOS:** open the HTTPS PWA in Safari and use **Add to Home Screen** for an app-like launcher.
+- **ChromeOS:** use the browser PWA; the Linux development environment can additionally run the Python CLI/TUI when Python 3.13+ is available.
+- **Windows/macOS/Linux browsers:** the same responsive PWA works in addition to the Python interfaces.
+
+Service-worker offline caching and PWA installation require a secure context outside `localhost`, so production/static deployments should use HTTPS.
+
+## PWA storage
+
+The PWA stores lightweight statistics/history and its selected mode/difficulty in browser origin-scoped storage. It does not silently share the Python `state.json` profile/backup model.
+
+Use **Reset local data** inside the PWA or clear the site's browser storage to delete that browser-local progress.
 
 ## Textual workspace
 
@@ -140,20 +213,27 @@ ruff check .
 ruff format --check .
 mypy src/guessnova
 pytest
+node --test tests/web/*.test.mjs
+node --check src/guessnova/web/app.js
+node --check src/guessnova/web/game-engine.mjs
+node --check src/guessnova/web/sw.js
 python -m compileall -q src tests scripts
 python scripts/verify_release_metadata.py
 python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
+python -m guessnova web --help
 python -m guessnova.doctor_cli --help
 python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
+Node.js is required only for the browser-engine development/CI checks above, not for users running the bundled PWA.
+
 ## Optional environment variables
 
-- `GUESSNOVA_HOME` — override the default local application-data directory for normal commands and TUI state.
+- `GUESSNOVA_HOME` — override the default local application-data directory for normal Python commands and TUI state.
 - `GUESSNOVA_SEED` — default deterministic seed for CLI challenges.
 
 Doctor `--data-dir PATH` can inspect a specific GuessNova data directory without modifying `GUESSNOVA_HOME`.
 
-GuessNova does not require API keys, accounts, telemetry credentials, or runtime network access.
+GuessNova does not require API keys, accounts, telemetry credentials, or a gameplay backend. A remotely hosted PWA naturally downloads its static application assets from the host selected by the deployer.
