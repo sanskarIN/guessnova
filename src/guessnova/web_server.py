@@ -60,7 +60,11 @@ class GuessNovaWebHandler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
-        self.send_header("Content-Security-Policy", "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; manifest-src 'self'; connect-src 'self'")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; style-src 'self'; script-src 'self'; "
+            "img-src 'self' data:; manifest-src 'self'; connect-src 'self'",
+        )
         self.end_headers()
         if include_body:
             self.wfile.write(payload)
@@ -86,9 +90,22 @@ def build_parser() -> argparse.ArgumentParser:
         prog="guessnova-web",
         description="Serve GuessNova's offline-first responsive web app.",
     )
-    parser.add_argument("--host", default=DEFAULT_HOST, help="Bind host (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="TCP port (default: 8765)")
-    parser.add_argument("--no-open", action="store_true", help="Do not open the default browser")
+    parser.add_argument(
+        "--host",
+        default=DEFAULT_HOST,
+        help="Bind host (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=DEFAULT_PORT,
+        help="TCP port (default: 8765)",
+    )
+    parser.add_argument(
+        "--no-open",
+        action="store_true",
+        help="Do not open the default browser",
+    )
     return parser
 
 
@@ -99,7 +116,9 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("--port must be between 0 and 65535")
     server = create_server(args.host, args.port)
     actual_host, actual_port = server.server_address[:2]
-    display_host = "127.0.0.1" if actual_host in {"0.0.0.0", "::"} else str(actual_host)
+    display_host = (
+        "127.0.0.1" if actual_host in {"0.0.0.0", "::"} else str(actual_host)
+    )
     url = f"http://{display_host}:{actual_port}/"
     print(f"GuessNova web app: {url}")
     print("Press Ctrl+C to stop.")
