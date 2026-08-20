@@ -55,9 +55,19 @@ def test_primary_entrypoint_routes_doctor_version(capsys) -> None:
     assert f"GuessNova Doctor {__version__}" in capsys.readouterr().out
 
 
-def test_primary_help_mentions_recovery_command(capsys) -> None:
+def test_primary_entrypoint_routes_web_help(capsys) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        main(["web", "--help"])
+    assert exc_info.value.code == 0
+    output = capsys.readouterr().out
+    assert "guessnova-web" in output
+    assert "offline-first responsive web app" in output
+
+
+def test_primary_help_mentions_recovery_and_web_commands(capsys) -> None:
     with pytest.raises(SystemExit) as exc_info:
         main(["--help"])
     assert exc_info.value.code == 0
     output = capsys.readouterr().out
     assert "guessnova doctor --help" in output
+    assert "guessnova web --help" in output
