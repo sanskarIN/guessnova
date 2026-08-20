@@ -1,10 +1,17 @@
-.PHONY: install test lint format type compile metadata smoke entrypoints check build
+.PHONY: install test browser lint format type compile metadata web-package smoke entrypoints check build
 
 install:
 	python -m pip install -e '.[dev]'
 
 test:
 	pytest
+
+browser:
+	node --test tests/web/*.mjs
+	node --check src/guessnova/web/app.js
+	node --check src/guessnova/web/browser-state.mjs
+	node --check src/guessnova/web/game-engine.mjs
+	node --check src/guessnova/web/sw.js
 
 lint:
 	ruff check .
@@ -21,6 +28,9 @@ compile:
 metadata:
 	python scripts/verify_release_metadata.py
 
+web-package:
+	python scripts/verify_web_package.py
+
 smoke:
 	python scripts/smoke_test.py
 
@@ -28,8 +38,10 @@ entrypoints:
 	python -m guessnova --help
 	python -m guessnova doctor --help
 	python -m guessnova.doctor_cli --help
+	guessnova web --help
+	guessnova-web --help
 
-check: lint format type test compile metadata smoke entrypoints
+check: lint format type test browser compile metadata web-package smoke entrypoints
 
 build:
 	python -m build
