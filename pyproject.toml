@@ -5,16 +5,18 @@ build-backend = "hatchling.build"
 [project]
 name = "guessnova"
 version = "1.4.0"
-description = "A polished, privacy-first number guessing game for the terminal."
+description = "A polished, privacy-first number guessing game for terminals and browsers."
 readme = "README.md"
 requires-python = ">=3.13"
 license = { text = "MIT" }
 authors = [{ name = "Sanskar", email = "sanskarin@outlook.in" }]
-keywords = ["game", "terminal", "textual", "rich", "number-guessing"]
+keywords = ["game", "terminal", "textual", "rich", "number-guessing", "pwa", "offline", "cross-platform"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
+  "Environment :: Web Environment",
   "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.13",
   "Topic :: Games/Entertainment :: Puzzle Games",
@@ -36,6 +38,7 @@ dev = [
 guessnova = "guessnova.entrypoint:main"
 guessnova-tui = "guessnova.tui:run"
 guessnova-doctor = "guessnova.doctor_cli:main"
+guessnova-web = "guessnova.web_server:main"
 
 [project.urls]
 Homepage = "https://github.com/sanskarIN/guessnova"
