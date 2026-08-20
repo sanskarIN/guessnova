@@ -14,6 +14,12 @@ def test_safe_asset_path_rejects_traversal() -> None:
     assert _safe_asset_path("/app.js?cache=1") == "app.js"
     assert _safe_asset_path("/../pyproject.toml") is None
     assert _safe_asset_path("/web/../../secret") is None
+    assert _safe_asset_path(r"/..\secret.txt") is None
+    assert _safe_asset_path("/%2e%2e/secret.txt") is None
+    assert _safe_asset_path("/web/%2e%2e/secret.txt") is None
+    assert _safe_asset_path("/%5c..%5csecret.txt") is None
+    assert _safe_asset_path("/safe%2f..%2fsecret.txt") is None
+    assert _safe_asset_path("/bad%00name.txt") is None
 
 
 def test_content_type_adds_charset_only_to_text_formats() -> None:
