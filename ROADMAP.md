@@ -81,6 +81,22 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 - [x] Add canonical/concise TUI workspace documentation and expand the manual accessibility evidence gate through all six panes.
 - [x] Keep state schema `2`, backup wrapper `2`, replay `1`, and Doctor report `1` because v1.4 does not change those compatibility domains.
 
+## Unreleased — Cross-platform browser/PWA edition
+
+- [x] Add an installable responsive PWA for modern desktop and mobile browsers, including Android, iOS/iPadOS, ChromeOS, Windows, macOS, and Linux browser paths.
+- [x] Add Classic, Timed, Streak, Daily, and Reverse browser modes across Easy, Normal, Hard, and Expert difficulties.
+- [x] Preserve deterministic Daily Challenge parity between Python and JavaScript through the portable daily-v2 FNV-1a rule.
+- [x] Add a standard-library local web server exposed through both `guessnova web` and `guessnova-web`.
+- [x] Keep the normal server loopback-only by default and reject path traversal while serving package resources read-only.
+- [x] Add responsive, keyboard-accessible, touch-friendly browser presentation with reduced-motion and color-scheme support.
+- [x] Add PWA manifest metadata, real 192px/512px raster install icons, iOS home-screen metadata, and offline app-shell caching.
+- [x] Keep browser gameplay private and local-only with no account, telemetry, analytics, ads, cloud sync, or gameplay backend.
+- [x] Keep browser storage explicitly separate from the Python schema-2 local state rather than silently coupling incompatible stores.
+- [x] Normalize malformed/stale browser storage before rendering, discard unknown fields, bound counters/history, and retain backward readability for unversioned `guessnova.web.v1` state.
+- [x] Cover browser engine and browser-state behavior with deterministic Node tests.
+- [x] Run committed browser tests in both normal CI and tagged-release verification.
+- [x] Verify browser module syntax and required PWA assets in built wheels across Ubuntu, Windows, and macOS package matrices.
+
 ## Gated future candidates
 
 These are intentionally not release checkboxes until their prerequisite exists:
@@ -91,11 +107,9 @@ These are intentionally not release checkboxes until their prerequisite exists:
 - Property-based testing dependency — only if a reproducible defect demonstrates a material coverage gap not addressed by deterministic regression suites.
 - Live in-process full relocalization of every mounted Textual widget — only if implemented atomically so the interface cannot become partially translated.
 - TUI repair/write actions — only if they preserve explicit confirmation, pre-repair backup guarantees, and a clear separation from read-only inspection.
+- Native Android/iOS wrappers — only if they add real platform value beyond the installable PWA and preserve the same offline/privacy guarantees; no APK/AAB/IPA support should be claimed before such artifacts exist and are tested.
+- Browser/Python state interchange — only after an explicit versioned interchange format is designed, migrated, validated, and tested; browser state must not be silently treated as Python schema-2 state.
 
 ## Release-media gate
 
 The only intentionally manual v1.1 carry-over is real screenshot/demo capture. Repository automation cannot truthfully substitute a mock image for a real terminal capture. The exact capture/provenance procedure is documented in `docs/media/README.md`.
-
-## Future optional edition
-
-A TypeScript/PWA edition may be explored only if it preserves deterministic rules, offline usability, keyboard accessibility, stable challenge/replay semantics, and privacy-first behavior. It is not required for the Python terminal release.
