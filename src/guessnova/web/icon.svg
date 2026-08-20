@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GuessNova icon">
+  <rect width="512" height="512" rx="112" fill="#0b1020"/>
+  <circle cx="256" cy="256" r="156" fill="#172a55"/>
+  <path d="M256 82 286 198 402 228 286 258 256 374 226 258 110 228 226 198Z" fill="#8ea8ff"/>
+  <circle cx="256" cy="228" r="54" fill="#f7f9ff"/>
+  <text x="256" y="250" text-anchor="middle" font-family="system-ui,sans-serif" font-size="64" font-weight="800" fill="#0b1020">?</text>
+</svg>
