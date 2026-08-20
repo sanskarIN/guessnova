@@ -2,6 +2,39 @@
 
 All notable GuessNova changes are recorded here. The project follows Semantic Versioning where practical.
 
+## [Unreleased]
+
+### Added
+
+- Installable responsive browser/PWA edition for modern desktop and mobile browsers while retaining the existing Python CLI, Textual workspace, and Doctor surfaces.
+- Bundled standard-library local web server exposed as `guessnova web` and `guessnova-web`.
+- Portable daily-v2 FNV-1a challenge parity between Python and JavaScript.
+- Browser-local statistics, bounded recent history, install metadata, real 192px/512px raster icons, iOS home-screen metadata, and offline app-shell caching.
+- Dedicated `browser-state.mjs` normalization boundary with browser state schema marker `1` and deterministic Node coverage.
+
+### Changed
+
+- Browser persistence now normalizes counters, settings, history records, targets, and timestamps before rendering or re-serializing state.
+- Unknown persisted fields are discarded; invalid counters and malformed history entries cannot leak directly into the UI.
+- Legacy unversioned `guessnova.web.v1` localStorage remains readable and is normalized into the current browser-state shape.
+- The service-worker cache now includes the browser-state module and advances its cache namespace so existing installations can refresh safely.
+- Normal CI and tagged-release verification now run every committed `tests/web/*.mjs` test instead of using a glob that did not match the existing `test_game_engine.mjs` filename.
+- Browser JavaScript syntax checks now include `browser-state.mjs`, and cross-platform built-wheel checks require the complete PWA module set.
+- The roadmap now records the browser/PWA edition as shipped work instead of describing it as only a future candidate.
+
+### Security, privacy, and reliability
+
+- Browser gameplay remains local-only with no account, telemetry, analytics, advertising, cloud sync, or gameplay backend.
+- Normal local web serving remains loopback-only by default and read-only for package resources.
+- Browser storage stays explicitly separate from Python schema-2 state; no silent cross-format import or mutation is performed.
+- Corrupt or blocked browser storage falls back to safe in-memory defaults so gameplay remains usable.
+
+### Compatibility
+
+- Package/runtime metadata remains `1.4.0` until a release version is intentionally cut.
+- Python local state schema remains `2`, backup wrapper remains `2`, replay format remains `1`, and Doctor report protocol remains `1`.
+- Browser localStorage key remains `guessnova.web.v1`; the new browser schema marker is additive and legacy unversioned values remain readable.
+
 ## [1.4.0] - 2026-08-19
 
 ### Added
