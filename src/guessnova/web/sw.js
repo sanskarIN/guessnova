@@ -1,9 +1,10 @@
-const CACHE_NAME = "guessnova-web-v2";
+const CACHE_NAME = "guessnova-web-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./app.css",
   "./app.js",
+  "./browser-state.mjs",
   "./game-engine.mjs",
   "./manifest.webmanifest",
   "./icon.svg",
