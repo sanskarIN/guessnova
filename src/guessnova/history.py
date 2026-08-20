@@ -149,7 +149,12 @@ def deserialize(items: object) -> list[HistoryEntry]:
             continue
         attempts = attempts_raw
         elapsed = float(elapsed_raw)
-        if attempts < 0 or elapsed < 0 or not math.isfinite(elapsed):
+        rules = DIFFICULTIES[difficulty]
+        if attempts < 0 or attempts > rules.max_attempts:
+            continue
+        if won and attempts < 1:
+            continue
+        if elapsed < 0 or not math.isfinite(elapsed):
             continue
         if not isinstance(played_at, str) or not played_at or len(played_at) > 80:
             continue
