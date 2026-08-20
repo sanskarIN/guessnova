@@ -63,6 +63,9 @@ export function defaultBrowserState() {
 
 export function normalizeBrowserState(value) {
   if (!isRecord(value)) return defaultBrowserState();
+  if (Object.hasOwn(value, "schema") && value.schema !== BROWSER_STATE_SCHEMA) {
+    return defaultBrowserState();
+  }
 
   const gamesPlayed = normalizeCounter(value.gamesPlayed);
   const gamesWon = Math.min(normalizeCounter(value.gamesWon), gamesPlayed);
