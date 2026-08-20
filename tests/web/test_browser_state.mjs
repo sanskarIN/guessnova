@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   BROWSER_STATE_SCHEMA,
   HISTORY_LIMIT,
+  MAX_SERIALIZED_STATE_CHARS,
   defaultBrowserState,
   normalizeBrowserState,
   parseBrowserState,
@@ -95,6 +96,21 @@ test("history discards invalid entries and normalizes fields", () => {
   assert.equal(state.history[3].completedAt, null);
 });
 
+test("oversized timestamps are discarded", () => {
+  const state = normalizeBrowserState({
+    history: [{
+      mode: "classic",
+      difficulty: "normal",
+      won: true,
+      attempts: 1,
+      target: 35,
+      completedAt: "2".repeat(65),
+    }],
+  });
+
+  assert.equal(state.history[0].completedAt, null);
+});
+
 test("legacy unversioned browser state remains readable", () => {
   const state = parseBrowserState(JSON.stringify({
     gamesPlayed: 3,
@@ -109,6 +125,15 @@ test("legacy unversioned browser state remains readable", () => {
   assert.equal(state.gamesPlayed, 3);
   assert.equal(state.settings.mode, "daily");
   assert.equal(state.settings.difficulty, "hard");
+});
+
+test("oversized serialized browser state is rejected before use", () => {
+  const oversized = JSON.stringify({
+    gamesPlayed: 1,
+    padding: "x".repeat(MAX_SERIALIZED_STATE_CHARS),
+  });
+  assert.ok(oversized.length > MAX_SERIALIZED_STATE_CHARS);
+  assert.deepEqual(parseBrowserState(oversized), defaultBrowserState());
 });
 
 test("parse and serialize recover from corrupt storage", () => {
