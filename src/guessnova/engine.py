@@ -22,6 +22,7 @@ class GuessGame:
     target: int | None = None
     clock: Clock = time.monotonic
     _started_at: float = field(init=False)
+    _finished_at: float | None = field(default=None, init=False)
     _guesses: list[int] = field(default_factory=list, init=False)
     _finished: bool = field(default=False, init=False)
     _won: bool = field(default=False, init=False)
@@ -62,9 +63,13 @@ class GuessGame:
     def attempts_left(self) -> int:
         return max(0, self.difficulty.max_attempts - self.attempts_used)
 
+    def _elapsed_at(self, timestamp: float) -> float:
+        return max(0.0, timestamp - self._started_at)
+
     @property
     def elapsed_seconds(self) -> float:
-        return max(0.0, self.clock() - self._started_at)
+        endpoint = self._finished_at if self._finished_at is not None else self.clock()
+        return self._elapsed_at(endpoint)
 
     @property
     def is_finished(self) -> bool:
@@ -82,15 +87,24 @@ class GuessGame:
     def hint_penalty(self) -> int:
         return self._hint_penalty
 
-    def _is_timed_out(self) -> bool:
-        return self.mode == GameMode.TIMED and self.elapsed_seconds >= self.difficulty.timed_seconds
+    def _is_timed_out_at(self, timestamp: float) -> bool:
+        return (
+            self.mode == GameMode.TIMED
+            and self._elapsed_at(timestamp) >= self.difficulty.timed_seconds
+        )
+
+    def _finish(self, timestamp: float, *, won: bool = False) -> None:
+        self._finished = True
+        self._won = won
+        self._finished_at = timestamp
 
     def request_hint(self, *, penalize: bool = True) -> str:
         """Return a deterministic narrowed-range clue without consuming an attempt."""
         if self._finished:
             raise RuntimeError("game is already finished")
-        if self._is_timed_out():
-            self._finished = True
+        now = self.clock()
+        if self._is_timed_out_at(now):
+            self._finish(now)
             raise RuntimeError("time expired")
         target = self.target_value
         radius = max(2, self.difficulty.span // 10)
@@ -110,8 +124,9 @@ class GuessGame:
     def guess(self, value: int) -> GuessFeedback:
         if self._finished:
             raise RuntimeError("game is already finished")
-        if self._is_timed_out():
-            self._finished = True
+        now = self.clock()
+        if self._is_timed_out_at(now):
+            self._finish(now)
             return GuessFeedback(
                 value, GuessOutcome.TIMEOUT, self.attempts_used, self.attempts_left
             )
@@ -123,14 +138,13 @@ class GuessGame:
         self._guesses.append(value)
         target = self.target_value
         if value == target:
-            self._finished = True
-            self._won = True
+            self._finish(now, won=True)
             return GuessFeedback(
                 value, GuessOutcome.CORRECT, self.attempts_used, self.attempts_left
             )
 
         if self.attempts_left == 0:
-            self._finished = True
+            self._finish(now)
             return GuessFeedback(value, GuessOutcome.EXHAUSTED, self.attempts_used, 0)
 
         outcome = GuessOutcome.TOO_LOW if value < target else GuessOutcome.TOO_HIGH
