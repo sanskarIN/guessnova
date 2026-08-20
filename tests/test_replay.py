@@ -52,6 +52,12 @@ def test_negative_seed_round_trip() -> None:
     assert decode_replay(encode_replay(summary)) == summary
 
 
+def test_encode_replay_rejects_reverse_summary() -> None:
+    summary = GameSummary(GameMode.REVERSE, "normal", 42, True, 1, 1.0, (42,))
+    with pytest.raises(ValueError, match="reverse mode"):
+        encode_replay(summary)
+
+
 def test_replay_detects_tamper() -> None:
     summary = GameSummary(GameMode.CLASSIC, "normal", 42, True, 1, 1.0, (42,))
     code = encode_replay(summary)
@@ -91,6 +97,7 @@ def test_malformed_replay_text_is_rejected_cleanly(code: str) -> None:
     [
         ("version", 2),
         ("mode", "unknown"),
+        ("mode", "reverse"),
         ("difficulty", "impossible"),
         ("target", 1000),
         ("won", "yes"),
