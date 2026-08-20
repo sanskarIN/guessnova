@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from typing import Final
 
 from .domain import PlayerStats
 from .history import HistoryEntry, deserialize as deserialize_history, serialize as serialize_history
 from .security import sanitize_profile_name
 from .settings import Settings
+
+MAX_PROFILE_COUNTER: Final = 1_000_000_000
 
 
 def _nonnegative_int(data: dict[str, object], key: str) -> int:
@@ -23,7 +26,7 @@ def _nonnegative_int(data: dict[str, object], key: str) -> int:
             return 0
     else:
         return 0
-    return max(0, parsed)
+    return min(max(0, parsed), MAX_PROFILE_COUNTER)
 
 
 @dataclass(slots=True)
