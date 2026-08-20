@@ -5,9 +5,12 @@ from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+from typing import Final
 
 from .domain import DIFFICULTIES, GameMode, GameSummary
 from .security import sanitize_profile_name
+
+MAX_LEADERBOARD_ENTRIES: Final = 100
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,7 +41,9 @@ def entry_from_summary(player: str, summary: GameSummary) -> LeaderboardEntry | 
 
 
 def add_entry(
-    entries: list[LeaderboardEntry], entry: LeaderboardEntry, limit: int = 100
+    entries: list[LeaderboardEntry],
+    entry: LeaderboardEntry,
+    limit: int = MAX_LEADERBOARD_ENTRIES,
 ) -> list[LeaderboardEntry]:
     if limit < 1:
         raise ValueError("leaderboard limit must be positive")
@@ -95,4 +100,4 @@ def deserialize(items: object) -> list[LeaderboardEntry]:
                 created_at=created_at,
             )
         )
-    return result
+    return sorted(result, key=lambda item: item.score_key)[:MAX_LEADERBOARD_ENTRIES]
