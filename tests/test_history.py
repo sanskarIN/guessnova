@@ -63,6 +63,46 @@ def test_history_deserializer_skips_invalid_items() -> None:
     assert deserialize(invalid) == []
 
 
+def test_history_deserializer_rejects_impossible_attempt_counts() -> None:
+    impossible = [
+        {
+            "mode": "classic",
+            "difficulty": "normal",
+            "won": True,
+            "attempts": 0,
+            "elapsed_seconds": 1.0,
+            "seed": None,
+            "played_at": "2026-08-20T00:00:00+00:00",
+        },
+        {
+            "mode": "classic",
+            "difficulty": "normal",
+            "won": False,
+            "attempts": 10,
+            "elapsed_seconds": 1.0,
+            "seed": None,
+            "played_at": "2026-08-20T00:00:00+00:00",
+        },
+    ]
+    assert deserialize(impossible) == []
+
+
+def test_history_deserializer_keeps_zero_attempt_timeout_style_loss() -> None:
+    item = {
+        "mode": "timed",
+        "difficulty": "normal",
+        "won": False,
+        "attempts": 0,
+        "elapsed_seconds": 45.0,
+        "seed": None,
+        "played_at": "2026-08-20T00:00:00+00:00",
+    }
+    restored = deserialize([item])
+    assert len(restored) == 1
+    assert restored[0].attempts == 0
+    assert restored[0].won is False
+
+
 def _entry(
     played_at: str,
     *,
