@@ -184,6 +184,9 @@ function startReverse(difficultyName) {
   standardPlay.hidden = true;
   reversePlay.hidden = false;
   hintButton.disabled = true;
+  lowerButton.disabled = false;
+  correctButton.disabled = false;
+  higherButton.disabled = false;
   timer.hidden = true;
   playTitle.textContent = "I’ll guess your number";
   rangeText.textContent = "";
