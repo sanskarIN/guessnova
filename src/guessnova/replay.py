@@ -20,6 +20,8 @@ MAX_PORTABLE_SEED = 2**63 - 1
 
 
 def encode_replay(summary: GameSummary) -> str:
+    if summary.mode == GameMode.REVERSE:
+        raise ValueError("reverse mode is not supported by the replay format")
     body = asdict(summary)
     body["mode"] = summary.mode.value
     body["version"] = REPLAY_VERSION
@@ -108,6 +110,8 @@ def decode_replay(code: str) -> GameSummary:
         mode = GameMode(mode_raw)
     except ValueError as exc:
         raise ValueError("invalid replay mode") from exc
+    if mode == GameMode.REVERSE:
+        raise ValueError("invalid replay mode")
     if not isinstance(difficulty, str) or difficulty not in DIFFICULTIES:
         raise ValueError("invalid replay difficulty")
     if not isinstance(won, bool):
