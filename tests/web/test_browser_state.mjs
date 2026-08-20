@@ -51,6 +51,17 @@ test("inherited object keys cannot become difficulties", () => {
   assert.equal(state.history[0].difficulty, "normal");
 });
 
+test("unknown browser state schemas are not interpreted as current", () => {
+  assert.deepEqual(
+    normalizeBrowserState({ schema: BROWSER_STATE_SCHEMA + 1, gamesPlayed: 99 }),
+    defaultBrowserState(),
+  );
+  assert.deepEqual(
+    normalizeBrowserState({ schema: String(BROWSER_STATE_SCHEMA), gamesPlayed: 99 }),
+    defaultBrowserState(),
+  );
+});
+
 test("statistics are bounded and internally consistent", () => {
   const state = normalizeBrowserState({
     gamesPlayed: 4,
