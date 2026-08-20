@@ -22,6 +22,8 @@ def test_required_pwa_assets_are_bundled() -> None:
         "manifest.webmanifest",
         "sw.js",
         "icon.svg",
+        "icon-192.png",
+        "icon-512.png",
     ):
         assert WEB_ROOT.joinpath(name).is_file(), name
 
