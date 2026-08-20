@@ -37,7 +37,7 @@ jobs:
       - name: Python tests
         run: pytest --cov=guessnova --cov-report=term-missing
       - name: Browser engine tests
-        run: node --test tests/web/*.test.mjs
+        run: node --test tests/web/*.mjs
       - name: Browser JavaScript syntax
         run: |
           node --check src/guessnova/web/app.js
