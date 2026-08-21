@@ -77,3 +77,17 @@ test("reverse guesser converges with binary responses", () => {
   assert.equal(reverse.finished, true);
   assert.equal(reverse.attempts, 3);
 });
+
+test("reverse contradictions do not corrupt search bounds", () => {
+  const reverse = new ReverseGuesser(1, 2);
+  assert.equal(reverse.nextGuess(), 1);
+
+  assert.throws(() => reverse.respond("lower"), /inconsistent/);
+  assert.deepEqual(
+    { low: reverse.low, high: reverse.high, current: reverse.current, attempts: reverse.attempts },
+    { low: 1, high: 2, current: 1, attempts: 1 },
+  );
+
+  reverse.respond("higher");
+  assert.equal(reverse.nextGuess(), 2);
+});
