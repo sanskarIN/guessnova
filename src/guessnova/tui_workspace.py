@@ -124,8 +124,8 @@ def parse_workspace_challenge(
         raise ValueError(f"unknown difficulty: {difficulty}")
 
     if selected_mode == GameMode.DAILY:
-        cleaned_day = day_text.strip()
         try:
+            cleaned_day = day_text.strip()
             selected_day = date.fromisoformat(cleaned_day) if cleaned_day else (today or date.today())
         except (AttributeError, TypeError, ValueError) as exc:
             raise ValueError("daily challenge date must use YYYY-MM-DD") from exc
