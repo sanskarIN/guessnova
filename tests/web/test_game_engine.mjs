@@ -91,3 +91,16 @@ test("reverse contradictions do not corrupt search bounds", () => {
   reverse.respond("higher");
   assert.equal(reverse.nextGuess(), 2);
 });
+
+test("reverse feedback is rejected after completion", () => {
+  const reverse = new ReverseGuesser(1, 2);
+  assert.equal(reverse.nextGuess(), 1);
+  reverse.respond("correct");
+  const snapshot = { low: reverse.low, high: reverse.high, current: reverse.current, attempts: reverse.attempts };
+
+  assert.throws(() => reverse.respond("higher"), /already finished/);
+  assert.deepEqual(
+    { low: reverse.low, high: reverse.high, current: reverse.current, attempts: reverse.attempts },
+    snapshot,
+  );
+});
