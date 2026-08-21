@@ -81,6 +81,29 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 - [x] Add canonical/concise TUI workspace documentation and expand the manual accessibility evidence gate through all six panes.
 - [x] Keep state schema `2`, backup wrapper `2`, replay `1`, and Doctor report `1` because v1.4 does not change those compatibility domains.
 
+## v1.5 candidate — Validated Textual Challenge Setup
+
+Implementation is reconstructed on the current-main reconciliation branch and remains subject to exact-head CI/security review before merge/release.
+
+- [x] Add immutable, Textual-independent `ChallengeConfiguration` validation for numeric challenge setup.
+- [x] Support Classic, Timed, Streak, and Daily configuration while keeping Reverse on its dedicated interaction path.
+- [x] Add optional whole-number deterministic seeds for Classic/Timed/Streak.
+- [x] Add explicit/resolved `YYYY-MM-DD` Daily configuration with deterministic reconstruction.
+- [x] Make challenge replacement transactional so malformed seed/date input cannot corrupt or replace the active round.
+- [x] Add target-free active challenge presentation in English and Hindi.
+- [x] Preserve initial Guess focus and the established Guess → Submit → Range Hint forward path while making Challenge Setup keyboard reachable.
+- [x] Keep plain `Q/R` local to numeric Guess so challenge text fields retain ordinary character entry.
+- [x] Add deterministic configured reset semantics without storing/exposing the hidden target.
+- [x] Layer challenge-specific integration over the stable six-pane workspace rather than rewriting `tui.py`.
+- [x] Route the installed `guessnova-tui` entry point through the challenge-enabled layer while preserving the stable app import for verification.
+- [x] Add focused parser, presenter, widget, accessibility, mutation-safety, reset, localization, and startup regressions.
+- [x] Extend smoke testing through configured challenge construction/status.
+- [x] Verify both stable and challenge-enabled Textual imports in Linux/Windows/macOS package matrices and tagged-release verification.
+- [x] Add architecture, usage, testing, development, release, accessibility, and continuity documentation for the additive layer.
+- [ ] Require CI, Security checks, and CodeQL to succeed on the exact final PR head before merge.
+- [ ] Complete manual release-candidate accessibility evidence before any v1.5 tag.
+- [ ] Select/bump release metadata and tag only after the merged feature has a deliberate signed-off release candidate.
+
 ## Unreleased — Cross-platform browser/PWA edition
 
 - [x] Add an installable responsive PWA for modern desktop and mobile browsers, including Android, iOS/iPadOS, ChromeOS, Windows, macOS, and Linux browser paths.
