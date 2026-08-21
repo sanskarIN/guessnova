@@ -23,3 +23,15 @@ def test_reverse_rejects_invalid_response() -> None:
 def test_reverse_requires_guess_before_response() -> None:
     with pytest.raises(RuntimeError):
         ReverseGuesser().respond("correct")
+
+
+def test_reverse_contradiction_does_not_corrupt_search_bounds() -> None:
+    engine = ReverseGuesser(1, 2)
+    assert engine.next_guess() == 1
+
+    with pytest.raises(ValueError, match="inconsistent"):
+        engine.respond("lower")
+
+    assert (engine.low, engine.high, engine.current, engine.attempts) == (1, 2, 1, 1)
+    engine.respond("higher")
+    assert engine.next_guess() == 2
