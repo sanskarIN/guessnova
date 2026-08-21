@@ -102,3 +102,34 @@ def test_challenge_configuration_rejects_inconsistent_manual_construction() -> N
             difficulty="normal",
             day=date(2026, 8, 19),
         )
+
+
+def test_manual_configuration_normalizes_valid_string_mode() -> None:
+    configuration = ChallengeConfiguration(  # type: ignore[arg-type]
+        mode="timed",
+        difficulty="normal",
+        seed=7,
+    )
+    assert configuration.mode is GameMode.TIMED
+    assert configuration.mode_value == "timed"
+
+
+def test_manual_configuration_rejects_runtime_type_traps() -> None:
+    with pytest.raises(ValueError, match="unknown game mode"):
+        ChallengeConfiguration(mode=None, difficulty="normal")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="unknown difficulty"):
+        ChallengeConfiguration(mode=GameMode.CLASSIC, difficulty=None)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="whole number"):
+        ChallengeConfiguration(mode=GameMode.CLASSIC, difficulty="normal", seed=True)
+    with pytest.raises(ValueError, match="whole number"):
+        ChallengeConfiguration(  # type: ignore[arg-type]
+            mode=GameMode.CLASSIC,
+            difficulty="normal",
+            seed=1.5,
+        )
+    with pytest.raises(ValueError, match="must be a date"):
+        ChallengeConfiguration(  # type: ignore[arg-type]
+            mode=GameMode.DAILY,
+            difficulty="normal",
+            day="2026-08-19",
+        )
