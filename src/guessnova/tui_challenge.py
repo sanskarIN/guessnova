@@ -38,8 +38,6 @@ def challenge_status(configuration: ChallengeConfiguration, *, locale: str) -> s
 
 def game_status(game: GuessGame, *, locale: str) -> str:
     """Describe an already-created numeric game without revealing its target."""
-    if game.mode == GameMode.REVERSE:
-        return ""
     if game.mode == GameMode.DAILY:
         detail = (
             text("tui.challenge.seed_detail", locale=locale, seed=game.seed)
