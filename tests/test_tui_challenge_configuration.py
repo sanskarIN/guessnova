@@ -133,3 +133,18 @@ def test_manual_configuration_rejects_runtime_type_traps() -> None:
             difficulty="normal",
             day="2026-08-19",
         )
+
+
+def test_parser_normalizes_malformed_field_types() -> None:
+    with pytest.raises(ValueError, match="whole number"):
+        parse_workspace_challenge(  # type: ignore[arg-type]
+            mode="classic",
+            difficulty="normal",
+            seed_text=None,
+        )
+    with pytest.raises(ValueError, match="YYYY-MM-DD"):
+        parse_workspace_challenge(  # type: ignore[arg-type]
+            mode="daily",
+            difficulty="normal",
+            day_text=None,
+        )
