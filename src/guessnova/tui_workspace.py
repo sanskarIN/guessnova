@@ -57,15 +57,27 @@ class ChallengeConfiguration:
     day: date | None = None
 
     def __post_init__(self) -> None:
-        if self.mode == GameMode.REVERSE:
+        try:
+            selected_mode = GameMode(self.mode)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"unknown game mode: {self.mode}") from exc
+        object.__setattr__(self, "mode", selected_mode)
+
+        if selected_mode == GameMode.REVERSE:
             raise ValueError("reverse mode uses its dedicated reverse interface")
-        if self.difficulty not in DIFFICULTIES:
+        if not isinstance(self.difficulty, str) or self.difficulty not in DIFFICULTIES:
             raise ValueError(f"unknown difficulty: {self.difficulty}")
-        if self.mode == GameMode.DAILY and self.day is None:
+        if self.seed is not None and (
+            not isinstance(self.seed, int) or isinstance(self.seed, bool)
+        ):
+            raise ValueError("seed must be a whole number")
+        if self.day is not None and not isinstance(self.day, date):
+            raise ValueError("challenge day must be a date")
+        if selected_mode == GameMode.DAILY and self.day is None:
             raise ValueError("daily challenge requires a resolved date")
-        if self.mode != GameMode.DAILY and self.day is not None:
+        if selected_mode != GameMode.DAILY and self.day is not None:
             raise ValueError("only daily challenges can carry a challenge date")
-        if self.mode == GameMode.DAILY and self.seed is not None:
+        if selected_mode == GameMode.DAILY and self.seed is not None:
             raise ValueError("daily challenges derive their seed from the challenge date")
 
     @property
@@ -104,18 +116,18 @@ def parse_workspace_challenge(
     """Validate TUI-friendly challenge fields without constructing widget state."""
     try:
         selected_mode = GameMode(mode)
-    except ValueError as exc:
+    except (TypeError, ValueError) as exc:
         raise ValueError(f"unknown game mode: {mode}") from exc
     if selected_mode == GameMode.REVERSE:
         raise ValueError("reverse mode uses its dedicated reverse interface")
-    if difficulty not in DIFFICULTIES:
+    if not isinstance(difficulty, str) or difficulty not in DIFFICULTIES:
         raise ValueError(f"unknown difficulty: {difficulty}")
 
     if selected_mode == GameMode.DAILY:
         cleaned_day = day_text.strip()
         try:
             selected_day = date.fromisoformat(cleaned_day) if cleaned_day else (today or date.today())
-        except ValueError as exc:
+        except (AttributeError, TypeError, ValueError) as exc:
             raise ValueError("daily challenge date must use YYYY-MM-DD") from exc
         return ChallengeConfiguration(
             mode=selected_mode,
@@ -123,7 +135,10 @@ def parse_workspace_challenge(
             day=selected_day,
         )
 
-    cleaned_seed = seed_text.strip()
+    try:
+        cleaned_seed = seed_text.strip()
+    except AttributeError as exc:
+        raise ValueError("seed must be a whole number") from exc
     if cleaned_seed:
         try:
             seed = int(cleaned_seed)
