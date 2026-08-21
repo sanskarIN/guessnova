@@ -21,6 +21,7 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 - Normal CI and tagged-release verification now run every committed `tests/web/*.mjs` test instead of using a glob that did not match the existing `test_game_engine.mjs` filename.
 - Browser JavaScript syntax checks now include `browser-state.mjs`, and cross-platform built-wheel checks require the complete PWA module set.
 - The roadmap now records the browser/PWA edition as shipped work instead of describing it as only a future candidate.
+- Python gameplay now rejects fractional and boolean explicit targets/guesses, matching the browser engine's whole-number invariant and preventing unwinnable fractional-target rounds.
 
 ### Security, privacy, and reliability
 
@@ -28,6 +29,8 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 - Normal local web serving remains loopback-only by default and read-only for package resources.
 - Browser storage stays explicitly separate from Python schema-2 state; no silent cross-format import or mutation is performed.
 - Corrupt or blocked browser storage falls back to safe in-memory defaults so gameplay remains usable.
+- Python and browser Reverse mode now validate proposed search-bound changes before mutation, so contradictory feedback raises without corrupting the active search interval.
+- Python and browser Reverse mode reject feedback after completion, preserving the completed round's bounds, guess, and attempt count.
 
 ### Compatibility
 
