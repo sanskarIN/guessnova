@@ -205,6 +205,8 @@ class ReverseGuesser:
         return self.current
 
     def respond(self, response: str) -> None:
+        if self.finished:
+            raise RuntimeError("reverse game is already finished")
         if self.current is None:
             raise RuntimeError("call next_guess before respond")
         response = response.strip().lower()
