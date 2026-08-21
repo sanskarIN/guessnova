@@ -184,9 +184,16 @@ export class ReverseGuesser {
       this.finished = true;
       return;
     }
-    if (normalized === "higher") this.low = this.current + 1;
-    else if (normalized === "lower") this.high = this.current - 1;
-    else throw new Error("response must be higher, lower, or correct");
-    if (this.low > this.high) throw new Error("responses are inconsistent");
+    if (normalized === "higher") {
+      const nextLow = this.current + 1;
+      if (nextLow > this.high) throw new Error("responses are inconsistent");
+      this.low = nextLow;
+    } else if (normalized === "lower") {
+      const nextHigh = this.current - 1;
+      if (this.low > nextHigh) throw new Error("responses are inconsistent");
+      this.high = nextHigh;
+    } else {
+      throw new Error("response must be higher, lower, or correct");
+    }
   }
 }
