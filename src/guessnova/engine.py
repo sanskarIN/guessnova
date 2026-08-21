@@ -41,8 +41,12 @@ class GuessGame:
         difficulty = self.difficulty
         if self.target is None:
             self.target = RandomSource(self.seed).randint(difficulty.minimum, difficulty.maximum)
-        elif not difficulty.minimum <= self.target <= difficulty.maximum:
-            raise ValueError("target is outside the difficulty range")
+        elif (
+            not isinstance(self.target, int)
+            or isinstance(self.target, bool)
+            or not difficulty.minimum <= self.target <= difficulty.maximum
+        ):
+            raise ValueError("target is outside the difficulty range or is not a whole number")
         self._started_at = self.clock()
 
     @property
@@ -130,7 +134,11 @@ class GuessGame:
             return GuessFeedback(
                 value, GuessOutcome.TIMEOUT, self.attempts_used, self.attempts_left
             )
-        if not self.difficulty.minimum <= value <= self.difficulty.maximum:
+        if (
+            not isinstance(value, int)
+            or isinstance(value, bool)
+            or not self.difficulty.minimum <= value <= self.difficulty.maximum
+        ):
             return GuessFeedback(
                 value, GuessOutcome.OUT_OF_RANGE, self.attempts_used, self.attempts_left
             )
