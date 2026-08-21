@@ -1,6 +1,6 @@
 # Testing
 
-GuessNova uses pytest with deterministic seeds, injected clocks, temporary directories, committed migration fixtures, and Textual's test pilot so tests do not depend on production credentials or persistent user data.
+GuessNova uses pytest with deterministic seeds, injected clocks, temporary directories, committed migration fixtures, Textual's test pilot, and Node's built-in test runner so tests do not depend on production credentials or persistent user data.
 
 ## Full local quality suite
 
@@ -10,24 +10,35 @@ ruff check .
 ruff format --check .
 mypy src/guessnova
 pytest --cov=guessnova --cov-report=term-missing
+node --test tests/web/*.mjs
+node --check src/guessnova/web/app.js
+node --check src/guessnova/web/browser-state.mjs
+node --check src/guessnova/web/game-engine.mjs
+node --check src/guessnova/web/sw.js
+python scripts/verify_web_package.py
 python -m compileall -q src tests scripts
 python scripts/verify_release_metadata.py
 python scripts/smoke_test.py
 python -m guessnova --help
 python -m guessnova doctor --help
 python -m guessnova.doctor_cli --help
+python -m guessnova web --help
+python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 ```
 
-`make check` runs the core lint/format/type/test/compile/metadata/smoke sequence plus entry-point verification on systems with Make available.
+`make check` runs the core lint/format/type/test/compile/metadata/smoke sequence plus entry-point verification on systems with Make available. Browser/PWA checks are also explicit in CI and should be run locally when Node.js is available.
 
-CI also builds, validates, installs, imports the Textual workspace, launches the game CLI, primary Doctor route, standalone Doctor compatibility entry point, Doctor version output, and smoke-tests distributions on Ubuntu, Windows, and macOS. Separate workflows perform CodeQL and dependency/secret checks.
+CI runs the Python quality suite, browser-engine tests, JavaScript syntax checks, PWA package verification, and smoke coverage. Its package matrix builds and installs the wheel on Ubuntu, Windows, and macOS, imports both the stable Textual workspace and the challenge-enabled Textual app, verifies Doctor and web entry points, verifies bundled PWA assets, and runs the installed smoke test. Separate workflows perform CodeQL and dependency/secret checks.
 
 ## Coverage areas
 
-- Classic/timed guessing outcomes, bounds, attempt exhaustion, and reproducible RNG.
+- Classic/timed guessing outcomes, bounds, attempt exhaustion, reproducible RNG, and whole-number target/guess runtime invariants.
 - Automatic smart hints plus explicit narrowed-range hints and optional XP penalties.
-- Reverse binary-search behavior and inconsistent responses.
-- Daily challenge reproducibility.
+- Reverse binary-search behavior, contradiction atomicity, invalid responses, and rejection of feedback after completion in both Python and browser engines.
+- Daily challenge reproducibility plus portable Python/browser daily-v2 parity vectors.
+- Browser difficulty definitions, gameplay outcomes, timeout duration freezing, integer target validation, and smart-hint parity.
+- Browser-state normalization for malformed/oversized localStorage data, invalid counters/history, legacy unversioned state, prototype-key rejection, and future-schema rejection.
 - Achievements, XP, streaks, settings, and defensive profile serialization.
 - Bounded session-history serialization, result/date/text filters, and grouping helpers.
 - Safe profile lifecycle: create/list/use/rename/delete/trash/restore, active-profile changes, and leaderboard restoration.
@@ -59,8 +70,12 @@ CI also builds, validates, installs, imports the Textual workspace, launches the
 - Textual leaderboard mode/difficulty/player filtering.
 - Textual settings persistence, immediate smart-hint behavior, launch-locale stability, and high-contrast class behavior.
 - Textual read-only diagnostics and backup verification.
+- ChallengeConfiguration runtime invariants, parser validation, seeded/Daily deterministic construction, and malformed field-type normalization.
+- Challenge Setup mode-aware seed/date controls, target-free status presentation, English/Hindi formatting, initial focus, backward keyboard access, and plain `Q/R` text-entry behavior.
+- Transactional challenge-start safety so invalid seed/date input cannot replace or mutate the active round.
+- Deterministic configured reset for seeded and Daily challenges.
 - UI-independent workspace snapshots, profile summaries, challenge construction, history selection, leaderboard selection, and settings persistence.
-- End-to-end smoke coverage for gameplay, persistence, schema 2, replay, backup integrity/importability, Doctor state/backup routes, diagnostics/repair, achievements, leaderboard, localization, workspace helpers, and reverse mode.
+- End-to-end smoke coverage for gameplay, persistence, schema 2, replay, backup integrity/importability, Doctor state/backup routes, diagnostics/repair, achievements, leaderboard, localization, workspace helpers, configured challenges, and reverse mode.
 
 ## Migration fixtures
 
@@ -125,22 +140,24 @@ Doctor protocol regression tests cover:
 
 ## Textual workspace helper tests
 
-`tests/test_tui_workspace.py` exercises logic that intentionally has no Textual dependency:
+`tests/test_tui_workspace.py` exercises stable logic that intentionally has no Textual dependency, including workspace snapshots, profile statistics, history/leaderboard selection, settings persistence, and basic configured-game construction.
 
-- deterministic seeded challenge construction;
-- reproducible daily-date challenge construction;
-- invalid seed/date and Reverse-mode separation;
-- workspace snapshots;
-- profile statistics derivation;
-- newest-first history selection;
-- leaderboard filters while preserving rank order;
-- settings validation/persistence while retaining onboarding state.
+`tests/test_tui_challenge_configuration.py` exercises the stricter challenge boundary independently from widgets:
+
+- immutable `ChallengeConfiguration` invariants;
+- normalization of valid string modes;
+- rejection of Reverse and unknown modes/difficulties;
+- whole-number seed validation, including boolean/fractional runtime traps;
+- ISO Daily date parsing and injected-date determinism;
+- malformed seed/date field-type normalization;
+- deterministic seeded challenge reconstruction;
+- deterministic Daily reconstruction.
 
 Keeping these helpers outside widget code allows domain/application behavior to be verified independently from rendering/focus behavior.
 
 ## Textual pilot suites
 
-The Textual workspace is covered by several focused pilot suites rather than one oversized scenario:
+The stable workspace is covered by focused pilot suites rather than one oversized scenario:
 
 - `tests/test_tui.py` — original gameplay/focus/persistence regressions;
 - `tests/test_tui_workspace_app.py` — pane shortcuts and profile lifecycle;
@@ -148,9 +165,21 @@ The Textual workspace is covered by several focused pilot suites rather than one
 - `tests/test_tui_workspace_leaderboard.py` — leaderboard filters;
 - `tests/test_tui_workspace_accessibility.py` — round isolation, launch-locale stability, and high contrast.
 
-All use `Storage(tmp_path)` and deterministic/injected games so tests cannot modify a user's actual data.
+Challenge Setup adds focused suites for:
 
-Pilot tests supplement rather than replace manual terminal review. Before release, complete `docs/accessibility_evidence_template.md` on the signed-off release candidate.
+- `tests/test_tui_challenge_app.py` — seeded/Daily challenge starts;
+- `tests/test_tui_challenge_safety.py` — invalid configuration preserves the current round;
+- `tests/test_tui_challenge_reset.py` — deterministic configured reset;
+- `tests/test_tui_challenge_widgets.py` — widget defaults/options;
+- `tests/test_tui_challenge_mode_fields.py` — mode-aware field enablement;
+- `tests/test_tui_challenge_accessibility.py` — focus/backward navigation and text-entry safety;
+- `tests/test_tui_challenge_initial_status.py` — startup identity;
+- `tests/test_tui_challenge_presenter.py` and `tests/test_tui_challenge_game_status.py` — target-free presentation;
+- `tests/test_tui_challenge_i18n.py` — English/Hindi formatting.
+
+All pilot tests use isolated temporary storage and deterministic/injected games so tests cannot modify a user's actual data.
+
+Pilot tests supplement rather than replace manual terminal review. Before release, complete `docs/accessibility_evidence_template.md` on the exact signed-off release candidate.
 
 ## Regression policy
 
@@ -158,7 +187,7 @@ Every reproducible bug should receive a focused regression test where practical.
 
 ## Property-testing dependency decision
 
-No property-testing dependency is added merely for v1.4. Current workspace failure classes are directly covered by deterministic helpers and Textual pilot tests, while persistence/replay/backup boundaries retain their existing malformed-input suites. Revisit Hypothesis or another property-testing tool only when a reproducible defect demonstrates materially better coverage than these deterministic suites.
+No property-testing dependency is added merely for the current release line. Current failure classes are directly covered by deterministic helpers, Textual pilot tests, browser-engine tests, and malformed-input suites. Revisit Hypothesis or another property-testing tool only when a reproducible defect demonstrates materially better coverage than these deterministic suites.
 
 ## Determinism
 
@@ -172,20 +201,25 @@ The CI `platform-package` matrix runs on:
 - `windows-latest`
 - `macos-latest`
 
-Each runner builds source/wheel distributions, runs Twine metadata validation, installs the generated wheel, verifies:
+Each runner builds source/wheel distributions, runs Twine metadata validation, installs the generated wheel, and verifies at least:
 
 ```bash
 python -m guessnova --help
 python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 guessnova doctor --help
 guessnova-doctor --help
 guessnova-doctor --version
+guessnova web --help
+guessnova-web --help
+python scripts/verify_web_package.py
+python scripts/smoke_test.py
 ```
 
-and then executes the smoke test. A failure on one platform is a release blocker until reproduced or documented as an infrastructure-only failure.
+The release workflow carries equivalent built-wheel checks before artifacts can be published. A failure on one platform is a release blocker until reproduced or documented as an infrastructure-only failure.
 
 ## Local execution limitation in the current continuation environment
 
-The available execution environment for the v1.4 continuation cannot resolve `github.com` or package-index hosts. A branch clone and a Ruff installation attempt therefore fail before local execution is possible. This limitation must not be converted into a claimed local test pass.
+The available execution environment for this continuation cannot resolve `github.com` or package-index hosts. A branch clone and a Ruff installation attempt therefore fail before local execution is possible. This limitation must not be converted into a claimed local test pass.
 
 Hosted GitHub Actions remains the exact-head execution source for this continuation. Static review and deterministic regression additions continue while runners are queued; any concrete current-head failure must be inspected and fixed before it can be called successful.
