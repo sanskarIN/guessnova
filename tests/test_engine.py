@@ -28,6 +28,23 @@ def test_out_of_range_does_not_consume_attempt() -> None:
     assert game.attempts_used == 0
 
 
+def test_non_integer_guess_does_not_consume_attempt() -> None:
+    game = GuessGame(target=42)
+    fractional = game.guess(42.0)  # type: ignore[arg-type]
+    boolean = game.guess(True)  # type: ignore[arg-type]
+    assert fractional.outcome == GuessOutcome.OUT_OF_RANGE
+    assert boolean.outcome == GuessOutcome.OUT_OF_RANGE
+    assert game.attempts_used == 0
+    assert not game.is_finished
+
+
+def test_non_integer_explicit_target_is_rejected() -> None:
+    with pytest.raises(ValueError, match="whole number"):
+        GuessGame(target=42.5)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="whole number"):
+        GuessGame(target=True)
+
+
 def test_attempt_exhaustion() -> None:
     game = GuessGame(difficulty_name="easy", target=50)
     for _ in range(game.difficulty.max_attempts - 1):
