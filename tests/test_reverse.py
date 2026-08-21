@@ -35,3 +35,15 @@ def test_reverse_contradiction_does_not_corrupt_search_bounds() -> None:
     assert (engine.low, engine.high, engine.current, engine.attempts) == (1, 2, 1, 1)
     engine.respond("higher")
     assert engine.next_guess() == 2
+
+
+def test_reverse_rejects_feedback_after_completion() -> None:
+    engine = ReverseGuesser(1, 2)
+    assert engine.next_guess() == 1
+    engine.respond("correct")
+    snapshot = (engine.low, engine.high, engine.current, engine.attempts)
+
+    with pytest.raises(RuntimeError, match="already finished"):
+        engine.respond("higher")
+
+    assert (engine.low, engine.high, engine.current, engine.attempts) == snapshot
