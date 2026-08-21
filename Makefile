@@ -38,6 +38,8 @@ entrypoints:
 	python -m guessnova --help
 	python -m guessnova doctor --help
 	python -m guessnova.doctor_cli --help
+	python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+	python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
 	guessnova web --help
 	guessnova-web --help
 
