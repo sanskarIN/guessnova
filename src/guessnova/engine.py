@@ -204,10 +204,14 @@ class ReverseGuesser:
             self.finished = True
             return
         if response == "higher":
-            self.low = self.current + 1
+            next_low = self.current + 1
+            if next_low > self.high:
+                raise ValueError("responses are inconsistent")
+            self.low = next_low
         elif response == "lower":
-            self.high = self.current - 1
+            next_high = self.current - 1
+            if self.low > next_high:
+                raise ValueError("responses are inconsistent")
+            self.high = next_high
         else:
             raise ValueError("response must be higher, lower, or correct")
-        if self.low > self.high:
-            raise ValueError("responses are inconsistent")
