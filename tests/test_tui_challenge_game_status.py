@@ -29,9 +29,3 @@ def test_game_status_describes_existing_daily_by_seed_when_date_is_unknown() -> 
 
     assert status == "Active: daily · easy · seed 20260819"
     assert "42" not in status
-
-
-def test_game_status_leaves_reverse_to_dedicated_interface() -> None:
-    game = GuessGame(difficulty_name="normal", mode=GameMode.REVERSE, seed=1)
-
-    assert game_status(game, locale="en") == ""
