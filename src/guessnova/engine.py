@@ -205,6 +205,8 @@ class ReverseGuesser:
     def next_guess(self) -> int:
         if self.finished:
             raise RuntimeError("reverse game is already finished")
+        if self.current is not None:
+            raise RuntimeError("respond before requesting another guess")
         if self.low > self.high:
             raise ValueError("responses are inconsistent")
         self.current = (self.low + self.high) // 2
@@ -232,3 +234,4 @@ class ReverseGuesser:
             self.high = next_high
         else:
             raise ValueError("response must be higher, lower, or correct")
+        self.current = None
