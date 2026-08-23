@@ -91,9 +91,10 @@ The server now:
 - formats IPv6 browser-launch hosts inside `[...]` as required by URL syntax;
 - maps the IPv6 wildcard `::` to the local browser destination `[::1]` for launch display;
 - percent-escapes scoped IPv6 zone identifiers when constructing browser URLs;
+- serves `.js` and `.mjs` with a deterministic `text/javascript; charset=utf-8` MIME type instead of trusting platform-specific MIME databases;
 - retains port validation, path traversal rejection, package-resource read-only serving, and the existing security headers.
 
-Focused tests cover wildcard, loopback, ordinary IPv4, and scoped IPv6 URL formatting without requiring an IPv6-capable CI network interface.
+Focused tests cover wildcard, loopback, ordinary IPv4, scoped IPv6 URL formatting, and deterministic JavaScript/module MIME values without requiring an IPv6-capable CI network interface.
 
 ### Browser history normalization now respects difficulty attempt ceilings
 
@@ -103,25 +104,36 @@ History normalization now clamps the retained attempt count to the selected diff
 
 This remains backward compatible with the existing browser-state marker and `guessnova.web.v1` localStorage key.
 
-### PWA activation no longer deletes unrelated caches
+### PWA Cache Storage isolation is complete on cleanup and reads
 
 The service worker previously removed every Cache Storage entry whose name was not the current GuessNova cache. On a shared origin, that could remove caches owned by another application.
 
-The service worker now uses an explicit GuessNova cache prefix and only removes obsolete caches in that namespace:
+The first hardening step introduced an explicit GuessNova cache prefix and limited obsolete-cache deletion to that namespace:
 
 ```text
 guessnova-web-*
 ```
 
-The active cache advances to `guessnova-web-v5`, and a committed source-contract regression test ensures activation cannot regress to broad origin-wide cache deletion.
+A second review found that `caches.match(...)` still searched every cache on the origin. Even though unrelated caches were no longer deleted, an unrelated cache could still satisfy a same-origin request before GuessNova's active cache. Cache lookup now opens `CACHE_NAME` first and matches only inside that cache.
+
+The active cache remains `guessnova-web-v5`.
+
+Service-worker lifecycle promises are also now awaited correctly:
+
+- app-shell pre-cache and `skipWaiting()` are part of the install event's `waitUntil(...)` promise;
+- obsolete GuessNova-cache cleanup and `clients.claim()` are part of the activation event's `waitUntil(...)` promise.
+
+Committed source-contract tests guard cleanup namespace isolation, cache-read isolation, awaited lifecycle work, app-shell module presence, navigation-only fallback, storage-failure handling, and same-origin GET-only interception.
 
 ### Release documentation synchronized
 
-`CHANGELOG.md` `Unreleased` now records the Reverse, IPv6, browser-state, and PWA cache-hardening changes without changing package/runtime version or serialized compatibility formats.
+`CHANGELOG.md` `Unreleased` records the Reverse, IPv6, deterministic module MIME, browser-state, and PWA cache/lifecycle hardening changes without changing package/runtime version or serialized compatibility formats.
 
-`ROADMAP.md` now explicitly records the completed IPv6 server support, namespaced service-worker cleanup, per-difficulty browser attempt bounding, and Python/JavaScript Reverse contract parity. The real screenshot/demo capture remains intentionally unchecked because repository automation cannot manufacture truthful release evidence.
+`ROADMAP.md` records the completed IPv6/MIME server support, namespaced service-worker reads/cleanup, awaited service-worker lifecycle work, per-difficulty browser attempt bounding, and Python/JavaScript Reverse contract parity. The real screenshot/demo capture remains intentionally unchecked because repository automation cannot manufacture truthful release evidence.
 
 ### Granular commits in the 2026-08-23 continuation
+
+The complete pre-final-handoff chain created during this continuation is:
 
 ```text
 c6dcb68b05026b13439d0fe0b5786b9c4aedc75a  fix(core): validate reverse integer bounds
@@ -146,7 +158,19 @@ b9724adea6a212a98cc53ea8d44b6013b247bfa5  fix(web): escape scoped IPv6 browser h
 ff2c83334bbd6eeda7f758e8506195b10b3cee6d  test(web): cover scoped IPv6 URL escaping
 267f246e416b145635158c1a61a0d1f77b7defbe  docs(changelog): record browser and reverse hardening
 255d2d471136a75ac6bc89d2aa6319e94112218b  docs(roadmap): record cross-platform hardening completion
+32e2d284925c83b9a0e2498101ae2bd9c7ecb979  docs(handoff): record 2026-08-23 hardening pass
+4ef54877114821135f746432754f185882110d4d  fix(pwa): isolate cache reads to GuessNova
+3bc016adabb1f3b7850b354104bac60c6e9accd6  test(pwa): guard cache read isolation
+9df0a681428d958ce3d64a8c54747d240bddd543  fix(pwa): await service worker lifecycle work
+c0709eb3cfbc1c00b25f21a51bde6e6d4e12d59e  test(pwa): cover awaited lifecycle work
+b6cc9e943f6e5a3c3cc8744f1c843daf58818335  fix(web): make JavaScript MIME types deterministic
+aedd8de0098a2ff9a5a2ef0cdf4637361db5b099  test(web): cover deterministic module MIME types
+f24865a82a3a5a3eb061abf536d09798c7e1a80b  style(test): format web server imports
+3991b1b689352bfab398018e387617ae3556f93c  docs(changelog): finish PWA portability hardening notes
+fbfd88fddaa4aebcad000acc03e39f55635c191e  docs(roadmap): finish browser reliability checklist
 ```
+
+This final `what_changed.md` update is intentionally not included in the list above because its commit SHA does not exist until the file is committed.
 
 ### Repository work queue after this pass
 
@@ -380,7 +404,9 @@ Browser engine coverage now includes:
 
 Browser-state coverage includes malformed/oversized state, counter bounding, per-difficulty history attempt bounding, malformed history, legacy unversioned state, prototype-key rejection, and future-schema rejection.
 
-Service-worker coverage includes app-shell module presence, navigation-only offline fallback, cache-storage failure isolation, same-origin GET-only interception, and GuessNova-only cache namespace cleanup.
+Service-worker coverage includes app-shell module presence, navigation-only offline fallback, cache-storage failure isolation, same-origin GET-only interception, GuessNova-only cache cleanup/read isolation, and awaited install/activation lifecycle work.
+
+Web-server coverage includes traversal rejection, security headers, GET/HEAD behavior, binary/text MIME behavior, deterministic JavaScript/module MIME values, IPv4/wildcard browser-host handling, and IPv6/scoped-IPv6 browser-host formatting.
 
 ---
 
@@ -457,6 +483,7 @@ Important properties:
 - explicit `--host`, `--port`, and `--no-open` controls;
 - IPv4 and explicit IPv6 literal bind support;
 - bracketed IPv6 browser URL formatting with scoped-zone escaping;
+- deterministic JavaScript MIME handling for `.js` and `.mjs` across operating systems;
 - traversal rejection and path normalization;
 - read-only serving of package resources;
 - no gameplay/state mutation HTTP API;
