@@ -34,7 +34,7 @@ def test_browser_host_formats_wildcard_and_ipv6_literals() -> None:
     assert _browser_host("0.0.0.0") == "127.0.0.1"
     assert _browser_host("::") == "[::1]"
     assert _browser_host("::1") == "[::1]"
-    assert _browser_host("fe80::1%lo0") == "[fe80::1%lo0]"
+    assert _browser_host("fe80::1%lo0") == "[fe80::1%25lo0]"
     assert _browser_host("127.0.0.1") == "127.0.0.1"
 
 
