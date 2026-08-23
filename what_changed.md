@@ -34,6 +34,134 @@ Detailed earlier terminal checkpoints remain in:
 
 ---
 
+## 2026-08-23 continuation — cross-platform release hardening
+
+This continuation started from an already mature repository rather than adding artificial feature count. At the beginning of the pass, the roadmap had no unfinished ordinary engineering checkbox, GitHub exposed no open issues, and the only explicit unchecked roadmap item was the truthful manual release-media capture gate.
+
+The work therefore concentrated on concrete correctness, portability, browser persistence, and offline-cache defects that could still affect real users.
+
+### Reverse-mode whole-number bounds are now enforced everywhere
+
+`ReverseGuesser` previously assumed its type hints/callers would supply integer bounds. That assumption was inconsistent with the whole-number contract already enforced for normal guessing.
+
+Python and JavaScript now both reject fractional/non-integer Reverse bounds before a round starts. Python additionally rejects booleans, which are integer subclasses at runtime.
+
+Resulting invariant:
+
+```text
+Reverse search range = two real whole-number bounds with minimum < maximum
+```
+
+Dedicated Python and Node regressions cover these invalid-bound cases.
+
+### Reverse-mode feedback sequencing is now a real state machine
+
+A caller could previously request multiple Reverse guesses without responding to the prior proposal. That silently incremented attempt count and replaced the pending guess, weakening replayability and making the engine API easier to misuse.
+
+Both engines now enforce one pending proposal at a time:
+
+```text
+next guess -> exactly one feedback response -> next guess
+```
+
+A repeated `next_guess()` / `nextGuess()` before feedback raises without changing the pending guess or attempt count.
+
+Successful `higher`/`lower` feedback consumes the pending proposal by clearing the current guess. Contradictory or invalid feedback intentionally leaves the proposal intact so the caller can correct the response and continue the same round.
+
+### Reverse-mode non-text feedback now has a stable domain error
+
+Both engines previously called string operations directly on feedback. Non-text values could therefore leak language/runtime-specific exceptions such as Python `AttributeError` or JavaScript `TypeError` instead of the documented Reverse feedback validation error.
+
+Both implementations now reject non-text feedback with the stable semantic message:
+
+```text
+response must be higher, lower, or correct
+```
+
+The pending guess, bounds, and attempt count remain unchanged after this validation failure.
+
+### Local browser server gained explicit IPv6 support
+
+The bundled `guessnova web` / `guessnova-web` server previously used the IPv4 `ThreadingHTTPServer` family regardless of the requested bind literal.
+
+The server now:
+
+- keeps IPv4 behavior and the `127.0.0.1` default unchanged;
+- selects an IPv6 server family for explicit IPv6 literal binds;
+- formats IPv6 browser-launch hosts inside `[...]` as required by URL syntax;
+- maps the IPv6 wildcard `::` to the local browser destination `[::1]` for launch display;
+- percent-escapes scoped IPv6 zone identifiers when constructing browser URLs;
+- retains port validation, path traversal rejection, package-resource read-only serving, and the existing security headers.
+
+Focused tests cover wildcard, loopback, ordinary IPv4, and scoped IPv6 URL formatting without requiring an IPv6-capable CI network interface.
+
+### Browser history normalization now respects difficulty attempt ceilings
+
+Browser-state normalization already bounded raw counters globally, but a stale/corrupt history record could still claim an impossible attempt count such as `999999` for Normal difficulty and have that value rendered into Recent rounds.
+
+History normalization now clamps the retained attempt count to the selected difficulty's actual maximum attempts before the record reaches the UI or is re-serialized.
+
+This remains backward compatible with the existing browser-state marker and `guessnova.web.v1` localStorage key.
+
+### PWA activation no longer deletes unrelated caches
+
+The service worker previously removed every Cache Storage entry whose name was not the current GuessNova cache. On a shared origin, that could remove caches owned by another application.
+
+The service worker now uses an explicit GuessNova cache prefix and only removes obsolete caches in that namespace:
+
+```text
+guessnova-web-*
+```
+
+The active cache advances to `guessnova-web-v5`, and a committed source-contract regression test ensures activation cannot regress to broad origin-wide cache deletion.
+
+### Release documentation synchronized
+
+`CHANGELOG.md` `Unreleased` now records the Reverse, IPv6, browser-state, and PWA cache-hardening changes without changing package/runtime version or serialized compatibility formats.
+
+`ROADMAP.md` now explicitly records the completed IPv6 server support, namespaced service-worker cleanup, per-difficulty browser attempt bounding, and Python/JavaScript Reverse contract parity. The real screenshot/demo capture remains intentionally unchecked because repository automation cannot manufacture truthful release evidence.
+
+### Granular commits in the 2026-08-23 continuation
+
+```text
+c6dcb68b05026b13439d0fe0b5786b9c4aedc75a  fix(core): validate reverse integer bounds
+fb7242f26f250aa06ce68e109015ad016607dfd4  test(core): cover reverse bound type validation
+d4d963e6ef7197585de8a6acaa14a29e537e858a  fix(web): validate reverse integer bounds
+a531925bda0e7ed248cf351f01a967c79e5cb05c  test(web): cover reverse bound type validation
+208e92cd4b9b3656aede0a4b6adfbfdab21070a8  fix(core): enforce reverse feedback sequencing
+6900db7dc4ed3c5666b60aac41cb7f933756f88e  test(core): cover reverse feedback sequencing
+d7a898d92191115da54c447df5337ac41de12ebd  fix(web): enforce reverse feedback sequencing
+2a688d3b66dc5ce6b94d97f69d99720f398b504a  test(web): cover reverse feedback sequencing
+fa5bc44bb17706ba1b35594263f9243d6242d787  feat(web): support IPv6 literal server binds
+848a0fb5950c1f3001e2b4552ca31402c261d942  test(web): cover IPv6 browser host formatting
+ac75c4df82d4b3043a422d40ac95106a1b944403  fix(web): bound persisted history attempts
+838985a340cc4b6c68c10307f72c4971dde0f1c4  test(web): cover persisted attempt bounds
+81606b7a249336480bad26208f3bee97ddb20128  fix(pwa): preserve unrelated origin caches
+f7bfc11d8188e343d65afdac7080d77d1130442d  test(pwa): guard cache namespace cleanup
+9cd4617a8ba828aeb16857009d8d5b65494ff08a  fix(core): validate reverse feedback type
+500d738dc5118232eaf4361c6c4919b619319b36  test(core): cover reverse feedback type validation
+6ae016d82fd2ace17b829b2a4077d1ce20f4d3aa  fix(web): validate reverse feedback type
+1dec2ff4a304b8f86cf76856377ae487d7fcf7ea  test(web): cover reverse feedback type validation
+b9724adea6a212a98cc53ea8d44b6013b247bfa5  fix(web): escape scoped IPv6 browser hosts
+ff2c83334bbd6eeda7f758e8506195b10b3cee6d  test(web): cover scoped IPv6 URL escaping
+267f246e416b145635158c1a61a0d1f77b7defbe  docs(changelog): record browser and reverse hardening
+255d2d471136a75ac6bc89d2aa6319e94112218b  docs(roadmap): record cross-platform hardening completion
+```
+
+### Repository work queue after this pass
+
+GitHub issue/PR search at this checkpoint reports no open issues and no open pull requests. The previous handoff's warning about open PR #11 is therefore historical, not a current merge task.
+
+The remaining explicit roadmap item is manual release evidence:
+
+```text
+real terminal screenshots + short demo recording from a signed-off release build
+```
+
+Other ideas under **Gated future candidates** are intentionally not treated as unfinished release work until their stated prerequisites exist. This prevents fake schema migrations, unnecessary dependencies, or unsupported native-mobile claims from being added only to increase feature count.
+
+---
+
 ## 2026-08-21 continuation — cross-platform engine invariants
 
 This continuation concentrated on correctness shared by the Python engine and browser/PWA engine rather than adding another isolated feature on top of unresolved branch divergence.
@@ -94,29 +222,15 @@ a1e3409c7e0dba52130f1308af91917f2172d314  test(core): reject reverse feedback af
 cf4d7456f3dbac7f2a3d3e5120fc624bfe1ecacb  docs(changelog): record cross-platform engine invariant fixes
 ```
 
-The `CHANGELOG.md` `Unreleased` section now records these behavior and reliability changes without changing the package/runtime version.
+The `CHANGELOG.md` `Unreleased` section records these behavior and reliability changes without changing the package/runtime version.
 
 ---
 
-## Important branch/release reconciliation state
+## Historical branch/release reconciliation note
 
-Open PR #11, `feat: add v1.5 Textual challenge workspace`, is not currently safe to merge directly.
+At the 2026-08-21 checkpoint, PR #11 (`feat: add v1.5 Textual challenge workspace`) was open and heavily diverged from then-current `main`. That warning was correct for that historical checkpoint.
 
-Observed comparison at the `cf4d7456...` main checkpoint:
-
-```text
-main vs release/v1.5.0-challenge-workspace-20260819
-status       diverged
-feature ahead by  85 commits
-feature behind by 108 commits
-merge base    3b0ae5ba92087e7286b77711d8dfb5df7f132c43
-```
-
-The branch contains useful v1.5 challenge-workspace work, but `main` has accumulated substantial independent browser/PWA, service, storage, CI/security, and engine hardening since the common base. The PR should not be force-merged or treated as a release candidate until its feature layer is deliberately reconciled with current `main` and all overlapping files are reviewed.
-
-High-risk overlap includes workflows, release metadata, changelog/docs, `pyproject.toml`, `tui_workspace.py`, localization, smoke testing, and the active handoff file.
-
-A safe continuation should port/reconcile the challenge feature onto current `main` rather than discarding either side's changes.
+At the 2026-08-23 checkpoint, GitHub issue/PR search reports no open pull requests. Therefore PR #11 is no longer listed as a current engineering blocker or next action. The old divergence information remains recoverable from Git history and this handoff's previous revisions if repository archaeology is required.
 
 ---
 
@@ -213,6 +327,7 @@ The boundary:
 - discards non-object history entries;
 - normalizes mode and difficulty identifiers;
 - validates stored targets against difficulty ranges;
+- clamps stored history attempts to each difficulty's real attempt ceiling;
 - converts invalid completion timestamps to `null`;
 - uses `Object.hasOwn()` for difficulty membership so prototype names cannot become fake difficulty identifiers;
 - preserves legacy unversioned `guessnova.web.v1` state;
@@ -239,6 +354,9 @@ Python engine coverage now includes:
 - Reverse response-before-guess rejection;
 - Reverse contradictory feedback atomicity;
 - Reverse post-completion feedback rejection;
+- Reverse whole-number bound validation;
+- Reverse one-feedback-per-proposal sequencing;
+- Reverse non-text feedback validation without state loss;
 - fractional guess rejection without attempt consumption;
 - boolean guess rejection without attempt consumption;
 - fractional explicit target rejection;
@@ -255,9 +373,14 @@ Browser engine coverage now includes:
 - smart-hint thresholds/parity;
 - Reverse convergence;
 - Reverse contradictory feedback atomicity;
-- Reverse post-completion feedback rejection.
+- Reverse post-completion feedback rejection;
+- Reverse whole-number bound validation;
+- Reverse one-feedback-per-proposal sequencing;
+- Reverse non-text feedback validation without state loss.
 
-Browser-state coverage continues to cover malformed/oversized state, counter bounding, malformed history, legacy unversioned state, prototype-key rejection, and future-schema rejection.
+Browser-state coverage includes malformed/oversized state, counter bounding, per-difficulty history attempt bounding, malformed history, legacy unversioned state, prototype-key rejection, and future-schema rejection.
+
+Service-worker coverage includes app-shell module presence, navigation-only offline fallback, cache-storage failure isolation, same-origin GET-only interception, and GuessNova-only cache namespace cleanup.
 
 ---
 
@@ -284,17 +407,25 @@ Ubuntu, Windows, and macOS package matrices continue to build/install the wheel 
 
 ---
 
-## CI evidence at this exact continuation
+## Validation evidence at the 2026-08-23 continuation
 
-For main checkpoint `cf4d7456f3dbac7f2a3d3e5120fc624bfe1ecacb`:
+Verified directly through the GitHub connector:
 
-- GitHub combined-status lookup exposed an empty status list;
-- the available commit workflow-run lookup exposed no pull-request-triggered runs;
-- an empty result is **not** treated as a pass or failure.
+- current repository metadata and `main` contents;
+- no open GitHub issues at the beginning of the pass;
+- no open pull requests at the end of the pass;
+- the current roadmap and its one manual release-media checkbox;
+- Python and JavaScript engine source before each modification;
+- local web-server implementation and tests;
+- browser-state normalization implementation and tests;
+- PWA service-worker implementation and tests;
+- every source/test/docs commit listed in the current continuation.
 
-The execution container still cannot resolve `github.com`, so a full local clone and repository-wide local test run could not be performed from that environment.
+A combined-status lookup performed during the continuation exposed no commit statuses for the queried head. The available GitHub fetch surface also does not permit listing Actions runs through the generic repository fetch endpoint. An empty/unavailable status result is **not** treated as a pass or a failure.
 
-Do not claim a full repository pass from this continuation until an actual CI conclusion or complete local run is observed.
+The execution environment used for this continuation does not provide a local checked-out repository with dependencies, and its direct network clone path is unavailable. Therefore this handoff does not claim a complete local Ruff/mypy/pytest/Node execution.
+
+Do not claim a full repository pass until an actual exact-head CI conclusion or complete exact-head local run is observed.
 
 ---
 
@@ -324,6 +455,8 @@ Important properties:
 - standard-library server, no web-framework runtime dependency;
 - loopback-only by default;
 - explicit `--host`, `--port`, and `--no-open` controls;
+- IPv4 and explicit IPv6 literal bind support;
+- bracketed IPv6 browser URL formatting with scoped-zone escaping;
 - traversal rejection and path normalization;
 - read-only serving of package resources;
 - no gameplay/state mutation HTTP API;
@@ -332,7 +465,7 @@ Important properties:
 - `Referrer-Policy: no-referrer`;
 - restrictive same-origin Content Security Policy.
 
-`0.0.0.0` remains an explicit trusted-LAN development choice, not the normal default. Public/mobile deployment should use HTTPS static hosting.
+`0.0.0.0` / `::` remain explicit trusted-LAN development choices, not the normal default. Public/mobile deployment should use HTTPS static hosting.
 
 ---
 
@@ -361,40 +494,27 @@ Legacy Python `daily_seed()` remains available for compatibility.
 
 ## Validation truthfulness
 
-Verified directly during the work:
+Not claimed without independent evidence:
 
-- repository metadata and current main head through the GitHub connector;
-- current open PR state and main/feature divergence;
-- Python and JavaScript engine source before modification;
-- the Reverse mutation-before-validation defect in both engines;
-- the Python fractional/boolean target/guess runtime mismatch;
-- committed source/test changes and exact commit SHAs;
-- changelog update;
-- exact-head combined-status/workflow-run lookups.
-
-Not claimed:
-
-- a complete local Ruff/mypy/pytest/Node repository pass;
-- a successful GitHub Actions conclusion when no conclusion was exposed;
+- a complete exact-head local Ruff/mypy/pytest/Node repository pass;
+- a successful GitHub Actions conclusion when no conclusion is exposed;
 - real-device Android/iOS/iPadOS/ChromeOS evidence;
 - release-candidate accessibility evidence;
 - signed release artifacts;
-- PR #11 mergeability after reconciliation, because reconciliation has not yet been completed.
+- real terminal screenshots/demo media before they are captured from a signed-off build.
 
 ---
 
 ## Next engineering priorities
 
-1. Reconcile the useful v1.5 Challenge Setup work from PR #11 onto current `main` without losing the 108 main-side commits since the common base.
-2. Resolve overlapping TUI/workflow/docs/release metadata deliberately; do not overwrite current PWA/security/service changes with the stale branch versions.
-3. Run or observe complete Python + Node quality gates on the exact reconciled head.
-4. Require CI/security checks to pass on that exact candidate SHA before tagging.
-5. Install the wheel on Windows, macOS, and Linux and verify CLI, TUI, Doctor, `guessnova web`, and `guessnova-web`.
-6. Verify the complete PWA module/asset set in the installed wheel.
-7. Host the PWA over HTTPS for Android/iOS/iPadOS/ChromeOS and current desktop-browser validation.
-8. Complete keyboard/touch/responsive/light-dark/reduced-motion checks and manual accessibility evidence on the exact candidate.
-9. Compare Python/browser Daily Challenge targets for the same date+difficulty.
-10. Capture screenshots/demo media only from a verified candidate.
+1. Run or observe the complete Python + Node quality gates on the exact current head.
+2. Require CI/security checks to pass on that exact candidate SHA before tagging a release.
+3. Install the built wheel on Windows, macOS, and Linux and verify CLI, TUI, Doctor, `guessnova web`, and `guessnova-web` from the installed artifact.
+4. Verify the complete PWA module/asset set in the installed wheel and host the PWA over HTTPS for browser/mobile release validation.
+5. Complete keyboard/touch/responsive/light-dark/reduced-motion checks and the manual accessibility evidence template on the exact candidate.
+6. Compare Python/browser Daily Challenge targets for the same date+difficulty as a release-candidate parity check.
+7. Capture real screenshots and demo media only from the verified candidate, following `docs/media/README.md` provenance rules.
+8. Consider any item under **Gated future candidates** only when its prerequisite actually exists; do not manufacture schema/version/native-platform work to make the roadmap look busier.
 
 Do not fabricate CI, device, accessibility, provenance, or screenshot evidence.
 
