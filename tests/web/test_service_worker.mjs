@@ -13,6 +13,14 @@ test("service worker precaches all JavaScript modules", () => {
   assert.match(source, /\.\/game-engine\.mjs/);
 });
 
+test("service worker awaits install and activation lifecycle work", () => {
+  assert.match(source, /event\.waitUntil\(\s*Promise\.all\(\[/);
+  assert.match(source, /self\.skipWaiting\(\)/);
+  assert.match(source, /self\.clients\.claim\(\)/);
+  assert.doesNotMatch(source, /\);\s*self\.skipWaiting\(\);/);
+  assert.doesNotMatch(source, /\);\s*self\.clients\.claim\(\);/);
+});
+
 test("service worker only deletes obsolete GuessNova caches", () => {
   assert.match(source, /const CACHE_PREFIX\s*=\s*["']guessnova-web-["']/);
   assert.match(source, /key\.startsWith\(CACHE_PREFIX\)\s*&&\s*key\s*!==\s*CACHE_NAME/);
