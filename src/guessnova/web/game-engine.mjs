@@ -159,6 +159,9 @@ export class GuessGame {
 
 export class ReverseGuesser {
   constructor(minimum = 1, maximum = 100) {
+    if (!Number.isInteger(minimum) || !Number.isInteger(maximum)) {
+      throw new Error("minimum and maximum must be whole numbers");
+    }
     if (minimum >= maximum) throw new Error("minimum must be less than maximum");
     this.minimum = minimum;
     this.maximum = maximum;
