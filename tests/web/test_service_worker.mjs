@@ -19,6 +19,12 @@ test("service worker only deletes obsolete GuessNova caches", () => {
   assert.doesNotMatch(source, /keys\.filter\(\(key\)\s*=>\s*key\s*!==\s*CACHE_NAME\)/);
 });
 
+test("cache reads are isolated to the active GuessNova cache", () => {
+  assert.match(source, /const cache\s*=\s*await caches\.open\(CACHE_NAME\)/);
+  assert.match(source, /return await cache\.match\(request\)/);
+  assert.doesNotMatch(source, /return await caches\.match\(request\)/);
+});
+
 test("offline HTML fallback is limited to navigations", () => {
   assert.match(source, /request\.mode\s*===\s*["']navigate["']/);
   assert.match(source, /safeCacheMatch\(\s*["']\.\/index\.html["']\s*\)/);
@@ -30,7 +36,7 @@ test("offline HTML fallback is limited to navigations", () => {
 
 test("cache storage failures are isolated from network responses", () => {
   assert.match(source, /async function safeCacheMatch\(/);
-  assert.match(source, /return await caches\.match\(request\)/);
+  assert.match(source, /return await cache\.match\(request\)/);
   assert.match(source, /async function cacheSuccessfulResponse\(/);
   assert.match(source, /await cache\.put\(request, response\.clone\(\)\)/);
   assert.match(
