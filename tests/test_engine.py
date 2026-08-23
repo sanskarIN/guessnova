@@ -1,7 +1,7 @@
 import pytest
 
 from guessnova.domain import GameMode, GuessOutcome
-from guessnova.engine import HINT_PENALTY_XP, GuessGame
+from guessnova.engine import HINT_PENALTY_XP, GuessGame, ReverseGuesser
 
 
 def test_correct_guess_wins() -> None:
@@ -73,6 +73,13 @@ def test_invalid_difficulty() -> None:
 def test_reverse_mode_requires_reverse_guesser() -> None:
     with pytest.raises(ValueError, match="ReverseGuesser"):
         GuessGame(mode=GameMode.REVERSE)
+
+
+def test_reverse_guesser_rejects_non_integer_bounds() -> None:
+    with pytest.raises(ValueError, match="whole numbers"):
+        ReverseGuesser(1.5, 10)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="whole numbers"):
+        ReverseGuesser(1, True)
 
 
 def test_runtime_mode_values_are_normalized_and_validated() -> None:
