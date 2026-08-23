@@ -6,7 +6,13 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-from guessnova.web_server import WEB_ROOT, _browser_host, _content_type, _safe_asset_path, create_server
+from guessnova.web_server import (
+    WEB_ROOT,
+    _browser_host,
+    _content_type,
+    _safe_asset_path,
+    create_server,
+)
 
 
 def test_safe_asset_path_rejects_traversal() -> None:
