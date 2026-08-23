@@ -78,6 +78,11 @@ test("reverse guesser converges with binary responses", () => {
   assert.equal(reverse.attempts, 3);
 });
 
+test("reverse guesser rejects non-integer bounds", () => {
+  assert.throws(() => new ReverseGuesser(1.5, 10), /whole numbers/);
+  assert.throws(() => new ReverseGuesser(1, Number.NaN), /whole numbers/);
+});
+
 test("reverse contradictions do not corrupt search bounds", () => {
   const reverse = new ReverseGuesser(1, 2);
   assert.equal(reverse.nextGuess(), 1);
