@@ -218,6 +218,8 @@ class ReverseGuesser:
             raise RuntimeError("reverse game is already finished")
         if self.current is None:
             raise RuntimeError("call next_guess before respond")
+        if not isinstance(response, str):
+            raise ValueError("response must be higher, lower, or correct")
         response = response.strip().lower()
         if response == "correct":
             self.finished = True
