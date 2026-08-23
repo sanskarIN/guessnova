@@ -88,11 +88,14 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 - [x] Preserve deterministic Daily Challenge parity between Python and JavaScript through the portable daily-v2 FNV-1a rule.
 - [x] Add a standard-library local web server exposed through both `guessnova web` and `guessnova-web`.
 - [x] Keep the normal server loopback-only by default and reject path traversal while serving package resources read-only.
+- [x] Support explicit IPv6 server binds and URL-safe browser-launch formatting, including scoped IPv6 zone identifiers.
 - [x] Add responsive, keyboard-accessible, touch-friendly browser presentation with reduced-motion and color-scheme support.
 - [x] Add PWA manifest metadata, real 192px/512px raster install icons, iOS home-screen metadata, and offline app-shell caching.
+- [x] Keep service-worker cache cleanup namespaced to GuessNova so unrelated caches on a shared origin are preserved.
 - [x] Keep browser gameplay private and local-only with no account, telemetry, analytics, ads, cloud sync, or gameplay backend.
 - [x] Keep browser storage explicitly separate from the Python schema-2 local state rather than silently coupling incompatible stores.
-- [x] Normalize malformed/stale browser storage before rendering, discard unknown fields, bound counters/history, and retain backward readability for unversioned `guessnova.web.v1` state.
+- [x] Normalize malformed/stale browser storage before rendering, discard unknown fields, bound counters/history and per-difficulty attempt counts, and retain backward readability for unversioned `guessnova.web.v1` state.
+- [x] Keep Reverse-mode whole-number bounds, response sequencing, contradiction recovery, completion guards, and feedback validation aligned between Python and JavaScript engines.
 - [x] Cover browser engine and browser-state behavior with deterministic Node tests.
 - [x] Run committed browser tests in both normal CI and tagged-release verification.
 - [x] Verify browser module syntax and required PWA assets in built wheels across Ubuntu, Windows, and macOS package matrices.
