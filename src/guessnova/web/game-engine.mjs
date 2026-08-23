@@ -174,6 +174,7 @@ export class ReverseGuesser {
 
   nextGuess() {
     if (this.finished) throw new Error("reverse game is already finished");
+    if (this.current !== null) throw new Error("respond before requesting another guess");
     if (this.low > this.high) throw new Error("responses are inconsistent");
     this.current = Math.floor((this.low + this.high) / 2);
     this.attempts += 1;
@@ -199,5 +200,6 @@ export class ReverseGuesser {
     } else {
       throw new Error("response must be higher, lower, or correct");
     }
+    this.current = null;
   }
 }
