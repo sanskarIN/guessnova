@@ -39,12 +39,13 @@ function normalizeHistoryEntry(value) {
     && value.target <= definition.maximum
     ? value.target
     : null;
+  const attempts = Math.min(normalizeCounter(value.attempts), definition.maxAttempts);
 
   return {
     mode,
     difficulty,
     won: value.won === true,
-    attempts: normalizeCounter(value.attempts),
+    attempts,
     target,
     completedAt: normalizeCompletedAt(value.completedAt),
   };
