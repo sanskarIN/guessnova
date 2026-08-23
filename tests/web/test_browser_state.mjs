@@ -96,6 +96,21 @@ test("history discards invalid entries and normalizes fields", () => {
   assert.equal(state.history[3].completedAt, null);
 });
 
+test("history attempts are bounded by the selected difficulty", () => {
+  const state = normalizeBrowserState({
+    history: [{
+      mode: "classic",
+      difficulty: "normal",
+      won: false,
+      attempts: 999_999,
+      target: 35,
+      completedAt: "2026-08-20T00:00:00.000Z",
+    }],
+  });
+
+  assert.equal(state.history[0].attempts, 9);
+});
+
 test("oversized timestamps are discarded", () => {
   const state = normalizeBrowserState({
     history: [{
