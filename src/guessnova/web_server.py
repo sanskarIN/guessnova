@@ -75,7 +75,7 @@ def _browser_host(host: str) -> str:
     if host == "::":
         return "[::1]"
     if ":" in host and not host.startswith("["):
-        return f"[{host}]"
+        return f"[{host.replace('%', '%25')}]"
     return host
 
 
