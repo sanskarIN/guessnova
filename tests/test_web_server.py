@@ -25,6 +25,8 @@ def test_safe_asset_path_rejects_traversal() -> None:
 
 def test_content_type_adds_charset_only_to_text_formats() -> None:
     assert _content_type("index.html") == "text/html; charset=utf-8"
+    assert _content_type("app.js") == "text/javascript; charset=utf-8"
+    assert _content_type("game-engine.mjs") == "text/javascript; charset=utf-8"
     assert _content_type("manifest.webmanifest") == "application/manifest+json; charset=utf-8"
     assert _content_type("icon.svg") == "image/svg+xml; charset=utf-8"
     assert _content_type("icon-192.png") == "image/png"
