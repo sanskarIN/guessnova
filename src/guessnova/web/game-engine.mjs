@@ -184,6 +184,9 @@ export class ReverseGuesser {
   respond(response) {
     if (this.finished) throw new Error("reverse game is already finished");
     if (this.current === null) throw new Error("call nextGuess before respond");
+    if (typeof response !== "string") {
+      throw new Error("response must be higher, lower, or correct");
+    }
     const normalized = response.trim().toLowerCase();
     if (normalized === "correct") {
       this.finished = true;
