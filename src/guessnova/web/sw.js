@@ -33,7 +33,8 @@ self.addEventListener("activate", (event) => {
 
 async function safeCacheMatch(request) {
   try {
-    return await caches.match(request);
+    const cache = await caches.open(CACHE_NAME);
+    return await cache.match(request);
   } catch {
     return undefined;
   }
