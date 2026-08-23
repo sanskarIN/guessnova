@@ -59,9 +59,11 @@ def _safe_asset_path(raw_path: str) -> str | None:
 
 
 def _content_type(asset_path: str) -> str:
-    """Return an HTTP Content-Type value with charset only for text formats."""
+    """Return a stable HTTP Content-Type value for bundled web assets."""
     guessed = mimetypes.guess_type(asset_path)[0] or "application/octet-stream"
-    if asset_path.endswith(".webmanifest"):
+    if asset_path.endswith((".js", ".mjs")):
+        guessed = "text/javascript"
+    elif asset_path.endswith(".webmanifest"):
         guessed = "application/manifest+json"
     if guessed in _TEXTUAL_CONTENT_TYPES or guessed.startswith("text/"):
         return f"{guessed}; charset=utf-8"
