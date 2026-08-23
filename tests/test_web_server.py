@@ -6,7 +6,7 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-from guessnova.web_server import WEB_ROOT, _content_type, _safe_asset_path, create_server
+from guessnova.web_server import WEB_ROOT, _browser_host, _content_type, _safe_asset_path, create_server
 
 
 def test_safe_asset_path_rejects_traversal() -> None:
@@ -28,6 +28,14 @@ def test_content_type_adds_charset_only_to_text_formats() -> None:
     assert _content_type("manifest.webmanifest") == "application/manifest+json; charset=utf-8"
     assert _content_type("icon.svg") == "image/svg+xml; charset=utf-8"
     assert _content_type("icon-192.png") == "image/png"
+
+
+def test_browser_host_formats_wildcard_and_ipv6_literals() -> None:
+    assert _browser_host("0.0.0.0") == "127.0.0.1"
+    assert _browser_host("::") == "[::1]"
+    assert _browser_host("::1") == "[::1]"
+    assert _browser_host("fe80::1%lo0") == "[fe80::1%lo0]"
+    assert _browser_host("127.0.0.1") == "127.0.0.1"
 
 
 def test_required_pwa_assets_are_bundled() -> None:
