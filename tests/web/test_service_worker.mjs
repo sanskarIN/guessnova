@@ -13,6 +13,12 @@ test("service worker precaches all JavaScript modules", () => {
   assert.match(source, /\.\/game-engine\.mjs/);
 });
 
+test("service worker only deletes obsolete GuessNova caches", () => {
+  assert.match(source, /const CACHE_PREFIX\s*=\s*["']guessnova-web-["']/);
+  assert.match(source, /key\.startsWith\(CACHE_PREFIX\)\s*&&\s*key\s*!==\s*CACHE_NAME/);
+  assert.doesNotMatch(source, /keys\.filter\(\(key\)\s*=>\s*key\s*!==\s*CACHE_NAME\)/);
+});
+
 test("offline HTML fallback is limited to navigations", () => {
   assert.match(source, /request\.mode\s*===\s*["']navigate["']/);
   assert.match(source, /safeCacheMatch\(\s*["']\.\/index\.html["']\s*\)/);
