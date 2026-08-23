@@ -15,13 +15,16 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 ### Changed
 
 - Browser persistence now normalizes counters, settings, history records, targets, and timestamps before rendering or re-serializing state.
+- Browser history attempt counts are clamped to the selected difficulty's real attempt ceiling before rendering or re-serializing stale localStorage data.
 - Unknown persisted fields are discarded; invalid counters and malformed history entries cannot leak directly into the UI.
 - Legacy unversioned `guessnova.web.v1` localStorage remains readable and is normalized into the current browser-state shape.
-- The service-worker cache now includes the browser-state module and advances its cache namespace so existing installations can refresh safely.
+- The service-worker cache now includes the browser-state module, advances its cache namespace, and removes only obsolete GuessNova-owned caches instead of unrelated caches on a shared origin.
 - Normal CI and tagged-release verification now run every committed `tests/web/*.mjs` test instead of using a glob that did not match the existing `test_game_engine.mjs` filename.
 - Browser JavaScript syntax checks now include `browser-state.mjs`, and cross-platform built-wheel checks require the complete PWA module set.
 - The roadmap now records the browser/PWA edition as shipped work instead of describing it as only a future candidate.
 - Python gameplay now rejects fractional and boolean explicit targets/guesses, matching the browser engine's whole-number invariant and preventing unwinnable fractional-target rounds.
+- Python and browser Reverse mode now require whole-number search bounds, require one feedback response per proposed guess, and normalize non-text feedback to the stable validation error without corrupting the pending guess.
+- The bundled web server can bind explicit IPv6 literals, formats browser-launch URLs with bracketed IPv6 hosts, and percent-escapes scoped IPv6 zone identifiers.
 
 ### Security, privacy, and reliability
 
@@ -31,6 +34,7 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 - Corrupt or blocked browser storage falls back to safe in-memory defaults so gameplay remains usable.
 - Python and browser Reverse mode now validate proposed search-bound changes before mutation, so contradictory feedback raises without corrupting the active search interval.
 - Python and browser Reverse mode reject feedback after completion, preserving the completed round's bounds, guess, and attempt count.
+- PWA activation leaves non-GuessNova Cache Storage entries untouched, avoiding destructive cleanup when multiple applications share one origin.
 
 ### Compatibility
 
