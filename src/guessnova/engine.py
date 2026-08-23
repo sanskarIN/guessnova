@@ -190,6 +190,13 @@ class ReverseGuesser:
     finished: bool = field(default=False, init=False)
 
     def __post_init__(self) -> None:
+        if (
+            not isinstance(self.minimum, int)
+            or isinstance(self.minimum, bool)
+            or not isinstance(self.maximum, int)
+            or isinstance(self.maximum, bool)
+        ):
+            raise ValueError("minimum and maximum must be whole numbers")
         if self.minimum >= self.maximum:
             raise ValueError("minimum must be less than maximum")
         self.low = self.minimum
