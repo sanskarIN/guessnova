@@ -35,3 +35,14 @@ test("invalid reverse feedback remains recoverable", () => {
   assert.equal(reverse.current, null);
   assert.equal(reverse.nextGuess(), 2);
 });
+
+test("reverse feedback requires text without consuming pending guess", () => {
+  const reverse = new ReverseGuesser(1, 10);
+  assert.equal(reverse.nextGuess(), 5);
+
+  assert.throws(() => reverse.respond(null), /higher, lower, or correct/);
+  assert.equal(reverse.current, 5);
+  assert.equal(reverse.attempts, 1);
+  assert.equal(reverse.low, 1);
+  assert.equal(reverse.high, 10);
+});
