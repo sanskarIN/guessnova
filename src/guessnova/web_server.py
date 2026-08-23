@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import mimetypes
+import socket
 import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -35,6 +36,12 @@ CONTENT_SECURITY_POLICY: Final = (
 )
 
 
+class _IPv6ThreadingHTTPServer(ThreadingHTTPServer):
+    """Threading HTTP server variant for explicit IPv6 literal binds."""
+
+    address_family = socket.AF_INET6
+
+
 def _safe_asset_path(raw_path: str) -> str | None:
     """Return a normalized bundled asset path, rejecting traversal attempts."""
     try:
@@ -59,6 +66,17 @@ def _content_type(asset_path: str) -> str:
     if guessed in _TEXTUAL_CONTENT_TYPES or guessed.startswith("text/"):
         return f"{guessed}; charset=utf-8"
     return guessed
+
+
+def _browser_host(host: str) -> str:
+    """Return a URL-safe local host for the browser launch message."""
+    if host == "0.0.0.0":
+        return "127.0.0.1"
+    if host == "::":
+        return "[::1]"
+    if ":" in host and not host.startswith("["):
+        return f"[{host}]"
+    return host
 
 
 class GuessNovaWebHandler(BaseHTTPRequestHandler):
@@ -117,8 +135,9 @@ class GuessNovaWebHandler(BaseHTTPRequestHandler):
 
 
 def create_server(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> ThreadingHTTPServer:
-    """Create a reusable web server instance for tests and embedding."""
-    return ThreadingHTTPServer((host, port), GuessNovaWebHandler)
+    """Create a reusable IPv4/IPv6 web server instance for tests and embedding."""
+    server_type = _IPv6ThreadingHTTPServer if ":" in host else ThreadingHTTPServer
+    return server_type((host, port), GuessNovaWebHandler)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -152,9 +171,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("--port must be between 0 and 65535")
     server = create_server(args.host, args.port)
     actual_host, actual_port = server.server_address[:2]
-    display_host = (
-        "127.0.0.1" if actual_host in {"0.0.0.0", "::"} else str(actual_host)
-    )
+    display_host = _browser_host(str(actual_host))
     url = f"http://{display_host}:{actual_port}/"
     print(f"GuessNova web app: {url}")
     print("Press Ctrl+C to stop.")
