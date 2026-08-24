@@ -1,12 +1,19 @@
 import asyncio
 from pathlib import Path
 
-from textual.widgets import Input, Select
+from textual.widgets import Button, Input, Select
 
 from guessnova.domain import GameMode
 from guessnova.engine import GuessGame
 from guessnova.storage import Storage
 from guessnova.tui_challenge_app import GuessNovaApp
+
+
+async def _activate_button(app: GuessNovaApp, pilot, selector: str) -> None:
+    app.query_one(selector, Button).focus()
+    await pilot.pause()
+    await pilot.press("enter")
+    await pilot.pause()
 
 
 def test_seeded_configured_reset_replays_same_target(tmp_path: Path) -> None:
@@ -16,8 +23,7 @@ def test_seeded_configured_reset_replays_same_target(tmp_path: Path) -> None:
             app.query_one("#challenge-mode", Select).value = "streak"
             app.query_one("#challenge-difficulty", Select).value = "expert"
             app.query_one("#challenge-seed", Input).value = "731"
-            await pilot.click("#challenge-start")
-            await pilot.pause()
+            await _activate_button(app, pilot, "#challenge-start")
             target = app.game.target_value
 
             app.query_one("#guess", Input).value = str(
@@ -49,8 +55,7 @@ def test_daily_configured_reset_replays_same_date_seed_and_target(tmp_path: Path
             app.query_one("#challenge-mode", Select).value = "daily"
             app.query_one("#challenge-difficulty", Select).value = "normal"
             app.query_one("#challenge-day", Input).value = "2026-08-19"
-            await pilot.click("#challenge-start")
-            await pilot.pause()
+            await _activate_button(app, pilot, "#challenge-start")
 
             original_seed = app.game.seed
             original_target = app.game.target_value
