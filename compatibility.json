@@ -1,0 +1,13 @@
+{
+  "package_version": "1.4.0",
+  "python_requires": ">=3.13",
+  "python_state_schema": 2,
+  "backup_wrapper": 2,
+  "legacy_backup_wrappers": [1],
+  "replay_format": 1,
+  "doctor_report_protocol": 1,
+  "browser_state_marker": 1,
+  "browser_storage_key": "guessnova.web.v1",
+  "portable_interchange_version": null,
+  "portable_challenge_descriptor_version": null
+}
