@@ -8,7 +8,14 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from scripts.verify_manual_release_evidence import evidence_path, load_evidence, validate_evidence
+try:
+    from scripts.verify_manual_release_evidence import (
+        evidence_path,
+        load_evidence,
+        validate_evidence,
+    )
+except ModuleNotFoundError:
+    from verify_manual_release_evidence import evidence_path, load_evidence, validate_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
 
