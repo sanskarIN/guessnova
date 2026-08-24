@@ -52,6 +52,8 @@ jobs:
         run: python -m compileall -q src tests scripts
       - name: Release metadata
         run: python scripts/verify_release_metadata.py
+      - name: Compatibility metadata
+        run: python scripts/verify_compatibility_baseline.py
       - name: Smoke test
         run: python scripts/smoke_test.py
 
@@ -96,5 +98,7 @@ jobs:
           guessnova-web --help
       - name: Verify installed PWA package
         run: python scripts/verify_web_package.py
+      - name: Verify compatibility metadata
+        run: python scripts/verify_compatibility_baseline.py
       - name: Run smoke test
         run: python scripts/smoke_test.py
