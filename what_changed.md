@@ -34,6 +34,18 @@ Detailed earlier terminal checkpoints remain in:
 
 ---
 
+## 2026-08-24 continuation — release readiness after PR #14 merge
+
+PR #14 was merged into `main` as `9e3c24db7653b500aacb31b68a59739f586e8059` after its final head passed CI, Security, CodeQL, Python/browser tests, Ruff, strict mypy, smoke checks, and Ubuntu/Windows/macOS built-wheel verification. The engineering reconciliation is therefore complete; release publication remains intentionally separate from merge.
+
+A follow-up branch, `release/v1.5-readiness-v2-entry-20260824`, adds a machine-readable manual release-evidence contract under `docs/release_evidence/`, a strict `verify_manual_release_evidence.py` gate, and `release_readiness.py` for non-fabricated repository-local status reporting. The committed v1.5 evidence record remains `pending`.
+
+Tagged-release automation now checks that evidence before release verification proceeds. Verification and platform-package jobs are read-only, while `contents: write` is scoped only to the final publication job. Release concurrency also prevents duplicate publication jobs for the same tag from racing.
+
+The 2.0 roadmap now records the true entry state: reconciliation, automated quality/security gates, compatibility baseline, and release-safety tooling are complete; truthful manual keyboard/accessibility review, signed-off screenshot/demo capture, the 1.5.0 metadata advance, and the final v1.5.0 tag remain pending. No 2.0 feature work or compatibility-version bump is claimed before those entry gates are complete.
+
+---
+
 ## 2026-08-24 continuation — v1.5 reconciliation and 2.0 preparation
 
 The canonical continuation now lives on `release/v1.5-v2-prep-20260824` in PR #14. It starts from the 2026-08-23 hardened `main` head rather than merging either stale v1.5 branch. PR #11 and PR #13 are closed as superseded historical inputs.

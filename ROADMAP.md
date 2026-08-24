@@ -112,7 +112,9 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 - [x] Modernize GitHub Actions checkout, Python setup, Node setup, CodeQL, and release-publication toolchain paths.
 - [x] Add and enforce a machine-readable compatibility baseline before 2.0 development.
 - [x] Define the compatibility-first 2.0 roadmap and release checklist under `docs/v2_roadmap.md` and `docs/v2_release_checklist.md`.
-- [ ] Require exact-head CI, Security, and CodeQL success for the final release-candidate head.
+- [x] Require exact-head CI, Security, and CodeQL success for the final release-candidate head.
+- [x] Add a machine-readable manual-evidence manifest and block tagged publication while it is pending or incomplete.
+- [x] Scope tagged-release repository write permission to the final publication job only.
 - [ ] Complete manual Challenge Setup accessibility evidence.
 - [ ] Complete truthful signed-off screenshots/demo media.
 - [ ] Advance package/runtime metadata to `1.5.0` only after the release gates above are accepted.

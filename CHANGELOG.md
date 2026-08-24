@@ -6,6 +6,7 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 
 ### Added
 
+- Machine-readable manual release-evidence manifests, a strict evidence verifier, and a repository-local release-readiness report for the v1.5-to-v2 entry path.
 - Validated Textual Challenge Setup for Classic, Timed, Streak, and Daily modes with deterministic seeded/date-bound reconstruction and target-free active-challenge presentation.
 - Machine-readable `compatibility.json` plus CI/release verification for package, state, backup, replay, Doctor, and browser compatibility contracts.
 - GuessNova 2.0 engineering roadmap, release checklist, and compatibility-first architecture decision record.
@@ -17,6 +18,7 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 
 ### Changed
 
+- Tagged releases now fail fast on incomplete manual evidence; verification/package jobs are read-only and only the final publication job receives repository write permission.
 - Installed `guessnova-tui` now routes to the additive challenge-enabled Textual workspace while retaining the stable six-pane workspace implementation underneath it.
 - Ruff formatting is normalized repository-wide and the development formatter is bounded to the established 0.12 compatibility line for reproducible checks.
 - CI, Security, CodeQL, and tagged-release workflows use current Node-24-compatible major releases of checkout/setup actions; release publication uses `softprops/action-gh-release@v3`.
