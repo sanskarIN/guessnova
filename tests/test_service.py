@@ -40,7 +40,7 @@ def test_service_adds_win_to_leaderboard(tmp_path: Path) -> None:
 
 def test_service_records_loss_in_history_without_leaderboard_entry(tmp_path: Path) -> None:
     storage = Storage(tmp_path)
-    summary = GameSummary(GameMode.CLASSIC, "easy", 42, False, 10, 3.5, tuple(range(10)))
+    summary = GameSummary(GameMode.CLASSIC, "easy", 42, False, 10, 3.5, tuple(range(1, 11)))
     profile, _ = GameService(storage).record(summary, "Tester")
     assert profile.history[-1].won is False
     assert storage.load_leaderboard() == []
