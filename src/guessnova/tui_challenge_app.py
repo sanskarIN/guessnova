@@ -17,6 +17,14 @@ from .tui_workspace import ChallengeConfiguration, parse_workspace_challenge
 class GuessNovaApp(WorkspaceApp):
     """Full workspace with validated in-Play challenge configuration."""
 
+    CSS = (
+        WorkspaceApp.CSS
+        + """
+        #play { align: center top; overflow-y: auto; }
+        #card { margin: 1 0; }
+        """
+    )
+
     def __init__(
         self,
         *,
