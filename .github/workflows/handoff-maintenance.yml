@@ -1,0 +1,85 @@
+name: Temporary handoff synchronization
+
+on:
+  push:
+    branches:
+      - release/v1.5-v2-prep-20260824
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor == 'sanskarIN'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: release/v1.5-v2-prep-20260824
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Synchronize canonical project records
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, marker: str, replacement: str, guard: str) -> None:
+              target = Path(path)
+              content = target.read_text(encoding="utf-8")
+              if guard in content:
+                  return
+              if marker not in content:
+                  raise SystemExit(f"required marker missing in {path}: {marker!r}")
+              target.write_text(content.replace(marker, replacement, 1), encoding="utf-8")
+
+          replace_once(
+              "CHANGELOG.md",
+              "### Added\n\n",
+              "### Added\n\n"
+              "- Validated Textual Challenge Setup for Classic, Timed, Streak, and Daily modes with deterministic seeded/date-bound reconstruction and target-free active-challenge presentation.\n"
+              "- Machine-readable `compatibility.json` plus CI/release verification for package, state, backup, replay, Doctor, and browser compatibility contracts.\n"
+              "- GuessNova 2.0 engineering roadmap, release checklist, and compatibility-first architecture decision record.\n",
+              "Machine-readable `compatibility.json`",
+          )
+
+          replace_once(
+              "CHANGELOG.md",
+              "### Changed\n\n",
+              "### Changed\n\n"
+              "- Installed `guessnova-tui` now routes to the additive challenge-enabled Textual workspace while retaining the stable six-pane workspace implementation underneath it.\n"
+              "- Ruff formatting is normalized repository-wide and the development formatter is bounded to the established 0.12 compatibility line for reproducible checks.\n"
+              "- CI, Security, CodeQL, and tagged-release workflows use current Node-24-compatible major releases of checkout/setup actions; release publication uses `softprops/action-gh-release@v3`.\n"
+              "- Cross-platform package jobs verify both stable and challenge-enabled Textual imports plus compatibility metadata from the built wheel.\n",
+              "Installed `guessnova-tui` now routes to the additive challenge-enabled Textual workspace",
+          )
+
+          roadmap_section = """## v1.5 release candidate — Challenge Setup integration\n\n- [x] Reconcile Challenge Setup directly onto the latest hardened `main` instead of merging stale v1.5 branches.\n- [x] Add immutable validated Challenge Setup for Classic, Timed, Streak, and Daily modes.\n- [x] Keep invalid seed/date validation non-destructive so an active round is not replaced or reset on input failure.\n- [x] Keep active challenge presentation target-free and deterministic configured resets reproducible.\n- [x] Route the installed Textual entry point to the additive challenge-enabled workspace without replacing existing storage/recovery boundaries.\n- [x] Add focused challenge configuration, presenter, widget, accessibility, localization, reset, initial-state, and safety regressions.\n- [x] Extend smoke and cross-platform built-wheel checks through the challenge-enabled application.\n- [x] Modernize GitHub Actions checkout, Python setup, Node setup, CodeQL, and release-publication toolchain paths.\n- [x] Add and enforce a machine-readable compatibility baseline before 2.0 development.\n- [x] Define the compatibility-first 2.0 roadmap and release checklist under `docs/v2_roadmap.md` and `docs/v2_release_checklist.md`.\n- [ ] Require exact-head CI, Security, and CodeQL success for the final release-candidate head.\n- [ ] Complete manual Challenge Setup accessibility evidence.\n- [ ] Complete truthful signed-off screenshots/demo media.\n- [ ] Advance package/runtime metadata to `1.5.0` only after the release gates above are accepted.\n\n"""
+          replace_once(
+              "ROADMAP.md",
+              "## Gated future candidates\n",
+              roadmap_section + "## Gated future candidates\n",
+              "## v1.5 release candidate — Challenge Setup integration",
+          )
+
+          handoff_section = """## 2026-08-24 continuation — v1.5 reconciliation and 2.0 preparation\n\nThe canonical continuation now lives on `release/v1.5-v2-prep-20260824` in PR #14. It starts from the 2026-08-23 hardened `main` head rather than merging either stale v1.5 branch. PR #11 and PR #13 are closed as superseded historical inputs.\n\n### Challenge Setup reconciled without dropping later hardening\n\nThe validated Challenge Setup layer, challenge-enabled Textual app, localized presentation, deterministic seeded/date-bound reconstruction, non-destructive validation behavior, focused regressions, and smoke coverage are ported on top of the current Python/browser/PWA hardening. The installed `guessnova-tui` entry point is routed to the additive challenge app while the established six-pane workspace remains the underlying application boundary.\n\n### Long-standing formatter drift was repaired\n\nExact-head CI exposed that repository-wide Ruff formatting had been failing across multiple previously merged 1.x branches, not only the new challenge work. A one-shot pinned Ruff 0.12.12 migration normalized the affected Python files. The temporary self-writing maintenance workflow was deleted immediately after producing that formatting commit. Normal CI retains the read-only `ruff format --check .` gate.\n\n### GitHub Actions toolchain modernized\n\nCI, Security, CodeQL, and tagged-release paths now use current major checkout/Python setup actions; normal browser testing uses the current Node setup major, and release publication uses `softprops/action-gh-release@v3`. Cross-platform built-wheel verification imports both the stable workspace and challenge-enabled app.\n\n### Compatibility baseline added before 2.0\n\n`compatibility.json` now records the current package/runtime and compatibility domains, and `scripts/verify_compatibility_baseline.py` proves that record matches shipped Python/browser constants. Normal CI and tagged-release verification both enforce the baseline.\n\nNo compatibility version is bumped merely because 2.0 is being prepared. At this checkpoint the intended compatibility contract remains:\n\n```text\npackage/runtime version  1.4.0 (until v1.5 release gates pass)\nPython state schema       2\nbackup wrapper            2\nlegacy backup wrapper     1\nreplay format             1\nDoctor report protocol    1\nbrowser state marker      1\nbrowser localStorage key  guessnova.web.v1\nportable interchange      not defined\nchallenge descriptor      not defined\n```\n\n### 2.0 preparation is explicit rather than speculative\n\n`docs/v2_roadmap.md`, `docs/v2_release_checklist.md`, and ADR 0006 define the 2.0 entry gates, compatibility-first architecture, cross-interface parity goals, explicit future interchange boundary, accessibility/reliability budgets, and final release definition of done. Native wrappers, schema changes, accounts/cloud, and new protocols remain gated until concrete product and compatibility requirements exist.\n\n### Remaining release evidence\n\nThe branch must still earn exact-head CI, Security, and CodeQL success after all reconciliation/documentation commits. Manual accessibility evidence and truthful signed-off screenshot/demo capture remain intentionally manual. Package metadata must not advance to `1.5.0` and no release tag should be created until those gates are accepted.\n\n---\n\n"""
+          replace_once(
+              "what_changed.md",
+              "## 2026-08-23 continuation — cross-platform release hardening\n",
+              handoff_section + "## 2026-08-23 continuation — cross-platform release hardening\n",
+              "## 2026-08-24 continuation — v1.5 reconciliation and 2.0 preparation",
+          )
+          PY
+      - name: Commit synchronized records when needed
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "Canonical records already synchronized."
+            exit 0
+          fi
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+          git add CHANGELOG.md ROADMAP.md what_changed.md
+          git commit -m "docs(handoff): sync v1.5 reconciliation and v2 preparation"
+          git push origin HEAD:release/v1.5-v2-prep-20260824
