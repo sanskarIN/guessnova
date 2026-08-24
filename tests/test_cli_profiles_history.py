@@ -52,7 +52,7 @@ def test_history_command_filters_saved_sessions(tmp_path: Path, monkeypatch) -> 
         "Tester",
     )
     service.record(
-        GameSummary(GameMode.DAILY, "hard", 80, False, 10, 3.0, tuple(range(10)), 2),
+        GameSummary(GameMode.DAILY, "hard", 80, False, 10, 3.0, tuple(range(1, 11)), 2),
         "Tester",
     )
     assert (
