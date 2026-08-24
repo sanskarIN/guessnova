@@ -100,6 +100,23 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 - [x] Run committed browser tests in both normal CI and tagged-release verification.
 - [x] Verify browser module syntax and required PWA assets in built wheels across Ubuntu, Windows, and macOS package matrices.
 
+## v1.5 release candidate — Challenge Setup integration
+
+- [x] Reconcile Challenge Setup directly onto the latest hardened `main` instead of merging stale v1.5 branches.
+- [x] Add immutable validated Challenge Setup for Classic, Timed, Streak, and Daily modes.
+- [x] Keep invalid seed/date validation non-destructive so an active round is not replaced or reset on input failure.
+- [x] Keep active challenge presentation target-free and deterministic configured resets reproducible.
+- [x] Route the installed Textual entry point to the additive challenge-enabled workspace without replacing existing storage/recovery boundaries.
+- [x] Add focused challenge configuration, presenter, widget, accessibility, localization, reset, initial-state, and safety regressions.
+- [x] Extend smoke and cross-platform built-wheel checks through the challenge-enabled application.
+- [x] Modernize GitHub Actions checkout, Python setup, Node setup, CodeQL, and release-publication toolchain paths.
+- [x] Add and enforce a machine-readable compatibility baseline before 2.0 development.
+- [x] Define the compatibility-first 2.0 roadmap and release checklist under `docs/v2_roadmap.md` and `docs/v2_release_checklist.md`.
+- [ ] Require exact-head CI, Security, and CodeQL success for the final release-candidate head.
+- [ ] Complete manual Challenge Setup accessibility evidence.
+- [ ] Complete truthful signed-off screenshots/demo media.
+- [ ] Advance package/runtime metadata to `1.5.0` only after the release gates above are accepted.
+
 ## Gated future candidates
 
 These are intentionally not release checkboxes until their prerequisite exists:

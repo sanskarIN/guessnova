@@ -49,6 +49,26 @@ Evidence / notes:
 
 Evidence / notes:
 
+## Textual TUI — Challenge Setup
+
+- [ ] Challenge Setup is reachable with keyboard-only navigation from Play, including backward navigation from the initial guess field.
+- [ ] Forward Tab from the initial guess field still follows Guess → Submit → Range Hint before cycling elsewhere.
+- [ ] Mode and difficulty selects are keyboard operable.
+- [ ] Classic, Timed, and Streak enable the seed field and disable the Daily date field.
+- [ ] Daily enables the date field and disables the manual seed field.
+- [ ] Reverse is not offered in the numeric Challenge Setup and remains available through its dedicated interaction.
+- [ ] Seed/date fields accept ordinary `q` and `r` characters without triggering quit/reset.
+- [ ] Start Challenge is keyboard operable and returns focus to the numeric guess field after success.
+- [ ] A blank Daily date resolves to an explicit date after a successful start.
+- [ ] Invalid seed input reports understandable text, focuses the seed field, and leaves the active round/attempts intact.
+- [ ] Invalid Daily date input reports understandable text, focuses the date field, and leaves the active round/attempts intact.
+- [ ] Active challenge status identifies mode/difficulty/seed-or-date without revealing the hidden target.
+- [ ] `Ctrl+R` on a seeded configured challenge reproduces the validated deterministic challenge while resetting transient round state.
+- [ ] `Ctrl+R` on a configured Daily challenge preserves the resolved Daily identity while resetting transient round state.
+- [ ] Challenge status/errors remain understandable without relying on color alone.
+
+Evidence / notes:
+
 ## Textual TUI — workspace navigation
 
 - [ ] `Ctrl+1` opens Play and focuses the guess input.
@@ -136,9 +156,10 @@ Test at a normal width and a narrow terminal.
 
 - [ ] 100% terminal font scale is usable.
 - [ ] Increased font scale remains usable without hiding required controls.
-- [ ] Narrow terminal layout remains navigable across all six panes.
+- [ ] Narrow terminal layout remains navigable across all six panes and Challenge Setup.
+- [ ] Challenge mode/difficulty/seed/date controls remain reachable at narrow width and enlarged terminal font sizes.
 - [ ] High-contrast CLI setting remains readable.
-- [ ] High-contrast TUI focus/borders remain readable.
+- [ ] High-contrast TUI focus/borders remain readable, including Challenge Setup controls.
 - [ ] Reduced-motion preference does not trigger unnecessary animation or fake delays.
 - [ ] Data tables remain horizontally/vertically navigable where terminal size requires it.
 
@@ -150,6 +171,9 @@ Evidence / notes:
 - [ ] Hindi CLI labels/prompts render correctly after `guessnova settings --locale hi`.
 - [ ] English TUI workspace labels/status render correctly.
 - [ ] Hindi TUI workspace labels/status render correctly after relaunch with a Hindi profile.
+- [ ] English Challenge Setup labels/help/status/errors render correctly.
+- [ ] Hindi Challenge Setup labels/help/status/errors render correctly after relaunch with a Hindi profile.
+- [ ] Seed/date/mode/difficulty formatted values remain present and understandable in both locales.
 - [ ] Placeholders and formatted values remain present in both locales.
 - [ ] No untranslated catalog key name is exposed to users.
 - [ ] Switching to a differently localized profile does not leave the current mounted TUI partially translated.
@@ -158,9 +182,10 @@ Evidence / notes:
 
 ## Privacy and local-data review
 
-- [ ] No workspace action unexpectedly requires network access.
+- [ ] No workspace or Challenge Setup action unexpectedly requires network access.
+- [ ] Challenge status never exposes the hidden target.
 - [ ] Recovery backup verification does not import or modify the selected backup/state.
-- [ ] Screenshots/support captures are reviewed for profile names, history, paths, and other local data before sharing.
+- [ ] Screenshots/support captures are reviewed for profile names, history, paths, challenge metadata, and other local data before sharing.
 
 Evidence / notes:
 

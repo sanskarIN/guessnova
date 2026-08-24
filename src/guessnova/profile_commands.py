@@ -39,23 +39,17 @@ def run_profiles(args: argparse.Namespace, console: Console) -> int:
 
     if action == "create":
         profile = storage.create_profile(args.name, make_active=not args.no_activate)
-        console.print(
-            text("profiles.created", locale=locale, name=escape(profile.name))
-        )
+        console.print(text("profiles.created", locale=locale, name=escape(profile.name)))
         return 0
 
     if action == "use":
         profile = storage.set_active_profile(args.name)
-        console.print(
-            text("profiles.activated", locale=locale, name=escape(profile.name))
-        )
+        console.print(text("profiles.activated", locale=locale, name=escape(profile.name)))
         return 0
 
     if action == "rename":
         profile = storage.rename_profile(args.current_name, args.new_name)
-        console.print(
-            text("profiles.renamed", locale=locale, name=escape(profile.name))
-        )
+        console.print(text("profiles.renamed", locale=locale, name=escape(profile.name)))
         return 0
 
     if action == "delete":
@@ -67,12 +61,8 @@ def run_profiles(args: argparse.Namespace, console: Console) -> int:
                 console.print(text("profiles.delete_cancelled", locale=locale))
                 return 1
         storage.delete_profile(normalized)
-        console.print(
-            text("profiles.deleted", locale=locale, name=escape(normalized))
-        )
-        console.print(
-            text("profiles.restore_hint", locale=locale, name=escape(normalized))
-        )
+        console.print(text("profiles.deleted", locale=locale, name=escape(normalized)))
+        console.print(text("profiles.restore_hint", locale=locale, name=escape(normalized)))
         return 0
 
     if action == "trash":
@@ -86,9 +76,7 @@ def run_profiles(args: argparse.Namespace, console: Console) -> int:
 
     if action == "restore":
         profile = storage.restore_profile(args.name, make_active=not args.no_activate)
-        console.print(
-            text("profiles.restored", locale=locale, name=escape(profile.name))
-        )
+        console.print(text("profiles.restored", locale=locale, name=escape(profile.name)))
         return 0
 
     raise ValueError(f"unsupported profile action: {action}")
@@ -118,9 +106,7 @@ def configure_profiles_parser(
     rename_parser.add_argument("new_name")
     rename_parser.set_defaults(func=run_profiles)
 
-    delete_parser = actions.add_parser(
-        "delete", help="move a profile to recoverable trash"
-    )
+    delete_parser = actions.add_parser("delete", help="move a profile to recoverable trash")
     delete_parser.add_argument("name")
     delete_parser.add_argument(
         "--yes",

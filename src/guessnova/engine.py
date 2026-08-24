@@ -120,9 +120,7 @@ class GuessGame:
         self._hints_used += 1
         if penalize:
             self._hint_penalty += HINT_PENALTY_XP
-        suffix = (
-            f" Using it costs {HINT_PENALTY_XP} XP from a winning reward." if penalize else ""
-        )
+        suffix = f" Using it costs {HINT_PENALTY_XP} XP from a winning reward." if penalize else ""
         return f"Range hint: the target is between {lower} and {upper}.{suffix}"
 
     def guess(self, value: int) -> GuessFeedback:

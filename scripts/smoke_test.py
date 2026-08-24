@@ -17,9 +17,11 @@ from guessnova.import_export import EXPORT_VERSION, export_state, import_state
 from guessnova.replay import decode_replay, encode_replay
 from guessnova.service import GameService
 from guessnova.storage import Storage
+from guessnova.tui_challenge import challenge_status
 from guessnova.tui_workspace import (
     build_workspace_game,
     load_workspace_snapshot,
+    parse_workspace_challenge,
     save_workspace_settings,
     select_history,
     select_leaderboard,
@@ -96,6 +98,26 @@ def main() -> int:
         assert daily.seed == daily_again.seed
         assert daily.target_value == daily_again.target_value
 
+        challenge = parse_workspace_challenge(
+            mode="streak",
+            difficulty="expert",
+            seed_text="731",
+        )
+        challenge_game = challenge.build_game()
+        challenge_replay = challenge.build_game()
+        assert challenge.mode_value == "streak"
+        assert challenge.seed_text == "731"
+        assert challenge_game.target_value == challenge_replay.target_value
+        assert challenge_status(challenge, locale="en") == "Active: streak · expert · seed 731"
+
+        daily_configuration = parse_workspace_challenge(
+            mode="daily",
+            difficulty="easy",
+            day_text="2026-08-19",
+        )
+        assert daily_configuration.day_text == "2026-08-19"
+        assert "2026-08-19" in challenge_status(daily_configuration, locale="hi")
+
         workspace_profile = save_workspace_settings(
             storage,
             "Smoke Nova",
@@ -133,9 +155,7 @@ def main() -> int:
                 {
                     "schema_version": 1,
                     "active_profile": "Legacy",
-                    "profiles": {
-                        "Legacy": {"name": "Legacy", "stats": {}, "settings": {}}
-                    },
+                    "profiles": {"Legacy": {"name": "Legacy", "stats": {}, "settings": {}}},
                     "leaderboard": [],
                 }
             ),

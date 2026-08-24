@@ -15,7 +15,9 @@ class GameService:
     def __init__(self, storage: Storage | None = None) -> None:
         self.storage = storage or Storage()
 
-    def record(self, summary: GameSummary, profile_name: str | None = None) -> tuple[Profile, set[str]]:
+    def record(
+        self, summary: GameSummary, profile_name: str | None = None
+    ) -> tuple[Profile, set[str]]:
         validate_game_summary(summary)
         profile = self.storage.load_profile(profile_name)
         unlocked = apply_summary(profile.stats, summary)

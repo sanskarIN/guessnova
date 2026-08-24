@@ -6,6 +6,9 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 
 ### Added
 
+- Validated Textual Challenge Setup for Classic, Timed, Streak, and Daily modes with deterministic seeded/date-bound reconstruction and target-free active-challenge presentation.
+- Machine-readable `compatibility.json` plus CI/release verification for package, state, backup, replay, Doctor, and browser compatibility contracts.
+- GuessNova 2.0 engineering roadmap, release checklist, and compatibility-first architecture decision record.
 - Installable responsive browser/PWA edition for modern desktop and mobile browsers while retaining the existing Python CLI, Textual workspace, and Doctor surfaces.
 - Bundled standard-library local web server exposed as `guessnova web` and `guessnova-web`.
 - Portable daily-v2 FNV-1a challenge parity between Python and JavaScript.
@@ -14,6 +17,10 @@ All notable GuessNova changes are recorded here. The project follows Semantic Ve
 
 ### Changed
 
+- Installed `guessnova-tui` now routes to the additive challenge-enabled Textual workspace while retaining the stable six-pane workspace implementation underneath it.
+- Ruff formatting is normalized repository-wide and the development formatter is bounded to the established 0.12 compatibility line for reproducible checks.
+- CI, Security, CodeQL, and tagged-release workflows use current Node-24-compatible major releases of checkout/setup actions; release publication uses `softprops/action-gh-release@v3`.
+- Cross-platform package jobs verify both stable and challenge-enabled Textual imports plus compatibility metadata from the built wheel.
 - Browser persistence now normalizes counters, settings, history records, targets, and timestamps before rendering or re-serializing state.
 - Browser history attempt counts are clamped to the selected difficulty's real attempt ceiling before rendering or re-serializing stale localStorage data.
 - Unknown persisted fields are discarded; invalid counters and malformed history entries cannot leak directly into the UI.

@@ -28,9 +28,7 @@ def test_about_command() -> None:
     assert main(["--compact", "about"]) == 0
 
 
-def test_settings_command_persists_profile_preferences(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_settings_command_persists_profile_preferences(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("GUESSNOVA_HOME", str(tmp_path))
     assert (
         main(

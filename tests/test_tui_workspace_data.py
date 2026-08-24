@@ -2,7 +2,7 @@ import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
 
-from textual.widgets import DataTable, Input, Select, Static, Switch
+from textual.widgets import Button, DataTable, Input, Select, Static, Switch
 
 from guessnova.constants import SCHEMA_VERSION
 from guessnova.engine import GuessGame
@@ -11,6 +11,13 @@ from guessnova.import_export import export_state
 from guessnova.profile import Profile
 from guessnova.storage import Storage
 from guessnova.tui import GuessNovaApp
+
+
+async def _activate_button(app: GuessNovaApp, pilot, selector: str) -> None:
+    app.query_one(selector, Button).focus()
+    await pilot.pause()
+    await pilot.press("enter")
+    await pilot.pause()
 
 
 def test_workspace_history_filters_use_active_profile_history(tmp_path: Path) -> None:
@@ -86,8 +93,7 @@ def test_workspace_settings_persist_without_restarting_app(tmp_path: Path) -> No
             app.query_one("#settings-high-contrast", Switch).value = True
             app.query_one("#settings-sound", Switch).value = True
             app.query_one("#settings-smart-hints", Switch).value = False
-            await pilot.click("#settings-save")
-            await pilot.pause()
+            await _activate_button(app, pilot, "#settings-save")
 
             saved = storage.load_profile("Nova").settings
             assert saved.theme == "mono"
@@ -113,8 +119,7 @@ def test_workspace_recovery_verifies_backup_without_importing(tmp_path: Path) ->
             await pilot.press("ctrl+6")
             await pilot.pause()
             app.query_one("#recovery-backup-path", Input).value = str(backup)
-            await pilot.click("#recovery-verify")
-            await pilot.pause()
+            await _activate_button(app, pilot, "#recovery-verify")
 
             assert storage.load_raw() == before
             assert storage.load_raw()["schema_version"] == SCHEMA_VERSION

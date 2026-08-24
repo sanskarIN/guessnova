@@ -29,11 +29,46 @@ def test_serialization_round_trip() -> None:
 
 def test_deserializer_rejects_invalid_entry_fields() -> None:
     invalid = [
-        {"player": ["A"], "difficulty": "normal", "mode": "classic", "attempts": 1, "elapsed_seconds": 1.0, "created_at": "now"},
-        {"player": "A", "difficulty": "unknown", "mode": "classic", "attempts": 1, "elapsed_seconds": 1.0, "created_at": "now"},
-        {"player": "A", "difficulty": "normal", "mode": "reverse", "attempts": 1, "elapsed_seconds": 1.0, "created_at": "now"},
-        {"player": "A", "difficulty": "normal", "mode": "classic", "attempts": -1, "elapsed_seconds": 1.0, "created_at": "now"},
-        {"player": "A", "difficulty": "normal", "mode": "classic", "attempts": 1, "elapsed_seconds": float("inf"), "created_at": "now"},
+        {
+            "player": ["A"],
+            "difficulty": "normal",
+            "mode": "classic",
+            "attempts": 1,
+            "elapsed_seconds": 1.0,
+            "created_at": "now",
+        },
+        {
+            "player": "A",
+            "difficulty": "unknown",
+            "mode": "classic",
+            "attempts": 1,
+            "elapsed_seconds": 1.0,
+            "created_at": "now",
+        },
+        {
+            "player": "A",
+            "difficulty": "normal",
+            "mode": "reverse",
+            "attempts": 1,
+            "elapsed_seconds": 1.0,
+            "created_at": "now",
+        },
+        {
+            "player": "A",
+            "difficulty": "normal",
+            "mode": "classic",
+            "attempts": -1,
+            "elapsed_seconds": 1.0,
+            "created_at": "now",
+        },
+        {
+            "player": "A",
+            "difficulty": "normal",
+            "mode": "classic",
+            "attempts": 1,
+            "elapsed_seconds": float("inf"),
+            "created_at": "now",
+        },
     ]
     assert deserialize(invalid) == []
 

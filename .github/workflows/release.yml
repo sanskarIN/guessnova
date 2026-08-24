@@ -12,12 +12,12 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
           cache: pip
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
       - name: Install quality dependencies
@@ -50,6 +50,8 @@ jobs:
         run: python -m compileall -q src tests scripts
       - name: Verify release metadata
         run: python scripts/verify_release_metadata.py
+      - name: Verify compatibility metadata
+        run: python scripts/verify_compatibility_baseline.py
       - name: Smoke test
         run: python scripts/smoke_test.py
       - name: Dependency audit
@@ -63,8 +65,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
           cache: pip
@@ -80,8 +82,10 @@ jobs:
         run: python -m pip install dist/*.whl
       - name: Verify game CLI entry point
         run: python -m guessnova --help
-      - name: Verify Textual workspace import
+      - name: Verify stable Textual workspace import
         run: python -c "from guessnova.tui import GuessNovaApp; print(GuessNovaApp.TITLE)"
+      - name: Verify challenge-enabled Textual app import
+        run: python -c "from guessnova.tui_challenge_app import GuessNovaApp; print(GuessNovaApp.TITLE)"
       - name: Verify primary doctor route
         run: guessnova doctor --help
       - name: Verify standalone doctor entry point
@@ -94,6 +98,8 @@ jobs:
           guessnova-web --help
       - name: Verify installed PWA package
         run: python scripts/verify_web_package.py
+      - name: Verify compatibility metadata
+        run: python scripts/verify_compatibility_baseline.py
       - name: Run smoke test
         run: python scripts/smoke_test.py
 
@@ -101,8 +107,8 @@ jobs:
     needs: [verify, platform-package]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - name: Build release artifacts
@@ -114,7 +120,8 @@ jobs:
         run: |
           python -m pip install dist/*.whl
           python scripts/verify_web_package.py
-      - uses: softprops/action-gh-release@v2
+          python scripts/verify_compatibility_baseline.py
+      - uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           files: |

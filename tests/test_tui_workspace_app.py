@@ -1,12 +1,19 @@
 import asyncio
 from pathlib import Path
 
-from textual.widgets import Input, Select, TabbedContent
+from textual.widgets import Button, Input, Select, TabbedContent
 
 from guessnova.engine import GuessGame
 from guessnova.profile import Profile
 from guessnova.storage import Storage
 from guessnova.tui import GuessNovaApp
+
+
+async def _activate_button(app: GuessNovaApp, pilot, selector: str) -> None:
+    app.query_one(selector, Button).focus()
+    await pilot.pause()
+    await pilot.press("enter")
+    await pilot.pause()
 
 
 def test_workspace_shortcuts_switch_tabs_and_text_fields_keep_letters(tmp_path: Path) -> None:
@@ -70,8 +77,7 @@ def test_workspace_profile_create_rename_delete_and_restore(tmp_path: Path) -> N
 
             trash = app.query_one("#trash-select", Select)
             trash.value = "Gamma"
-            await pilot.click("#profile-restore")
-            await pilot.pause()
+            await _activate_button(app, pilot, "#profile-restore")
             assert storage.active_profile_name() == "Gamma"
             assert storage.list_profile_names() == ["Alpha", "Gamma"]
             assert storage.list_deleted_profile_names() == []

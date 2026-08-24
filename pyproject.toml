@@ -31,12 +31,12 @@ dev = [
   "mypy>=1.17,<2",
   "pytest>=9.0,<10",
   "pytest-cov>=6.2,<7",
-  "ruff>=0.12,<1",
+  "ruff>=0.12,<0.13",
 ]
 
 [project.scripts]
 guessnova = "guessnova.entrypoint:main"
-guessnova-tui = "guessnova.tui:run"
+guessnova-tui = "guessnova.tui_challenge_app:run"
 guessnova-doctor = "guessnova.doctor_cli:main"
 guessnova-web = "guessnova.web_server:main"
 

@@ -19,9 +19,7 @@ from .storage import Storage
 console = Console()
 
 
-def _as_dict(
-    report: DiagnosticReport, *, repair_backup: Path | None = None
-) -> dict[str, object]:
+def _as_dict(report: DiagnosticReport, *, repair_backup: Path | None = None) -> dict[str, object]:
     return {
         "report_version": DOCTOR_REPORT_VERSION,
         "kind": "state",

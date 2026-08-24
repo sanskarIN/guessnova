@@ -6,7 +6,11 @@ from dataclasses import asdict, dataclass, field
 from typing import Final
 
 from .domain import PlayerStats
-from .history import HistoryEntry, deserialize as deserialize_history, serialize as serialize_history
+from .history import (
+    HistoryEntry,
+    deserialize as deserialize_history,
+    serialize as serialize_history,
+)
 from .security import sanitize_profile_name
 from .settings import Settings
 
@@ -55,11 +59,7 @@ class Profile:
         stats_data = raw_stats if isinstance(raw_stats, dict) else {}
         raw_achievements = stats_data.get("achievements", [])
         achievements = (
-            {
-                item
-                for item in raw_achievements
-                if isinstance(item, str) and 0 < len(item) <= 64
-            }
+            {item for item in raw_achievements if isinstance(item, str) and 0 < len(item) <= 64}
             if isinstance(raw_achievements, list)
             else set()
         )

@@ -34,6 +34,51 @@ Detailed earlier terminal checkpoints remain in:
 
 ---
 
+## 2026-08-24 continuation — v1.5 reconciliation and 2.0 preparation
+
+The canonical continuation now lives on `release/v1.5-v2-prep-20260824` in PR #14. It starts from the 2026-08-23 hardened `main` head rather than merging either stale v1.5 branch. PR #11 and PR #13 are closed as superseded historical inputs.
+
+### Challenge Setup reconciled without dropping later hardening
+
+The validated Challenge Setup layer, challenge-enabled Textual app, localized presentation, deterministic seeded/date-bound reconstruction, non-destructive validation behavior, focused regressions, and smoke coverage are ported on top of the current Python/browser/PWA hardening. The installed `guessnova-tui` entry point is routed to the additive challenge app while the established six-pane workspace remains the underlying application boundary.
+
+### Long-standing formatter drift was repaired
+
+Exact-head CI exposed that repository-wide Ruff formatting had been failing across multiple previously merged 1.x branches, not only the new challenge work. A one-shot pinned Ruff 0.12.12 migration normalized the affected Python files. The temporary self-writing maintenance workflow was deleted immediately after producing that formatting commit. Normal CI retains the read-only `ruff format --check .` gate.
+
+### GitHub Actions toolchain modernized
+
+CI, Security, CodeQL, and tagged-release paths now use current major checkout/Python setup actions; normal browser testing uses the current Node setup major, and release publication uses `softprops/action-gh-release@v3`. Cross-platform built-wheel verification imports both the stable workspace and challenge-enabled app.
+
+### Compatibility baseline added before 2.0
+
+`compatibility.json` now records the current package/runtime and compatibility domains, and `scripts/verify_compatibility_baseline.py` proves that record matches shipped Python/browser constants. Normal CI and tagged-release verification both enforce the baseline.
+
+No compatibility version is bumped merely because 2.0 is being prepared. At this checkpoint the intended compatibility contract remains:
+
+```text
+package/runtime version  1.4.0 (until v1.5 release gates pass)
+Python state schema       2
+backup wrapper            2
+legacy backup wrapper     1
+replay format             1
+Doctor report protocol    1
+browser state marker      1
+browser localStorage key  guessnova.web.v1
+portable interchange      not defined
+challenge descriptor      not defined
+```
+
+### 2.0 preparation is explicit rather than speculative
+
+`docs/v2_roadmap.md`, `docs/v2_release_checklist.md`, and ADR 0006 define the 2.0 entry gates, compatibility-first architecture, cross-interface parity goals, explicit future interchange boundary, accessibility/reliability budgets, and final release definition of done. Native wrappers, schema changes, accounts/cloud, and new protocols remain gated until concrete product and compatibility requirements exist.
+
+### Remaining release evidence
+
+The branch must still earn exact-head CI, Security, and CodeQL success after all reconciliation/documentation commits. Manual accessibility evidence and truthful signed-off screenshot/demo capture remain intentionally manual. Package metadata must not advance to `1.5.0` and no release tag should be created until those gates are accepted.
+
+---
+
 ## 2026-08-23 continuation — cross-platform release hardening
 
 This continuation started from an already mature repository rather than adding artificial feature count. At the beginning of the pass, the roadmap had no unfinished ordinary engineering checkbox, GitHub exposed no open issues, and the only explicit unchecked roadmap item was the truthful manual release-media capture gate.
