@@ -14,8 +14,8 @@ class GuessInput(Input):
         """Request a new round without making R global to every text field."""
 
     BINDINGS = [
-        Binding("r", "new_round", "New Game", show=False),
-        Binding("q", "quit_app", "Quit", show=False),
+        Binding("r", "new_round", "New Game", show=False, priority=True),
+        Binding("q", "quit_app", "Quit", show=False, priority=True),
     ]
 
     def action_new_round(self) -> None:
