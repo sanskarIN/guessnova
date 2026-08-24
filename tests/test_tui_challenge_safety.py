@@ -1,11 +1,18 @@
 import asyncio
 from pathlib import Path
 
-from textual.widgets import Input, Select, Static
+from textual.widgets import Button, Input, Select, Static
 
 from guessnova.engine import GuessGame
 from guessnova.storage import Storage
 from guessnova.tui_challenge_app import GuessNovaApp
+
+
+async def _activate_button(app: GuessNovaApp, pilot, selector: str) -> None:
+    app.query_one(selector, Button).focus()
+    await pilot.pause()
+    await pilot.press("enter")
+    await pilot.pause()
 
 
 def test_invalid_seed_preserves_active_round_and_attempts(tmp_path: Path) -> None:
@@ -22,8 +29,7 @@ def test_invalid_seed_preserves_active_round_and_attempts(tmp_path: Path) -> Non
 
             app.query_one("#challenge-mode", Select).value = "classic"
             app.query_one("#challenge-seed", Input).value = "nova"
-            await pilot.click("#challenge-start")
-            await pilot.pause()
+            await _activate_button(app, pilot, "#challenge-start")
 
             assert app.game is active_game
             assert app.game.attempts_used == 1
@@ -44,8 +50,7 @@ def test_invalid_daily_date_preserves_active_round(tmp_path: Path) -> None:
             app.query_one("#challenge-mode", Select).value = "daily"
             app.query_one("#challenge-day", Input).value = "19-08-2026"
 
-            await pilot.click("#challenge-start")
-            await pilot.pause()
+            await _activate_button(app, pilot, "#challenge-start")
 
             assert app.game is active_game
             assert app.game.target_value == 42
