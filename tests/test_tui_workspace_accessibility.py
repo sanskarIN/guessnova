@@ -1,12 +1,19 @@
 import asyncio
 from pathlib import Path
 
-from textual.widgets import Input, Select, Switch
+from textual.widgets import Button, Input, Select, Switch
 
 from guessnova.engine import GuessGame
 from guessnova.profile import Profile
 from guessnova.storage import Storage
 from guessnova.tui import GuessNovaApp
+
+
+async def _activate_button(app: GuessNovaApp, pilot, selector: str) -> None:
+    app.query_one(selector, Button).focus()
+    await pilot.pause()
+    await pilot.press("enter")
+    await pilot.pause()
 
 
 def test_switching_profile_resets_unfinished_round_without_leaving_profiles_tab(
@@ -82,8 +89,7 @@ def test_high_contrast_applies_on_launch_and_after_settings_save(tmp_path: Path)
             await pilot.press("ctrl+5")
             await pilot.pause()
             app.query_one("#settings-high-contrast", Switch).value = True
-            await pilot.click("#settings-save")
-            await pilot.pause()
+            await _activate_button(app, pilot, "#settings-save")
             assert app.screen.has_class("high-contrast") is True
             assert storage.load_profile("Nova").settings.high_contrast is True
 
