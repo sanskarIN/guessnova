@@ -29,9 +29,7 @@ def test_invalid_seed_preserves_active_round_and_attempts(tmp_path: Path) -> Non
             assert app.game.attempts_used == 1
             assert app.game.target_value == 42
             assert app.challenge_configuration is None
-            assert "whole number" in str(
-                app.query_one("#challenge-status", Static).render()
-            )
+            assert "whole number" in str(app.query_one("#challenge-status", Static).render())
             assert app.focused is not None
             assert app.focused.id == "challenge-seed"
 
@@ -52,9 +50,7 @@ def test_invalid_daily_date_preserves_active_round(tmp_path: Path) -> None:
             assert app.game is active_game
             assert app.game.target_value == 42
             assert app.challenge_configuration is None
-            assert "YYYY-MM-DD" in str(
-                app.query_one("#challenge-status", Static).render()
-            )
+            assert "YYYY-MM-DD" in str(app.query_one("#challenge-status", Static).render())
             assert app.focused is not None
             assert app.focused.id == "challenge-day"
 

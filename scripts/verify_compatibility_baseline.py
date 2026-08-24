@@ -18,7 +18,7 @@ BROWSER_STATE_PATH = ROOT / "src" / "guessnova" / "web" / "browser-state.mjs"
 
 
 def _javascript_export(source: str, name: str) -> str:
-    match = re.search(rf'^export const {re.escape(name)} = (.+?);$', source, re.MULTILINE)
+    match = re.search(rf"^export const {re.escape(name)} = (.+?);$", source, re.MULTILINE)
     if match is None:
         raise RuntimeError(f"browser compatibility constant {name} is missing")
     return match.group(1).strip()

@@ -126,7 +126,9 @@ def parse_workspace_challenge(
     if selected_mode == GameMode.DAILY:
         try:
             cleaned_day = day_text.strip()
-            selected_day = date.fromisoformat(cleaned_day) if cleaned_day else (today or date.today())
+            selected_day = (
+                date.fromisoformat(cleaned_day) if cleaned_day else (today or date.today())
+            )
         except (AttributeError, TypeError, ValueError) as exc:
             raise ValueError("daily challenge date must use YYYY-MM-DD") from exc
         return ChallengeConfiguration(
@@ -169,9 +171,7 @@ def build_workspace_game(
     ).build_game()
 
 
-def load_workspace_snapshot(
-    storage: Storage, profile_name: str | None = None
-) -> WorkspaceSnapshot:
+def load_workspace_snapshot(storage: Storage, profile_name: str | None = None) -> WorkspaceSnapshot:
     """Load a read-only snapshot through the normal persistence boundaries."""
     profile = storage.load_profile(profile_name)
     return WorkspaceSnapshot(

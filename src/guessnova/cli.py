@@ -128,14 +128,9 @@ def _show_onboarding(
     if settings.onboarding_complete:
         return
     locale = args.locale
-    body = (
-        f"{text('onboarding.body', locale=locale)}\n"
-        f"{text('onboarding.settings', locale=locale)}"
-    )
+    body = f"{text('onboarding.body', locale=locale)}\n{text('onboarding.settings', locale=locale)}"
     if args.compact:
-        console.print(
-            f"{text('onboarding.title', locale=locale)}: {body.replace(chr(10), ' ')}"
-        )
+        console.print(f"{text('onboarding.title', locale=locale)}: {body.replace(chr(10), ' ')}")
     else:
         console.print(Panel.fit(body, title=text("onboarding.title", locale=locale)))
     if not args.no_save:
@@ -182,9 +177,7 @@ def play(args: argparse.Namespace) -> int:
                 return 1
             if command in {"h", "hint"}:
                 try:
-                    console.print(
-                        f"[hint]{game.request_hint(penalize=args.hint_penalty)}[/hint]"
-                    )
+                    console.print(f"[hint]{game.request_hint(penalize=args.hint_penalty)}[/hint]")
                 except RuntimeError as exc:
                     console.print(f"[warning]{escape(str(exc))}[/warning]")
                 continue
@@ -236,9 +229,9 @@ def reverse(args: argparse.Namespace) -> int:
     console.print(message if args.compact else Panel.fit(message))
     while not engine.finished:
         guess = engine.next_guess()
-        response = console.input(
-            text("reverse.prompt", locale=args.locale, guess=guess)
-        ).strip().lower()
+        response = (
+            console.input(text("reverse.prompt", locale=args.locale, guess=guess)).strip().lower()
+        )
         try:
             engine.respond(response)
         except ValueError as exc:

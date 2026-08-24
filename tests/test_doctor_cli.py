@@ -46,9 +46,7 @@ def test_doctor_reports_attention_for_schema1_state(tmp_path: Path, monkeypatch)
     assert main(["--compact"]) == EXIT_ATTENTION
 
 
-def test_doctor_repair_requires_confirmation_and_can_repair(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_doctor_repair_requires_confirmation_and_can_repair(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("GUESSNOVA_HOME", str(tmp_path / "data"))
     storage = Storage()
     storage.data_dir.mkdir(parents=True, exist_ok=True)
@@ -73,9 +71,7 @@ def test_doctor_repair_requires_confirmation_and_can_repair(
     assert len(list(backups.glob("*.guessnova.json"))) == 1
 
 
-def test_doctor_json_repair_emits_single_json_document(
-    tmp_path: Path, monkeypatch, capsys
-) -> None:
+def test_doctor_json_repair_emits_single_json_document(tmp_path: Path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("GUESSNOVA_HOME", str(tmp_path / "data"))
     storage = Storage()
     storage.data_dir.mkdir(parents=True, exist_ok=True)
@@ -155,10 +151,7 @@ def test_doctor_rejects_backup_verification_with_repair(tmp_path: Path, capsys) 
     backup = tmp_path / "backup.json"
     export_state({"schema_version": SCHEMA_VERSION}, backup)
 
-    assert (
-        main(["--json", "--verify-backup", str(backup), "--repair", "--yes"])
-        == EXIT_ATTENTION
-    )
+    assert main(["--json", "--verify-backup", str(backup), "--repair", "--yes"]) == EXIT_ATTENTION
     payload = json.loads(capsys.readouterr().out)
     assert payload["kind"] == "error"
     assert payload["healthy"] is False

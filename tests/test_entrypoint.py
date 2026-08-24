@@ -10,9 +10,7 @@ from guessnova.entrypoint import main
 from guessnova.import_export import export_state
 
 
-def test_primary_entrypoint_routes_doctor_json_to_explicit_data_dir(
-    tmp_path: Path, capsys
-) -> None:
+def test_primary_entrypoint_routes_doctor_json_to_explicit_data_dir(tmp_path: Path, capsys) -> None:
     assert main(["doctor", "--json", "--data-dir", str(tmp_path)]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["report_version"] == DOCTOR_REPORT_VERSION
@@ -20,18 +18,14 @@ def test_primary_entrypoint_routes_doctor_json_to_explicit_data_dir(
     assert payload["state_exists"] is False
 
 
-def test_primary_entrypoint_forwards_global_compact_flag_to_doctor(
-    tmp_path: Path, capsys
-) -> None:
+def test_primary_entrypoint_forwards_global_compact_flag_to_doctor(tmp_path: Path, capsys) -> None:
     assert main(["--compact", "doctor", "--data-dir", str(tmp_path)]) == 0
     output = capsys.readouterr().out
     assert "kind=state" in output
     assert "state_exists=False" in output
 
 
-def test_primary_entrypoint_forwards_global_plain_flag_to_doctor(
-    tmp_path: Path, capsys
-) -> None:
+def test_primary_entrypoint_forwards_global_plain_flag_to_doctor(tmp_path: Path, capsys) -> None:
     assert main(["--plain", "doctor", "--data-dir", str(tmp_path)]) == 0
     output = capsys.readouterr().out
     assert "GuessNova Doctor" in output

@@ -32,9 +32,7 @@ def test_history_parser_accepts_advanced_filters() -> None:
     assert args.limit == 50
 
 
-def test_profile_commands_create_rename_delete_and_restore(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_profile_commands_create_rename_delete_and_restore(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("GUESSNOVA_HOME", str(tmp_path))
     assert main(["--compact", "profiles", "create", "Alpha"]) == 0
     assert main(["--compact", "profiles", "rename", "Alpha", "Nova"]) == 0

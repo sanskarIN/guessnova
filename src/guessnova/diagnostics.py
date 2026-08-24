@@ -135,7 +135,9 @@ def repair(storage: Storage, *, backup_dir: Path | None = None) -> Path | None:
     if not report.state_exists:
         return None
     if not report.readable:
-        raise ValueError("state is not safely repairable; restore or replace the invalid state file")
+        raise ValueError(
+            "state is not safely repairable; restore or replace the invalid state file"
+        )
 
     payload = read_state_payload(storage.path)
     normalized = normalize_state(payload)

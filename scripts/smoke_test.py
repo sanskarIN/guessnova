@@ -155,9 +155,7 @@ def main() -> int:
                 {
                     "schema_version": 1,
                     "active_profile": "Legacy",
-                    "profiles": {
-                        "Legacy": {"name": "Legacy", "stats": {}, "settings": {}}
-                    },
+                    "profiles": {"Legacy": {"name": "Legacy", "stats": {}, "settings": {}}},
                     "leaderboard": [],
                 }
             ),

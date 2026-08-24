@@ -39,9 +39,7 @@ def main() -> int:
         "CITATION.cff": _citation_version(),
     }
     mismatches = {
-        source: version
-        for source, version in versions.items()
-        if version != project_version
+        source: version for source, version in versions.items() if version != project_version
     }
     if mismatches:
         detail = ", ".join(f"{source}={version}" for source, version in mismatches.items())

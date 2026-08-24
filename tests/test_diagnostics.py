@@ -54,9 +54,7 @@ def test_diagnose_invalid_json_is_not_repairable(tmp_path: Path) -> None:
         repair(storage)
 
 
-def test_diagnose_oversized_state_is_not_repairable(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_diagnose_oversized_state_is_not_repairable(tmp_path: Path, monkeypatch) -> None:
     storage = Storage(tmp_path)
     storage.data_dir.mkdir(parents=True, exist_ok=True)
     storage.path.write_bytes(b"{" + b"x" * 128 + b"}")

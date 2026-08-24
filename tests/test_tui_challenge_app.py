@@ -31,9 +31,7 @@ def test_challenge_app_starts_seeded_timed_round(tmp_path: Path) -> None:
             assert app.game.seed == 20260819
             assert app.game.target_value == expected.target_value
             assert app.query_one("#challenge-day", Input).value == ""
-            assert "seed 20260819" in str(
-                app.query_one("#challenge-status", Static).render()
-            )
+            assert "seed 20260819" in str(app.query_one("#challenge-status", Static).render())
             assert app.focused is not None
             assert app.focused.id == "guess"
 

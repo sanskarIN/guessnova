@@ -166,9 +166,7 @@ class GuessNovaApp(App[None]):
                                 id="profile-refresh",
                             )
                         yield Input(
-                            placeholder=text(
-                                "tui.profile.name_placeholder", locale=self.locale
-                            ),
+                            placeholder=text("tui.profile.name_placeholder", locale=self.locale),
                             max_length=64,
                             id="profile-name",
                         )
@@ -241,16 +239,12 @@ class GuessNovaApp(App[None]):
                     )
                     with Horizontal(classes="form-row"):
                         yield Input(
-                            placeholder=text(
-                                "tui.history.since_placeholder", locale=self.locale
-                            ),
+                            placeholder=text("tui.history.since_placeholder", locale=self.locale),
                             id="history-since",
                             classes="field-control",
                         )
                         yield Input(
-                            placeholder=text(
-                                "tui.history.until_placeholder", locale=self.locale
-                            ),
+                            placeholder=text("tui.history.until_placeholder", locale=self.locale),
                             id="history-until",
                             classes="field-control",
                         )
@@ -377,9 +371,7 @@ class GuessNovaApp(App[None]):
             with TabPane(text("tui.tab.recovery", locale=self.locale), id="recovery"):
                 with VerticalScroll(classes="pane-scroll"):
                     with Vertical(classes="section"):
-                        yield Static(
-                            f"[b]{text('tui.recovery.title', locale=self.locale)}[/b]"
-                        )
+                        yield Static(f"[b]{text('tui.recovery.title', locale=self.locale)}[/b]")
                         yield Static("", id="recovery-health", classes="status")
                         yield Static("", id="recovery-data")
                         yield Static("", id="recovery-schema")
@@ -389,9 +381,7 @@ class GuessNovaApp(App[None]):
                         )
                     with Vertical(classes="section"):
                         yield Input(
-                            placeholder=text(
-                                "tui.recovery.backup_placeholder", locale=self.locale
-                            ),
+                            placeholder=text("tui.recovery.backup_placeholder", locale=self.locale),
                             id="recovery-backup-path",
                         )
                         yield Button(
@@ -501,9 +491,7 @@ class GuessNovaApp(App[None]):
                 "[/b red]"
             )
         elif result.outcome == GuessOutcome.OUT_OF_RANGE:
-            feedback.update(
-                f"[yellow]{text('tui.outside_range', locale=self.locale)}[/yellow]"
-            )
+            feedback.update(f"[yellow]{text('tui.outside_range', locale=self.locale)}[/yellow]")
         elif self.show_smart_hints and result.hint:
             feedback.update(result.hint)
         else:
@@ -552,8 +540,7 @@ class GuessNovaApp(App[None]):
             )
         )
         self.query_one("#profile-achievements", Static).update(
-            f"{text('stats.achievements', locale=self.locale)}: "
-            f"{self._achievement_labels(profile)}"
+            f"{text('stats.achievements', locale=self.locale)}: {self._achievement_labels(profile)}"
         )
         profile_select = self.query_one("#profile-select", Select)
         profile_names = self.storage.list_profile_names()
@@ -626,9 +613,7 @@ class GuessNovaApp(App[None]):
         self._apply_accessibility_preferences()
         self._reset_round(show_play=False, focus=False)
         self._refresh_workspace()
-        self._set_profile_status(
-            text("profiles.created", locale=self.locale, name=created.name)
-        )
+        self._set_profile_status(text("profiles.created", locale=self.locale, name=created.name))
 
     def _profile_rename(self) -> None:
         selected = self._selected_string("#profile-select")
@@ -650,9 +635,7 @@ class GuessNovaApp(App[None]):
             self.profile_name = renamed.name
         field.value = ""
         self._refresh_workspace()
-        self._set_profile_status(
-            text("profiles.renamed", locale=self.locale, name=renamed.name)
-        )
+        self._set_profile_status(text("profiles.renamed", locale=self.locale, name=renamed.name))
 
     def _profile_delete(self) -> None:
         selected = self._selected_string("#profile-select")
@@ -679,16 +662,12 @@ class GuessNovaApp(App[None]):
             self._apply_accessibility_preferences()
             self._reset_round(show_play=False, focus=False)
         self._refresh_workspace()
-        self._set_profile_status(
-            text("profiles.deleted", locale=self.locale, name=selected)
-        )
+        self._set_profile_status(text("profiles.deleted", locale=self.locale, name=selected))
 
     def _profile_restore(self) -> None:
         selected = self._selected_string("#trash-select")
         if selected is None:
-            self._set_profile_status(
-                text("tui.profile.no_trash_selection", locale=self.locale)
-            )
+            self._set_profile_status(text("tui.profile.no_trash_selection", locale=self.locale))
             return
         try:
             restored = self.storage.restore_profile(selected, make_active=True)
@@ -701,9 +680,7 @@ class GuessNovaApp(App[None]):
         self._apply_accessibility_preferences()
         self._reset_round(show_play=False, focus=False)
         self._refresh_workspace()
-        self._set_profile_status(
-            text("profiles.restored", locale=self.locale, name=restored.name)
-        )
+        self._set_profile_status(text("profiles.restored", locale=self.locale, name=restored.name))
 
     def _history_choice(self, selector: str) -> str | None:
         value = self._selected_string(selector)
@@ -847,11 +824,7 @@ class GuessNovaApp(App[None]):
                 path=self.storage.data_dir,
             )
         )
-        source = (
-            report.source_schema_version
-            if report.source_schema_version is not None
-            else "-"
-        )
+        source = report.source_schema_version if report.source_schema_version is not None else "-"
         self.query_one("#recovery-schema", Static).update(
             text(
                 "tui.recovery.schema",
@@ -946,9 +919,7 @@ class GuessNovaApp(App[None]):
         elif event.input.id == "recovery-backup-path":
             self._verify_backup()
 
-    def on_guess_input_new_round_requested(
-        self, _event: GuessInput.NewRoundRequested
-    ) -> None:
+    def on_guess_input_new_round_requested(self, _event: GuessInput.NewRoundRequested) -> None:
         self.action_reset()
 
     def _focus_tab(self, tab_id: str) -> None:
