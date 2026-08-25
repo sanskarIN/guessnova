@@ -90,9 +90,11 @@ class PortableChallengeDescriptor:
             raise ValueError(f"unsupported portable challenge descriptor version: {version}")
 
         raw_mode = payload.get("mode")
+        if not isinstance(raw_mode, str):
+            raise ValueError(f"unknown game mode: {raw_mode}")
         try:
             mode = GameMode(raw_mode)
-        except (TypeError, ValueError) as exc:
+        except ValueError as exc:
             raise ValueError(f"unknown game mode: {raw_mode}") from exc
         if mode not in PORTABLE_CHALLENGE_MODES:
             raise ValueError(f"game mode is not portable: {mode.value}")
