@@ -109,7 +109,11 @@ class PortableChallengeDescriptor:
                 details.append(f"missing fields: {', '.join(missing)}")
             if unknown:
                 details.append(f"unknown fields: {', '.join(unknown)}")
-            raise ValueError("invalid portable challenge descriptor fields (" + "; ".join(details) + ")")
+            raise ValueError(
+                "invalid portable challenge descriptor fields ("
+                + "; ".join(details)
+                + ")"
+            )
 
         difficulty = payload["difficulty"]
         if not isinstance(difficulty, str):
