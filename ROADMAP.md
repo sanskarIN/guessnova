@@ -117,6 +117,18 @@ The roadmap prioritizes coherent quality improvements over feature count. Core o
 - [ ] Complete truthful signed-off screenshots/demo media.
 - [ ] Advance package/runtime metadata to `1.5.0` only after the release gates above are accepted.
 
+## Next-version preparation — portable challenge compatibility
+
+- [x] Publish a strict opt-in portable challenge descriptor version `1` without silently changing the current CLI/Textual seeded-challenge behavior.
+- [x] Mirror descriptor validation and deterministic target derivation in Python and browser JavaScript.
+- [x] Commit one shared golden-vector fixture consumed by both Python and Node tests for seeded and Daily challenge identity.
+- [x] Publish descriptor version `1` in `compatibility.json` and verify the Python/browser version constants agree in CI and release checks.
+- [x] Require the browser descriptor module in built-wheel PWA package verification and JavaScript syntax gates.
+- [x] Document the descriptor contract, safe seed range, canonical Daily date format, and separation from future state interchange.
+- [ ] Audit stable future-version rejection behavior across every remaining versioned compatibility reader before declaring the 2.0 compatibility freeze complete.
+- [ ] Integrate portable descriptor identity into normal challenge share/copy flows only after the accepted 1.x release gates are complete.
+- [ ] Design portable browser/Python user-data interchange separately; challenge identity alone must never imply state-format compatibility.
+
 ## Gated future candidates
 
 These are intentionally not release checkboxes until their prerequisite exists:
