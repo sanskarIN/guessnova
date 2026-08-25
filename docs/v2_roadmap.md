@@ -4,7 +4,9 @@ This document prepares the 2.0 line without pretending that unreleased work alre
 
 ## Entry gate
 
-2.0 development starts only after the current 1.x release candidate is reconciled onto current `main`, exact-head CI/Security/CodeQL are green, and the manual release-evidence gates are complete.
+Versioned 2.0 development artifacts start only after the current 1.x release candidate is reconciled onto current `main`, exact-head CI/Security/CodeQL are green, and the manual release-evidence gates are complete.
+
+Compatibility analysis and additive preparation may land before that gate only when it leaves the current shipped interface behavior and package/runtime version unchanged. No 2.0 alpha artifact may be cut from that preparation alone.
 
 The 2.0 preparation branch must not silently change package/runtime version, Python state schema, backup wrapper, replay format, Doctor protocol, or browser-state marker.
 
@@ -24,14 +26,14 @@ Primary goals:
 
 ## 2.0-alpha.1 — compatibility contract freeze
 
-- [ ] Inventory every persisted or externally visible compatibility domain.
-- [ ] Publish a machine-readable compatibility matrix for package version, Python state schema, backup wrapper, replay format, Doctor report protocol, browser state marker, and any future interchange format.
-- [ ] Keep state schema `2` unless a concrete state-model change requires schema `3`.
-- [ ] Keep backup wrapper `2` unless a concrete envelope/integrity change requires a new wrapper.
-- [ ] Keep replay format `1` unless replay semantics actually change.
-- [ ] Define an explicit portable challenge descriptor for deterministic challenge identity.
-- [ ] Add golden fixtures shared by Python and JavaScript for every portable deterministic rule.
-- [ ] Reject unknown future compatibility versions with stable errors.
+- [x] Inventory every persisted or externally visible compatibility domain in `compatibility.json` and `docs/compatibility.md`.
+- [x] Publish a machine-readable compatibility matrix for package version, Python state schema, backup wrapper, replay format, Doctor report protocol, browser state marker, and future interchange/challenge formats.
+- [x] Keep state schema `2` unless a concrete state-model change requires schema `3`.
+- [x] Keep backup wrapper `2` unless a concrete envelope/integrity change requires a new wrapper.
+- [x] Keep replay format `1` unless replay semantics actually change.
+- [x] Define portable challenge descriptor `1` for opt-in deterministic challenge identity without changing existing TUI/CLI seeded behavior.
+- [x] Add shared Python/JavaScript golden fixtures for portable seeded and Daily deterministic target rules.
+- [ ] Reject unknown future compatibility versions with stable errors across every inventoried domain. Descriptor-v1 future-version rejection is complete; the full-domain audit remains.
 
 ## 2.0-alpha.2 — cross-interface challenge parity
 
