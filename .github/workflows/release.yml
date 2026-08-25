@@ -42,6 +42,7 @@ jobs:
         run: |
           node --check src/guessnova/web/app.js
           node --check src/guessnova/web/browser-state.mjs
+          node --check src/guessnova/web/challenge-descriptor.mjs
           node --check src/guessnova/web/game-engine.mjs
           node --check src/guessnova/web/sw.js
       - name: Verify PWA package contract
