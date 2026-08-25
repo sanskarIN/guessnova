@@ -12,6 +12,7 @@ REQUIRED_ASSETS: Final = (
     "app.css",
     "app.js",
     "browser-state.mjs",
+    "challenge-descriptor.mjs",
     "game-engine.mjs",
     "manifest.webmanifest",
     "sw.js",
