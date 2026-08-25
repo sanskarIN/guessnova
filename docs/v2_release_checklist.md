@@ -12,14 +12,14 @@ This is the operational companion to `docs/v2_roadmap.md` and ADR 0006. It inten
 
 ## Compatibility inventory
 
-- [ ] Record the latest accepted 1.x package version.
-- [ ] Record Python state schema and committed migration fixtures.
-- [ ] Record backup wrapper and supported legacy wrappers.
-- [ ] Record replay format.
-- [ ] Record Doctor machine report protocol.
-- [ ] Record browser state marker and storage key.
-- [ ] Record every deterministic cross-language rule and its golden fixtures.
-- [ ] Introduce a portable interchange/challenge protocol version only if its design is accepted.
+- [x] Record the latest accepted 1.x package version (`1.4.0` at this preparation checkpoint).
+- [x] Record Python state schema `2` and retain its committed migration fixtures.
+- [x] Record backup wrapper `2` and supported legacy wrapper `1`.
+- [x] Record replay format `1`.
+- [x] Record Doctor machine report protocol `1`.
+- [x] Record browser state marker `1` and storage key `guessnova.web.v1`.
+- [x] Record every currently portable deterministic target rule and enforce shared Python/JavaScript golden fixtures.
+- [x] Define portable challenge descriptor `1`; keep portable state interchange intentionally undefined until its separate design is accepted.
 
 ## Upgrade safety
 
@@ -36,10 +36,10 @@ This is the operational companion to `docs/v2_roadmap.md` and ADR 0006. It inten
 - [ ] Classic parity is documented and tested where parity is promised.
 - [ ] Timed parity is documented and tested where parity is promised.
 - [ ] Streak parity is documented and tested where parity is promised.
-- [ ] Daily parity uses committed Python/JavaScript golden fixtures.
-- [ ] Reverse parity covers integer bounds, sequencing, contradictions, completion, and feedback validation.
-- [ ] Challenge identity is versioned before it becomes portable/shareable.
-- [ ] Browser and Python stores remain separated unless an explicit interchange protocol is used.
+- [x] Daily parity uses committed shared Python/JavaScript golden fixtures.
+- [x] Reverse parity covers integer bounds, sequencing, contradictions, completion, and feedback validation.
+- [x] Portable challenge identity is versioned before it becomes shareable across interfaces.
+- [x] Browser and Python stores remain separated unless an explicit interchange protocol is used.
 
 ## Accessibility
 
