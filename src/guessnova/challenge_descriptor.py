@@ -87,7 +87,9 @@ class PortableChallengeDescriptor:
             or isinstance(version, bool)
             or version != PORTABLE_CHALLENGE_DESCRIPTOR_VERSION
         ):
-            raise ValueError(f"unsupported portable challenge descriptor version: {version}")
+            raise ValueError(
+                f"unsupported portable challenge descriptor version: {version}"
+            )
 
         raw_mode = payload.get("mode")
         if not isinstance(raw_mode, str):
