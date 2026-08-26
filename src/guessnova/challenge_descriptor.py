@@ -64,7 +64,9 @@ class PortableChallengeDescriptor:
             return
 
         if self.day is not None:
-            raise ValueError("only daily portable challenges can carry a challenge date")
+            raise ValueError(
+                "only daily portable challenges can carry a challenge date"
+            )
         if (
             not isinstance(self.seed, int)
             or isinstance(self.seed, bool)
@@ -132,7 +134,9 @@ class PortableChallengeDescriptor:
             except ValueError as exc:
                 raise ValueError("portable challenge date must use YYYY-MM-DD") from exc
             if selected_day.isoformat() != raw_day:
-                raise ValueError("portable challenge date must use canonical YYYY-MM-DD")
+                raise ValueError(
+                    "portable challenge date must use canonical YYYY-MM-DD"
+                )
             return cls(
                 mode=mode,
                 difficulty=difficulty,
