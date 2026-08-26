@@ -1,0 +1,18 @@
+name: Debug Ruff format
+
+on:
+  push:
+    branches: [debug-guessnova-format-20260826]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Install Ruff
+        run: python -m pip install ruff==0.12.12
+      - name: Show Ruff format diff
+        run: ruff format --diff src/guessnova/challenge_descriptor.py
