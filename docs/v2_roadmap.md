@@ -8,6 +8,19 @@ This document prepares the 2.0 line without pretending that unreleased work alre
 
 The 2.0 preparation branch must not silently change package/runtime version, Python state schema, backup wrapper, replay format, Doctor protocol, or browser-state marker.
 
+### Entry gate status — 2026-08-24
+
+- [x] Reconcile the v1.5 Challenge Setup and hardened browser/PWA baseline onto current `main`.
+- [x] Require exact-head CI, Security, CodeQL, Python/browser tests, Ruff, mypy, smoke, and cross-platform package verification before merge.
+- [x] Keep a machine-readable compatibility baseline and verifier on `main`.
+- [x] Add a machine-readable v1.5 manual-evidence record and block tagged publication while that record is pending or incomplete.
+- [x] Keep release verification/package jobs read-only and scope repository write permission to the final publication job only.
+- [ ] Complete truthful manual keyboard/accessibility review for the v1.5 candidate.
+- [ ] Capture truthful signed-off screenshots and demo media for the v1.5 candidate.
+- [ ] Advance canonical package/runtime metadata to `1.5.0`, rerun exact-head release gates, and tag `v1.5.0`.
+
+Until the three remaining items are complete, 2.0 feature development stays gated. Preparation documents, compatibility inventories, and release-safety tooling may continue without claiming that `2.0-alpha.1` has started.
+
 ## Product goals
 
 GuessNova 2.0 should make the existing terminal, Textual, and browser/PWA experiences feel like one coherent product while preserving the advantages of each surface.

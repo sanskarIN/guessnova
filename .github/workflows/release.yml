@@ -6,7 +6,11 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   verify:
@@ -17,17 +21,22 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-      - name: Install quality dependencies
-        run: python -m pip install -e '.[dev]' pip-audit build twine
       - name: Verify tag matches package version
         shell: bash
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
           PROJECT_VERSION="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
           test "$TAG_VERSION" = "$PROJECT_VERSION"
+      - name: Verify truthful manual release evidence
+        shell: bash
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          python scripts/verify_manual_release_evidence.py --version "$TAG_VERSION"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Install quality dependencies
+        run: python -m pip install -e '.[dev]' pip-audit build twine
       - name: Ruff lint
         run: ruff check .
       - name: Ruff format
@@ -106,6 +115,8 @@ jobs:
   build-release:
     needs: [verify, platform-package]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
