@@ -1,0 +1,42 @@
+[
+  {
+    "descriptor": {"version": 1, "mode": "classic", "difficulty": "easy", "seed": 0},
+    "target": 15
+  },
+  {
+    "descriptor": {"version": 1, "mode": "classic", "difficulty": "normal", "seed": 42},
+    "target": 32
+  },
+  {
+    "descriptor": {"version": 1, "mode": "timed", "difficulty": "hard", "seed": -7},
+    "target": 245
+  },
+  {
+    "descriptor": {"version": 1, "mode": "streak", "difficulty": "expert", "seed": 20260825},
+    "target": 878
+  },
+  {
+    "descriptor": {"version": 1, "mode": "classic", "difficulty": "expert", "seed": 9007199254740991},
+    "target": 855
+  },
+  {
+    "descriptor": {"version": 1, "mode": "timed", "difficulty": "easy", "seed": -9007199254740991},
+    "target": 7
+  },
+  {
+    "descriptor": {"version": 1, "mode": "daily", "difficulty": "easy", "day": "2026-08-25"},
+    "target": 23
+  },
+  {
+    "descriptor": {"version": 1, "mode": "daily", "difficulty": "normal", "day": "2026-08-25"},
+    "target": 8
+  },
+  {
+    "descriptor": {"version": 1, "mode": "daily", "difficulty": "hard", "day": "2000-02-29"},
+    "target": 288
+  },
+  {
+    "descriptor": {"version": 1, "mode": "daily", "difficulty": "expert", "day": "9999-12-31"},
+    "target": 187
+  }
+]

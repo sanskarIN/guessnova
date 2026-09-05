@@ -7,6 +7,7 @@ import re
 import tomllib
 from pathlib import Path
 
+from guessnova.challenge_descriptor import PORTABLE_CHALLENGE_DESCRIPTOR_VERSION
 from guessnova.constants import REPLAY_VERSION, SCHEMA_VERSION
 from guessnova.doctor_protocol import DOCTOR_REPORT_VERSION
 from guessnova.import_export import EXPORT_VERSION, LEGACY_EXPORT_VERSION
@@ -15,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BASELINE_PATH = ROOT / "compatibility.json"
 PYPROJECT_PATH = ROOT / "pyproject.toml"
 BROWSER_STATE_PATH = ROOT / "src" / "guessnova" / "web" / "browser-state.mjs"
+CHALLENGE_DESCRIPTOR_PATH = ROOT / "src" / "guessnova" / "web" / "challenge-descriptor.mjs"
 
 
 def _javascript_export(source: str, name: str) -> str:
@@ -28,9 +30,19 @@ def main() -> int:
     baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
     project = tomllib.loads(PYPROJECT_PATH.read_text(encoding="utf-8"))["project"]
     browser_source = BROWSER_STATE_PATH.read_text(encoding="utf-8")
+    challenge_source = CHALLENGE_DESCRIPTOR_PATH.read_text(encoding="utf-8")
 
     browser_schema = int(_javascript_export(browser_source, "BROWSER_STATE_SCHEMA"))
     storage_key = json.loads(_javascript_export(browser_source, "STORAGE_KEY"))
+    browser_descriptor_version = int(
+        _javascript_export(challenge_source, "PORTABLE_CHALLENGE_DESCRIPTOR_VERSION")
+    )
+    if browser_descriptor_version != PORTABLE_CHALLENGE_DESCRIPTOR_VERSION:
+        raise SystemExit(
+            "portable challenge descriptor versions differ between Python and browser contracts: "
+            f"python={PORTABLE_CHALLENGE_DESCRIPTOR_VERSION}, "
+            f"browser={browser_descriptor_version}"
+        )
 
     actual = {
         "package_version": project["version"],
@@ -43,7 +55,7 @@ def main() -> int:
         "browser_state_marker": browser_schema,
         "browser_storage_key": storage_key,
         "portable_interchange_version": None,
-        "portable_challenge_descriptor_version": None,
+        "portable_challenge_descriptor_version": PORTABLE_CHALLENGE_DESCRIPTOR_VERSION,
     }
 
     if baseline != actual:
